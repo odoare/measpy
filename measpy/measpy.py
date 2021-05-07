@@ -64,20 +64,21 @@ class Measurement:
                 fs=44100
                 dur=2
                 in_map=[1,2]
-                in_cal=[1,1]
+                in_cal=[1.0,1.0]
                 in_dbfs=[1.0,1.0]
                 in_unit=['V','V']
-                in_desc=['Input channel 1','Input channel 2']
+                in_desc=['In1','In2']
                 out_sig='noise'
+                extrat=[0.0,0.0]
 
             If out_sig != None:
                 out_map=[1]
                 out_amp=1.0
                 out_dbfs=[1.0]
-                min_freq=20
-                max_freq=20000
+                out_desc=['Out1']
+                out_sig_freqs=[20.0,20000.0]
+                fades=[0,0]
                 ioSync=0
-                fades=[100,100]
             
             device_type=''
             device=''

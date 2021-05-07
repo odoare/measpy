@@ -7,7 +7,7 @@ import numpy as np
 #plt.style.use('dark_background')
 %matplotlib auto
 
-#%%
+#%% Define and run a measurement
 M1 = ma.Measurement(out_sig='noise',
                     out_map=[1],
                     out_desc=['Out1'],
@@ -21,12 +21,15 @@ M1 = ma.Measurement(out_sig='noise',
                     out_sig_fades=[500,500],
                     dur=2)
 M1.run_measurement()
+M1.plot_with_cal()
+
+#%% Save in three different formats
 M1.to_jsonwav('j1')
 M1.to_csvwav('c1')
 M1.to_pickle('1.pck')
 
-# %%
-M3=ma.load_measurement_from_pickle('M1.pck')
+#%% Load from file 
+M3=ma.load_measurement_from_pickle('1.pck')
 plt.plot(M3.t,M3.x)
 
 # %%
