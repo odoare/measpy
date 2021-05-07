@@ -14,6 +14,7 @@ from scipy.signal import welch, csd, coherence
 # - Coherence
 # - Calibrations
 # - Apply dBA, dBC or any calibration curve to a signal
+# - add silence before, after
 
 class Signal:
     """ Defines a signal object
@@ -92,16 +93,16 @@ def apply_fades(s,fades):
 
 def create_noise(fs, dur, out_amp, freqs, fades):
     """ Create band-limited noise """
-    t = create_time(fs,dur=dur)
-    leng = int(dur * fs)
+    out = Signal('Noise',fs,'1',1.0,1.0)
+    leng = int(dur*fs)
     lengs2 = int(leng/2)
     f = fs*np.arange(lengs2+1,dtype=float)/leng
     amp = ((f>freqs[0]) & (f<freqs[1]))*np.sqrt(leng)
     phase  = 2*np.pi*(np.random.rand(lengs2+1)-0.5)
     fftx = amp*np.exp(1j*phase)
-    s = np.fft.irfft(fftx)
-    s = apply_fades(s,fades)
-    return t,out_amp*s
+    s = out_amp*np.fft.irfft(fftx)
+    out.values = apply_fades(s,fades)
+    return out
 
 def tfe_welch(x, y, *args, **kwargs):
     """ Transfer function estimate (Welch's method)       
@@ -193,3 +194,18 @@ def plot_tfe(f, H):
 #     @values.setter
 #     def values(self,val):
 #         self = Signalb(val,fs=self.fs,cal=self.cal,unit=self.unit,dbfs=self.dbfs)
+
+
+# Old version that doesn't use Signals
+# def create_noise(fs, dur, out_amp, freqs, fades):
+#     """ Create band-limited noise """
+#     t = create_time(fs,dur=dur)
+#     leng = int(dur * fs)
+#     lengs2 = int(leng/2)
+#     f = fs*np.arange(lengs2+1,dtype=float)/leng
+#     amp = ((f>freqs[0]) & (f<freqs[1]))*np.sqrt(leng)
+#     phase  = 2*np.pi*(np.random.rand(lengs2+1)-0.5)
+#     fftx = amp*np.exp(1j*phase)
+#     s = np.fft.irfft(fftx)
+#     s = apply_fades(s,fades)
+#     return t,out_amp*s

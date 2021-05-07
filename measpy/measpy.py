@@ -114,14 +114,14 @@ class Measurement:
         
     def create_output(self):
         if self.out_sig=='noise': # White noise output signal
-            _, out = ms.create_noise(self.fs,
+            self.data[self.out_desc[0]] = ms.create_noise(self.fs,
                                                             self.dur,
                                                             self.out_amp,
                                                             self.out_sig_freqs,
                                                             self.out_sig_fades)
             self.data[self.out_desc[0]].values = np.hstack(
                 (np.zeros(int(np.round(self.extrat[0]*self.fs))),
-                out,
+                self.data[self.out_desc[0]].values,
                 np.zeros(int(np.round(self.extrat[1]*self.fs))) ))
             if self.out_map==0:
                 self._out_map=[1]
