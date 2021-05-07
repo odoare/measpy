@@ -15,9 +15,8 @@ Example of basic measurement where:
 - the sampling frequency is 44100Hz
 
 ```python
-import measpyaudio as ma
+from measpy import measpyaudio as ma
 import matplotlib.pyplot as plt
-import numpy as np
 
 M1 = ma.Measurement(out_sig='noise',
                     out_map=[1],
@@ -38,5 +37,22 @@ plt.show()
 
 Load Measurement object:
 ```
-M1.to_pickle('1.pck')
+M1.to_pickle('file.pck')
 ```
+
+Load a measurement file into the Measurement object M2:
+```python
+M2=ma.Measurement()
+M2.from_pickle('file.pck')
+```
+Or simply:
+```python
+M2=ma.load_measurement_from_pickle()
+```
+
+Compute transfer functions:
+```python
+[f,H]= M1.tfe()
+plt.plot(f,20*np.log10(np.abs(H)))
+```
+
