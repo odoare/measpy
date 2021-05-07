@@ -47,8 +47,9 @@ M2.from_pickle('file.pck')
 ```
 Or simply:
 ```python
-M2=ma.load_measurement_from_pickle()
+M2=ma.load_measurement_from_pickle('file.pck')
 ```
+Other formats are possible : A combination of a cvs file and wave files, or a json+wave files. See from_csvwav() or from_jsonwav() functions.
 
 Compute transfer functions:
 ```python
