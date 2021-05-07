@@ -6,9 +6,11 @@ The base classes are:
 - Signal: It is basically a class that contain a 1D numpy array, an a few other properties to describe the data as: sampling frequency, calibration and unit.
 - Measurement : A class that describe a data acquisition process, its outputs (Signal objects), its inputs (Signal objects)...
 
+For now, only audio measurement type is possible, via the ```sounddevice``` package.
+
 ## Usage example
 
-Example of basic measurement where:
+Consider the following experiment:
 - a white noise between 20Hz and 20kHz is sent to output 1
 - a pressure is acquired at input 1
 - an acceleration is acquired at input 2
