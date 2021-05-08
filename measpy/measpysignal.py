@@ -96,6 +96,7 @@ class Spectral_data():
             plt.semilogx(self.freqs,20*np.log10(np.abs(self.values)))
             plt.xlabel('Freq (Hz)')
             plt.ylabel('20 Log |H|')
+            plt.title(self.desc)
             plt.subplot(2,1,2)
             plt.semilogx(self.freqs,20*np.angle(self.values))
             plt.xlabel('Freq (Hz)')
@@ -184,13 +185,13 @@ def create_log_sweep(fs, dur, out_amp, freqs, fades):
     s = apply_fades(s,fades)
     return t,out_amp*s
 
-def tfe_farina(y, dur, fs, freqs):
+def tfe_farina(y, fs, freqs):
     """ Transfer function estimate
         Farina's method """
     leng = int(2**np.ceil(np.log2(len(y))))
     Y = np.fft.rfft(y,leng)/fs
     f = np.linspace(0, fs/2, num=round(leng/2)+1) # frequency axis
-    L = dur/np.log(freqs[1]/freqs[0])
+    L = len(y)/fs/np.log(freqs[1]/freqs[0])
     S = 2*np.sqrt(f/L)*np.exp(-1j*2*np.pi*f*L*(1-np.log(f/freqs[0])) + 1j*np.pi/4)
     S[0] = 0j
     H = Y*S

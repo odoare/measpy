@@ -8,7 +8,7 @@ import numpy as np
 %matplotlib auto
 
 #%% Define and run a measurement
-M1 = ma.Measurement(out_sig='noise',
+M1 = ma.Measurement(out_sig='logsweep',
                     out_map=[1],
                     out_desc=['Out1'],
                     out_dbfs=[1.0],

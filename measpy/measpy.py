@@ -439,13 +439,11 @@ class Measurement:
         elif self.out_sig=='logsweep':
             #H = np.zeros_like(self.y,dtype=complex)
             freqs, Hout = ms.tfe_farina(self.y[:,0],
-                                self.dur,
                                 self.fs,
                                 self.out_sig_freqs)
             Hout = Hout[:,None]
             for ii in range(self.y.shape[1]-1):
                 freqs, H =  ms.tfe_farina(self.y[:,ii+1],
-                                    self.dur,
                                     self.fs,
                                     self.out_sig_freqs)
                 Hout = np.block([Hout,H[:,None]])
