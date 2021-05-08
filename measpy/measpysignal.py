@@ -35,20 +35,25 @@ class Signal:
         self.dbfs = dbfs
         self.fs = fs
         self._values = np.array([])
+
     def plot(self):
         plt.plot(self.time,self.values_in_unit)
         plt.xlabel('Time (s)')
         plt.ylabel(self.desc+'  ['+self.unit+']')
+
     def psd(self,nperseg=2**15):
         return welch(self._values, nperseg=nperseg, fs=self.fs)
+
     def level(self,nperseg=100):
         return
+
     def resample(self,fs=None):
         if fs==None:
             fs=self.fs
         out = Signal(desc=self.desc+' resampled',fs=fs,unit=self.unit,cal=self.cal,dbfs=self.dbfs)      
         out.values=resample(self.values,round(len(self.values)*out.fs/self.fs))
         return out
+
     @property
     def values(self):
         return self._values
@@ -85,6 +90,16 @@ class Spectral_data():
         self.unit = unit
         self.fs = fs
         self._values = np.array([])
+    def plot(self,axestype='logdb',xlabel=None,ylabel=None):
+        if axestype=='logdb':
+            plt.subplot(2,1,1)
+            plt.semilogx(self.freqs,20*np.log10(np.abs(self.values)))
+            plt.xlabel('Freq (Hz)')
+            plt.ylabel('20 Log |H|')
+            plt.subplot(2,1,2)
+            plt.semilogx(self.freqs,20*np.angle(self.values))
+            plt.xlabel('Freq (Hz)')
+            plt.ylabel('Arg(H)')
     @property
     def values(self):
         return self._values
