@@ -7,7 +7,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 #from matplotlib.mlab import psd, csd
-from scipy.signal import welch, csd, coherence
+from scipy.signal import welch, csd, coherence, resample
 
 # TODO :
 # - Analysis functions of signals : levels dBSPL, resample
@@ -28,7 +28,7 @@ class Signal:
             - fs : The sampling frequency
             - _values : A numpy array of raw values
     """
-    def __init__(self,desc,fs,unit,cal,dbfs):
+    def __init__(self,desc='Noise',fs=1,unit='1',cal=1.0,dbfs=1.0):
         self.desc = desc
         self.unit = unit
         self.cal = cal
@@ -42,7 +42,13 @@ class Signal:
     def psd(self,nperseg=2**15):
         return welch(self._values, nperseg=nperseg, fs=self.fs)
     def level(self,nperseg=100):
-        return                          
+        return
+    def resample(self,fs=None):
+        if fs==None:
+            fs=self.fs
+        out = Signal(desc=self.desc+' resampled',fs=fs,unit=self.unit,cal=self.cal,dbfs=self.dbfs)      
+        out.values=resample(self.values,round(len(self.values)*out.fs/self.fs))
+        return out
     @property
     def values(self):
         return self._values
@@ -64,6 +70,30 @@ class Signal:
     @property
     def time(self):
         return create_time(self.fs,length=len(self._values))
+
+class Spectral_data():
+    ''' Class that holds a set of values as function of evenly spaced
+        frequencies. Usualy contains tranfert functions, spectral
+        densities, etc.
+
+        Frequencies are not stored. If needed they are constructed
+        using sampling frequencies and length of the values array
+        by calling the property freqs. 
+    '''
+    def __init__(self,desc,fs,unit):
+        self.desc = desc
+        self.unit = unit
+        self.fs = fs
+        self._values = np.array([])
+    @property
+    def values(self):
+        return self._values
+    @values.setter
+    def values(self,val):
+        self._values = val
+    @property
+    def freqs(self):
+        return np.linspace(0, self.fs/2, num=len(self._values))
 
 def picv(long):
     return np.hstack((np.zeros(long),1,np.zeros(long-1)))
@@ -93,7 +123,7 @@ def apply_fades(s,fades):
 
 def create_noise(fs, dur, out_amp, freqs, fades):
     """ Create band-limited noise """
-    out = Signal('Noise',fs,'1',1.0,1.0)
+    t = create_time(fs,dur=dur)
     leng = int(dur*fs)
     lengs2 = int(leng/2)
     f = fs*np.arange(lengs2+1,dtype=float)/leng
@@ -101,10 +131,10 @@ def create_noise(fs, dur, out_amp, freqs, fades):
     phase  = 2*np.pi*(np.random.rand(lengs2+1)-0.5)
     fftx = amp*np.exp(1j*phase)
     s = out_amp*np.fft.irfft(fftx)
-    out.values = apply_fades(s,fades)
-    return out
+    s = apply_fades(s,fades)
+    return t,s
 
-def tfe_welch(x, y, *args, **kwargs):
+def tfe_welch(x, y, fs=None, nperseg=2**12,noverlap=None):
     """ Transfer function estimate (Welch's method)       
         Arguments and defaults :
         NFFT=None,
@@ -116,13 +146,24 @@ def tfe_welch(x, y, *args, **kwargs):
         sides=None,
         scale_by_freq=None
     """
-    f, p = welch(x, *args, **kwargs)
-    f, c = csd(y, x, *args, **kwargs)
+    if type(x) != type(y):
+        raise Exception('x and y must have the same type (numpy array or Signal object).')
+    if type(x) == Signal:
+        f, p = welch(x.values_in_unit , fs=x.fs, nperseg=nperseg, noverlap=noverlap )
+        f, c = csd(y.values_in_unit ,x.values_in_unit, fs=x.fs, nperseg=nperseg, noverlap=noverlap)
+        out = Spectral_data(desc='Transfer function between '+x.desc+' and '+y.desc,
+                                fs=x.fs,
+                                unit = y.unit+'/'+x.unit)
+        out.values = c/p
+        return out
+    else:
+        f, p = welch(x, fs=fs, nperseg=nperseg, noverlap=noverlap)
+        f, c = csd(y, x, fs=fs, nperseg=nperseg, noverlap=noverlap)
     return f, c/p
 
 def create_log_sweep(fs, dur, out_amp, freqs, fades):
     """ Create log swwep """
-    L = dur/np.log(freqs[1]/freqs[0])              # parametre of exp.swept-sine
+    L = dur/np.log(freqs[1]/freqs[0])
     t = create_time(fs, dur=dur)
     s = np.sin(2*np.pi*freqs[0]*L*np.exp(t/L))
     s = apply_fades(s,fades)

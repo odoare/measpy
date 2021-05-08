@@ -114,7 +114,7 @@ class Measurement:
         
     def create_output(self):
         if self.out_sig=='noise': # White noise output signal
-            self.data[self.out_desc[0]] = ms.create_noise(self.fs,
+            _, self.data[self.out_desc[0]].values = ms.create_noise(self.fs,
                                                             self.dur,
                                                             self.out_amp,
                                                             self.out_sig_freqs,
