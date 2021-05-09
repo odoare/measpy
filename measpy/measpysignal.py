@@ -46,7 +46,7 @@ class Signal:
         _, out.values = welch(self._values, nperseg=nperseg, fs=self.fs)
         return out
 
-    def rms(self,nperseg=100):
+    def rms_smooth(self,nperseg=100):
         out = np.zeros_like(self._values)
         l = len(self._values)
         for ii in range(l):
