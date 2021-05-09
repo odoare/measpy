@@ -42,7 +42,9 @@ class Signal:
         plt.ylabel(self.desc+'  ['+self.unit+']')
 
     def psd(self,nperseg=2**15):
-        return welch(self._values, nperseg=nperseg, fs=self.fs)
+        out = Spectral_data('PSD of '+self.desc,self.fs,self.unit+'^2')
+        _, out.values = welch(self._values, nperseg=nperseg, fs=self.fs)
+        return out
 
     def rms(self,nperseg=100):
         out = np.zeros_like(self._values)
