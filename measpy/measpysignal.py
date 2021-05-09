@@ -44,8 +44,17 @@ class Signal:
     def psd(self,nperseg=2**15):
         return welch(self._values, nperseg=nperseg, fs=self.fs)
 
-    def level(self,nperseg=100):
-        return
+    def rms(self,nperseg=100):
+        out = np.zeros_like(self._values)
+        l = len(self._values)
+        for ii in range(l):
+            if ii<np.ceil(nperseg/2):
+                out[ii] = np.sqrt(np.mean(self._values[0:nperseg-1]**2))
+            elif l-ii<np.ceil(nperseg/2):
+                out[ii] = np.sqrt(np.mean(self._values[l-nperseg-1:]**2))
+            else:
+                out[ii] = np.sqrt(np.mean(self._values[ii:ii+nperseg]**2))
+        return out
 
     def resample(self,fs=None):
         if fs==None:
