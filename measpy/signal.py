@@ -46,9 +46,9 @@ class Signal:
         plt.xlabel('Time (s)')
         plt.ylabel(self.desc+'  ['+self.unit+']')
 
-    def psd(self,nperseg=2**15):
+    def psd(self,**kwargs):
         out = Spectral_data('PSD of '+self.desc,self.fs,self.unit+'^2')
-        _, out.values = welch(self.values, nperseg=nperseg, fs=self.fs)
+        _, out.values = welch(self.values, **kwargs)
         return out
 
     def rms_smooth(self,nperseg=100):
