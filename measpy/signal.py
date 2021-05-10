@@ -29,16 +29,13 @@ class Signal:
             - _values : A numpy array of raw values
     """
     def __init__(self,x=None,desc='A signal',fs=1,unit='1',cal=1.0,dbfs=1.0):
+        self._rawvalues = np.array(x)
         self.desc = desc
         self.unit = unit
         self.cal = cal
         self.dbfs = dbfs
         self.fs = fs
-        if x==None:
-            self._rawvalues = np.array([])
-        else:
-            self._rawvalues = np.array(x)
-
+        
     def as_signal(self,x):
         return Signal(x=x,fs=self.fs,unit=self.unit,cal=self.cal,dbfs=self.dbfs)
 
@@ -54,14 +51,14 @@ class Signal:
 
     def rms_smooth(self,nperseg=100):
         out = self.as_signal(np.sqrt(smooth(self.values**2,nperseg)))
-        out.desc=self.desc+'-->RMS smoothed on '+str(nperseg)+' data points',
+        out.desc=self.desc+'-->RMS smoothed on '+str(nperseg)+' data points'
         out.unit=self.unit+'^2'
         out.cal=1.0
         out.dbfs=1.0
         return out
 
     def resample(self,fs):
-        out = self.as_signal(resample(self.raw,round(len(self.raw)*out.fs/self.fs)))
+        out = self.as_signal(resample(self.raw,round(len(self.raw)*fs/self.fs)))
         out.desc=self.desc+'-->resampled to '+str(fs)+'Hz'
         return out
 
@@ -96,7 +93,7 @@ class Spectral_data():
         using sampling frequencies and length of the values array
         by calling the property freqs. 
     '''
-    def __init__(self,desc,fs,unit):
+    def __init__(self,desc='Spectral data',fs=1,unit='1'):
         self.desc = desc
         self.unit = unit
         self.fs = fs
@@ -148,7 +145,7 @@ def apply_fades(s,fades):
         s[-fades[1]:] = s[-fades[1]:] *  ((np.cos(np.arange(fades[1])/fades[1]*np.pi)+1) / 2)
     return s
 
-def create_noise(fs, dur, out_amp, freqs, fades):
+def noise(fs, dur, out_amp, freqs, fades):
     """ Create band-limited noise """
     t = create_time(fs,dur=dur)
     leng = int(dur*fs)
@@ -188,7 +185,7 @@ def tfe_welch(x, y, fs=None, nperseg=2**12,noverlap=None):
         f, c = csd(y, x, fs=fs, nperseg=nperseg, noverlap=noverlap)
     return f, c/p
 
-def create_log_sweep(fs, dur, out_amp, freqs, fades):
+def log_sweep(fs, dur, out_amp, freqs, fades):
     """ Create log swwep """
     L = dur/np.log(freqs[1]/freqs[0])
     t = create_time(fs, dur=dur)

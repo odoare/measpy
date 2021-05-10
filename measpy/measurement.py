@@ -106,28 +106,36 @@ class Measurement:
         self.device = params.setdefault("device",'')
         self.data = {}
         for n in range(len(self.out_desc)):
-            self.data[self.out_desc[n]]=Signal(self.out_desc[n],self.fs,'V',1.0,self.out_dbfs[n])
+            self.data[self.out_desc[n]]=Signal(desc=self.out_desc[n],
+                                                fs=self.fs,
+                                                unit='V',
+                                                cal=1.0,
+                                                dbfs=self.out_dbfs[n])
         for n in range(len(self.in_desc)):
-            self.data[self.in_desc[n]]=Signal(self.in_desc[n],self.fs,self.in_unit[n],self.in_cal[n],self.in_dbfs[n])
+            self.data[self.in_desc[n]]=Signal(desc=self.in_desc[n],
+                                                fs=self.fs,
+                                                unit=self.in_unit[n],
+                                                cal=self.in_cal[n],
+                                                dbfs=self.in_dbfs[n])
         self.datakeys = list(self.data.keys())
         self.create_output()
         
     def create_output(self):
         if self.out_sig=='noise': # White noise output signal
-            _, self.data[self.out_desc[0]].values = ms.create_noise(self.fs,
+            _, self.data[self.out_desc[0]].raw = ms.noise(self.fs,
                                                             self.dur,
                                                             self.out_amp,
                                                             self.out_sig_freqs,
                                                             self.out_sig_fades)
-            self.data[self.out_desc[0]].values = np.hstack(
+            self.data[self.out_desc[0]].raw = np.hstack(
                 (np.zeros(int(np.round(self.extrat[0]*self.fs))),
-                self.data[self.out_desc[0]].values,
+                self.data[self.out_desc[0]].raw,
                 np.zeros(int(np.round(self.extrat[1]*self.fs))) ))
             if self.out_map==0:
                 self._out_map=[1]
 
         elif self.out_sig=='logsweep': # Logarithmic sweep output signal
-            _, self.data[self.out_desc[0]].values = ms.create_log_sweep(self.fs,
+            _, self.data[self.out_desc[0]].raw = ms.log_sweep(self.fs,
                                                             self.dur,
                                                             self.out_amp,
                                                             self.out_sig_freqs,
@@ -171,13 +179,13 @@ class Measurement:
                     print("  Truncating channels of the output signal...")
             if x.dtype == 'int16':
                 for ii in range(len(self.out_map)):
-                    self.data[self.out_desc[ii]].values=np.array(x[:,ii],dtype=float)/32768
+                    self.data[self.out_desc[ii]].raw=np.array(x[:,ii],dtype=float)/32768
             elif x.dtype == 'int32':
                 for ii in range(len(self.out_map)):
-                    self.data[self.out_desc[ii]].values=np.array(x[:,ii],dtype=float)/2147483648
+                    self.data[self.out_desc[ii]].raw=np.array(x[:,ii],dtype=float)/2147483648
             else:
                 for ii in range(len(self.out_map)):
-                    self.data[self.out_desc[ii]].values=np.array(x[:,ii],dtype=float)
+                    self.data[self.out_desc[ii]].raw=np.array(x[:,ii],dtype=float)
 
     def show(self):
         """ Pretty prints the measurement properties """
@@ -315,10 +323,10 @@ class Measurement:
         n = 0
         for key in self.data.keys():
             if n==0:
-                out = self.data[key].values[:,None]
+                out = self.data[key].raw[:,None]
                 n += 1
             else:
-                out = np.block([out,self.data[key].values[:,None]])
+                out = np.block([out,self.data[key].raw[:,None]])
                 n += 1
         write(filename,int(round(self.fs)),out)
 
@@ -326,7 +334,7 @@ class Measurement:
         _, dat = read(filename)
         n = 0
         for key in self.data_keys:
-            self.data[key].values = dat[:,n]
+            self.data[key].raw = dat[:,n]
             n += 1
 
     def params_to_csv(self,filename):
@@ -471,11 +479,11 @@ class Measurement:
 
     @property
     def x(self):
-        return np.array([self.data[n].values_in_volts for n in self.out_desc]).T
+        return np.array([self.data[n].values for n in self.out_desc]).T
     
     @property
     def y(self):
-        return np.array([self.data[n].values_in_unit for n in self.in_desc]).T
+        return np.array([self.data[n].values for n in self.in_desc]).T
 
     @property
     def t(self):
