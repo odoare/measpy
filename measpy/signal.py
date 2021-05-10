@@ -28,28 +28,28 @@ class Signal:
             - fs : The sampling frequency
             - _values : A numpy array of raw values
     """
-    def __init__(self,x=None,desc='Noise',fs=1,unit='1',cal=1.0,dbfs=1.0):
+    def __init__(self,x=None,desc='A signal',fs=1,unit='1',cal=1.0,dbfs=1.0):
         self.desc = desc
         self.unit = unit
         self.cal = cal
         self.dbfs = dbfs
         self.fs = fs
         if x==None:
-            self._values = np.array([])
+            self._rawvalues = np.array([])
         else:
-            self._values = np.array(x)
+            self._rawvalues = np.array(x)
 
     def as_signal(self,x):
-        return Signal()
+        return Signal(x=x,fs=self.fs,unit=self.unit,cal=self.cal,dbfs=self.dbfs)
 
     def plot(self):
-        plt.plot(self.time,self.values_in_unit)
+        plt.plot(self.time,self.values)
         plt.xlabel('Time (s)')
         plt.ylabel(self.desc+'  ['+self.unit+']')
 
     def psd(self,nperseg=2**15):
         out = Spectral_data('PSD of '+self.desc,self.fs,self.unit+'^2')
-        _, out.values = welch(self._values, nperseg=nperseg, fs=self.fs)
+        _, out.values = welch(self.values, nperseg=nperseg, fs=self.fs)
         return out
 
     def rms_smooth(self,nperseg=100):
@@ -65,9 +65,9 @@ class Signal:
         out = Signal(desc=self.desc+'-->RMS smoothed on '+str(nperseg)+' data points',
                         fs=self.fs,
                         unit=self.unit+'^2',
-                        cal=self.cal,
-                        dbfs=self.dbfs)
-        out.values = np.sqrt(smooth(self._values**2,nperseg))
+                        cal=1.0,
+                        dbfs=1.0)
+        out.values = np.sqrt(smooth(self.values**2,nperseg))
         return out
 
     def resample(self,fs=None):
