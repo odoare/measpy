@@ -56,7 +56,7 @@ class Signal:
         #         out[ii] = np.sqrt(np.mean(self._values[l-nperseg-1:]**2))
         #     else:
         #         out[ii] = np.sqrt(np.mean(self._values[ii:ii+nperseg]**2))
-        out = Signal(desc=self.desc+' --> RMS smoothed on '+str(nperseg)+' data points',
+        out = Signal(desc=self.desc+'-->RMS smoothed on '+str(nperseg)+' data points',
                         fs=self.fs,
                         unit=self.unit+'^2',
                         cal=self.cal,
@@ -67,7 +67,7 @@ class Signal:
     def resample(self,fs=None):
         if fs==None:
             fs=self.fs
-        out = Signal(desc=self.desc+' resampled',fs=fs,unit=self.unit,cal=self.cal,dbfs=self.dbfs)      
+        out = Signal(desc=self.desc+'-->resampled',fs=fs,unit=self.unit,cal=self.cal,dbfs=self.dbfs)      
         out.values=resample(self.values,round(len(self.values)*out.fs/self.fs))
         return out
 
