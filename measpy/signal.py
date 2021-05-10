@@ -133,7 +133,7 @@ class Signal:
     def values(self):
         return self._rawvalues*self.dbfs/self.cal
     @values.setter
-    def values_in_unit(self,val):
+    def values(self,val):
         self._rawvalues = val*self.cal/self.dbfs
     @property
     def volts(self):
@@ -173,6 +173,15 @@ class Spectral_data:
             plt.semilogx(self.freqs,20*np.angle(self.values))
             plt.xlabel('Freq (Hz)')
             plt.ylabel('Arg(H)')
+    def green(self):
+        """ Compute the real inverse Fourier transform
+        """
+        out = Signal(desc='Inverse Fourrier Transform of '+self.desc,
+                fs=self.fs,
+                unit=self.unit)
+        out.values=np.fft.irfft(self.values)
+        return out
+
     @property
     def values(self):
         return self._values

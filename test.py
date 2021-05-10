@@ -9,7 +9,7 @@ import numpy as np
 %matplotlib auto
 
 #%% Define and run a measurement
-M1 = ma.Measurement(out_sig='noise',
+M1 = ma.Measurement(out_sig='logsweep',
                     out_map=[1],
                     out_desc=['Out1'],
                     out_dbfs=[1.0],
@@ -19,8 +19,8 @@ M1 = ma.Measurement(out_sig='noise',
                     in_unit=['V','V'],
                     in_dbfs=[1.0,1.0],
                     extrat=[0.0,0.0],
-                    out_sig_fades=[500,500],
-                    dur=2)
+                    out_sig_fades=[10,10],
+                    dur=5)
 M1.run_measurement()
 M1.plot_with_cal()
 
