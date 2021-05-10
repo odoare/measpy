@@ -64,8 +64,8 @@ class Signal:
         out.desc=self.desc+'-->resampled to '+str(fs)+'Hz'
         return out
 
-    def tfe(self,x,nperseg=2**12,noverlap=None):
-        """ Compute transfer function between x and the Signal object
+    def tfe(self, x, **kwargs):
+        """ Compute transfer function between x and the Signal
         """
         if self.fs!=x.fs:
             raise Exception('Sampling frequencies have to be the same')
@@ -74,12 +74,10 @@ class Signal:
         out = Spectral_data(desc='Transfer function between '+x.desc+' and '+self.desc,
                                 fs=self.fs,
                                 unit=self.unit+'/'+x.unit)
-        _, out._values = tfe_welch(x.values,
-                                self.values,
-                                fs=self.fs,
-                                nperseg=nperseg,
-                                noverlap=noverlap)
-        return out   
+        _, p = welch(x.values, **kwargs)
+        _, c = csd(self.values, x.values, **kwargs)
+        out.values = c/p
+        return out
 
     def to_csvwav(self,filename):
         with open(filename+'.csv', 'w') as file:
@@ -135,7 +133,7 @@ class Signal:
     def length(self):
         return len(self._rawvalues)
 
-class Spectral_data():
+class Spectral_data:
     ''' Class that holds a set of values as function of evenly spaced
         frequencies. Usualy contains tranfert functions, spectral
         densities, etc.
