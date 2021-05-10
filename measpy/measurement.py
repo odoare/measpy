@@ -1,4 +1,4 @@
-# measpy.py
+# measurement.py
 # 
 # A class for measurement management with data acquisition devices
 #

@@ -1,6 +1,7 @@
 #%%
 
-from measpy import measpyaudio as ma
+#from measpy import measpyaudio as ma
+import measpy
 import matplotlib.pyplot as plt
 import numpy as np
 
