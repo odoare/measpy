@@ -1,4 +1,4 @@
 # __init__.py
 
-import measpy.measpysignal
+import measpy.signal
 import measpy.measurement

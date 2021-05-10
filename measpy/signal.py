@@ -7,7 +7,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 #from matplotlib.mlab import psd, csd
-from scipy.signal import welch, csd, coherence, resample
+from scipy.signal import welch, csd, coherence, resample, convolve
 
 # TODO :
 # - Analysis functions of signals : levels dBSPL, resample
@@ -47,15 +47,21 @@ class Signal:
         return out
 
     def rms_smooth(self,nperseg=100):
-        out = np.zeros_like(self._values)
-        l = len(self._values)
-        for ii in range(l):
-            if ii<np.ceil(nperseg/2):
-                out[ii] = np.sqrt(np.mean(self._values[0:nperseg-1]**2))
-            elif l-ii<np.ceil(nperseg/2):
-                out[ii] = np.sqrt(np.mean(self._values[l-nperseg-1:]**2))
-            else:
-                out[ii] = np.sqrt(np.mean(self._values[ii:ii+nperseg]**2))
+        # out = np.zeros_like(self._values)
+        # l = len(self._values)
+        # for ii in range(l):
+        #     if ii<np.ceil(nperseg/2):
+        #         out[ii] = np.sqrt(np.mean(self._values[0:nperseg-1]**2))
+        #     elif l-ii<np.ceil(nperseg/2):
+        #         out[ii] = np.sqrt(np.mean(self._values[l-nperseg-1:]**2))
+        #     else:
+        #         out[ii] = np.sqrt(np.mean(self._values[ii:ii+nperseg]**2))
+        out = Signal(desc=self.desc+' --> RMS smoothed on '+str(nperseg)+' data points',
+                        fs=self.fs,
+                        unit=self.unit+'^2',
+                        cal=self.cal,
+                        dbfs=self.dbfs)
+        out.values = np.sqrt(smooth(self._values**2,nperseg))
         return out
 
     def resample(self,fs=None):
@@ -217,6 +223,10 @@ def plot_tfe(f, H):
     plt.semilogx(f,20*np.angle(H))
     plt.xlabel('Freq (Hz)')
     plt.ylabel('Arg(H)')
+
+def smooth(in_array,l=20):
+    ker = np.ones(l)/l
+    return np.convolve(in_array,ker,mode='same')
 
 # class Signalb(np.ndarray):
 #     def __new__(cls, input_array, fs=44100, cal=1.0, dbfs=1.0, unit='V'):

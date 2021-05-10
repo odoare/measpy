@@ -67,4 +67,4 @@ def run_audio_measurement(M,progress=True):
     for ii in range(len(M.in_map)):
         M.data[M.in_desc[ii]].values=np.array(y[:,ii],dtype=float)
 
-#Measurement.run_measurement=run_audio_measurement
+Measurement.run_measurement=run_audio_measurement

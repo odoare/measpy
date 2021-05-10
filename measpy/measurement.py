@@ -8,8 +8,8 @@
 # - tbefore, tafter
 # - synchronisation
 
-import measpy.measpysignal as ms
-from measpy.measpysignal import Signal
+import measpy.signal as ms
+from measpy.signal import Signal
 import numpy as np
 import matplotlib.pyplot as plt
 
