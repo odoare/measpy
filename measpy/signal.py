@@ -53,28 +53,16 @@ class Signal:
         return out
 
     def rms_smooth(self,nperseg=100):
-        # out = np.zeros_like(self._values)
-        # l = len(self._values)
-        # for ii in range(l):
-        #     if ii<np.ceil(nperseg/2):
-        #         out[ii] = np.sqrt(np.mean(self._values[0:nperseg-1]**2))
-        #     elif l-ii<np.ceil(nperseg/2):
-        #         out[ii] = np.sqrt(np.mean(self._values[l-nperseg-1:]**2))
-        #     else:
-        #         out[ii] = np.sqrt(np.mean(self._values[ii:ii+nperseg]**2))
-        out = Signal(desc=self.desc+'-->RMS smoothed on '+str(nperseg)+' data points',
-                        fs=self.fs,
-                        unit=self.unit+'^2',
-                        cal=1.0,
-                        dbfs=1.0)
-        out.values = np.sqrt(smooth(self.values**2,nperseg))
+        out = self.as_signal(np.sqrt(smooth(self.values**2,nperseg)))
+        out.desc=self.desc+'-->RMS smoothed on '+str(nperseg)+' data points',
+        out.unit=self.unit+'^2'
+        out.cal=1.0
+        out.dbfs=1.0
         return out
 
-    def resample(self,fs=None):
-        if fs==None:
-            fs=self.fs
-        out = Signal(desc=self.desc+'-->resampled',fs=fs,unit=self.unit,cal=self.cal,dbfs=self.dbfs)      
-        out.values=resample(self.values,round(len(self.values)*out.fs/self.fs))
+    def resample(self,fs):
+        out = self.as_signal(resample(self.raw,round(len(self.raw)*out.fs/self.fs)))
+        out.desc=self.desc+'-->resampled to '+str(fs)+'Hz'
         return out
 
     @property
@@ -97,7 +85,7 @@ class Signal:
         self._rawvalues = val/self.dbfs
     @property
     def time(self):
-        return create_time(self.fs,length=len(self._values))
+        return create_time(self.fs,length=len(self._rawvalues))
 
 class Spectral_data():
     ''' Class that holds a set of values as function of evenly spaced
