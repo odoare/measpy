@@ -64,6 +64,23 @@ class Signal:
         out.desc=self.desc+'-->resampled to '+str(fs)+'Hz'
         return out
 
+    def tfe(self,x,nperseg=2**12,noverlap=None):
+        """ Compute transfer function between x and the Signal object
+        """
+        if self.fs!=x.fs:
+            raise Exception('Sampling frequencies have to be the same')
+        if self.length!=x.length:
+            raise Exception('Lengths have to be the same')
+        out = Spectral_data(desc='Transfer function between '+x.desc+' and '+self.desc,
+                                fs=self.fs,
+                                unit=self.unit+'/'+x.unit)
+        _, out._values = tfe_welch(x.values,
+                                self.values,
+                                fs=self.fs,
+                                nperseg=nperseg,
+                                noverlap=noverlap)
+        return out   
+
     def to_csvwav(self,filename):
         with open(filename+'.csv', 'w') as file:
             writer = csv.writer(file)
@@ -114,6 +131,9 @@ class Signal:
     @property
     def time(self):
         return create_time(self.fs,length=len(self._rawvalues))
+    @property
+    def length(self):
+        return len(self._rawvalues)
 
 class Spectral_data():
     ''' Class that holds a set of values as function of evenly spaced
