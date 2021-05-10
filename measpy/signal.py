@@ -28,13 +28,19 @@ class Signal:
             - fs : The sampling frequency
             - _values : A numpy array of raw values
     """
-    def __init__(self,desc='Noise',fs=1,unit='1',cal=1.0,dbfs=1.0):
+    def __init__(self,x=None,desc='Noise',fs=1,unit='1',cal=1.0,dbfs=1.0):
         self.desc = desc
         self.unit = unit
         self.cal = cal
         self.dbfs = dbfs
         self.fs = fs
-        self._values = np.array([])
+        if x==None:
+            self._values = np.array([])
+        else:
+            self._values = np.array(x)
+
+    def as_signal(self,x):
+        return Signal()
 
     def plot(self):
         plt.plot(self.time,self.values_in_unit)
@@ -72,23 +78,23 @@ class Signal:
         return out
 
     @property
+    def raw(self):
+        return self._rawvalues
+    @raw.setter
+    def raw(self,val):
+        self._rawvalues = val
+    @property
     def values(self):
-        return self._values
+        return self._rawvalues*self.dbfs/self.cal
     @values.setter
-    def values(self,val):
-        self._values = val
-    @property
-    def values_in_unit(self):
-        return self._values*self.dbfs/self.cal
-    @values_in_unit.setter
     def values_in_unit(self,val):
-        self._values = val*self.cal/self.dbfs
+        self._rawvalues = val*self.cal/self.dbfs
     @property
-    def values_in_volts(self):
-        return self._values*self.dbfs
-    @values_in_volts.setter
-    def values_in_volts(self,val):
-        self._values = val/self.dbfs
+    def volts(self):
+        return self._rawvalues*self.dbfs
+    @volts.setter
+    def volts(self,val):
+        self._rawvalues = val/self.dbfs
     @property
     def time(self):
         return create_time(self.fs,length=len(self._values))
