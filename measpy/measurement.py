@@ -1,4 +1,4 @@
-# measpy.py
+# measurement.py
 # 
 # A class for measurement management with data acquisition devices
 #
@@ -8,8 +8,8 @@
 # - tbefore, tafter
 # - synchronisation
 
-import measpy.measpysignal as ms
-from measpy.measpysignal import Signal
+import measpy.signal as ms
+from measpy.signal import Signal
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -114,14 +114,14 @@ class Measurement:
         
     def create_output(self):
         if self.out_sig=='noise': # White noise output signal
-            _, out = ms.create_noise(self.fs,
+            _, self.data[self.out_desc[0]].values = ms.create_noise(self.fs,
                                                             self.dur,
                                                             self.out_amp,
                                                             self.out_sig_freqs,
                                                             self.out_sig_fades)
             self.data[self.out_desc[0]].values = np.hstack(
                 (np.zeros(int(np.round(self.extrat[0]*self.fs))),
-                out,
+                self.data[self.out_desc[0]].values,
                 np.zeros(int(np.round(self.extrat[1]*self.fs))) ))
             if self.out_map==0:
                 self._out_map=[1]
@@ -439,13 +439,11 @@ class Measurement:
         elif self.out_sig=='logsweep':
             #H = np.zeros_like(self.y,dtype=complex)
             freqs, Hout = ms.tfe_farina(self.y[:,0],
-                                self.dur,
                                 self.fs,
                                 self.out_sig_freqs)
             Hout = Hout[:,None]
             for ii in range(self.y.shape[1]-1):
                 freqs, H =  ms.tfe_farina(self.y[:,ii+1],
-                                    self.dur,
                                     self.fs,
                                     self.out_sig_freqs)
                 Hout = np.block([Hout,H[:,None]])

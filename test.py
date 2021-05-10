@@ -1,6 +1,7 @@
 #%%
 
-from measpy import measpyaudio as ma
+#from measpy import measpyaudio as ma
+import measpy.audio as ma
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -17,7 +18,7 @@ M1 = ma.Measurement(out_sig='noise',
                     in_cal=[1.0,1.0],
                     in_unit=['V','V'],
                     in_dbfs=[1.0,1.0],
-                    extrat=[1.0,2.0],
+                    extrat=[0.0,0.0],
                     out_sig_fades=[500,500],
                     dur=2)
 M1.run_measurement()

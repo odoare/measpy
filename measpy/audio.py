@@ -1,5 +1,5 @@
 import sounddevice as sd
-from measpy.measpy import (Signal,
+from measpy.measurement import (Signal,
                     Measurement,
                     ms,
                     load_measurement_from_csvwav,
