@@ -8,6 +8,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 #from matplotlib.mlab import psd, csd
 from scipy.signal import welch, csd, coherence, resample, convolve
+from scipy.io.wavfile import write, read
+import csv
 
 # TODO :
 # - Analysis functions of signals : levels dBSPL, resample
@@ -61,6 +63,16 @@ class Signal:
         out = self.as_signal(resample(self.raw,round(len(self.raw)*fs/self.fs)))
         out.desc=self.desc+'-->resampled to '+str(fs)+'Hz'
         return out
+
+    def to_csvwav(self,filename):
+        with open(filename+'.csv', 'w') as file:
+            writer = csv.writer(file)
+            writer.writerow(['desc',self.desc])
+            writer.writerow(['fs',self.fs])
+            writer.writerow(['unit',self.unit])
+            writer.writerow(['cal',self.cal])
+            writer.writerow(['dbfs',self.dbfs])
+        write(filename+'.wav',int(round(self.fs)),self.raw)
 
     @property
     def raw(self):
