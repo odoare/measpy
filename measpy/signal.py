@@ -74,6 +74,25 @@ class Signal:
             writer.writerow(['dbfs',self.dbfs])
         write(filename+'.wav',int(round(self.fs)),self.raw)
 
+    @classmethod
+    def from_csvwav(cls,filename):
+        out = cls()
+        with open(filename+'.csv', 'r') as file:
+            reader = csv.reader(file)
+            for row in reader:
+                if row[0]=='desc':
+                    out.desc=row[1]
+                if row[0]=='fs':
+                    out.fs=int(row[1])
+                if row[0]=='unit':
+                    out.unit=row[1]
+                if row[0]=='cal':
+                    out.cal=float(row[1])
+                if row[0]=='dbfs':
+                    out.dbfs=float(row[1])
+        _, out._rawvalues = read(filename+'.wav')
+        return out
+
     @property
     def raw(self):
         return self._rawvalues
