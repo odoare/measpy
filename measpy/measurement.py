@@ -33,28 +33,6 @@ def csv_to_dict(filename):
             dd[row[0]]=row[1:]
     return dd
 
-def load_measurement_from_csvwav(basefilename):
-    """ Returns a Measurement object from a set of csv+wav files
-        See help of method from_csvwav
-    """
-    M=Measurement()
-    M.from_csvwav(basefilename)
-    return M
-
-def load_measurement_from_jsonwav(basefilename):
-    """ Returns a Measurement object from a set of json+wav files
-        See help of method from_jsonwav
-    """
-    M=Measurement()
-    M.from_jsonwav(basefilename)
-    return M
-
-def load_measurement_from_pickle(filename):
-    """ Returns a Measurement object from a pickle file """
-    M=Measurement()
-    M.from_pickle(filename)
-    return M
-
 class Measurement:
     """ The class Measurement allows to simply define and perform
         a measurement
@@ -420,7 +398,7 @@ class Measurement:
         except:
             print('data_from_wav failed (file not present?)')
         return M
-        
+
     def plot_with_cal(self):
         for ii in range(self.y.shape[1]):
             plt.plot(self.t,self.y[:,ii]/self.in_cal[ii]*self.in_dbfs[ii])
