@@ -8,6 +8,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 #from matplotlib.mlab import psd, csd
 from scipy.signal import welch, csd, coherence, resample, convolve
+from scipy.io.wavfile import write, read
+import csv
 
 # TODO :
 # - Analysis functions of signals : levels dBSPL, resample
@@ -28,72 +30,125 @@ class Signal:
             - fs : The sampling frequency
             - _values : A numpy array of raw values
     """
-    def __init__(self,desc='Noise',fs=1,unit='1',cal=1.0,dbfs=1.0):
+    def __init__(self,x=None,desc='A signal',fs=1,unit='1',cal=1.0,dbfs=1.0):
+        self._rawvalues = np.array(x)
         self.desc = desc
         self.unit = unit
         self.cal = cal
         self.dbfs = dbfs
         self.fs = fs
-        self._values = np.array([])
+        
+    def as_signal(self,x):
+        return Signal(x=x,fs=self.fs,unit=self.unit,cal=self.cal,dbfs=self.dbfs)
 
     def plot(self):
-        plt.plot(self.time,self.values_in_unit)
+        plt.plot(self.time,self.values)
         plt.xlabel('Time (s)')
         plt.ylabel(self.desc+'  ['+self.unit+']')
 
-    def psd(self,nperseg=2**15):
+    def psd(self,**kwargs):
         out = Spectral_data('PSD of '+self.desc,self.fs,self.unit+'^2')
-        _, out.values = welch(self._values, nperseg=nperseg, fs=self.fs)
+        _, out.values = welch(self.values, **kwargs)
         return out
 
     def rms_smooth(self,nperseg=100):
-        # out = np.zeros_like(self._values)
-        # l = len(self._values)
-        # for ii in range(l):
-        #     if ii<np.ceil(nperseg/2):
-        #         out[ii] = np.sqrt(np.mean(self._values[0:nperseg-1]**2))
-        #     elif l-ii<np.ceil(nperseg/2):
-        #         out[ii] = np.sqrt(np.mean(self._values[l-nperseg-1:]**2))
-        #     else:
-        #         out[ii] = np.sqrt(np.mean(self._values[ii:ii+nperseg]**2))
-        out = Signal(desc=self.desc+'-->RMS smoothed on '+str(nperseg)+' data points',
-                        fs=self.fs,
-                        unit=self.unit+'^2',
-                        cal=self.cal,
-                        dbfs=self.dbfs)
-        out.values = np.sqrt(smooth(self._values**2,nperseg))
+        out = self.as_signal(np.sqrt(smooth(self.values**2,nperseg)))
+        out.desc=self.desc+'-->RMS smoothed on '+str(nperseg)+' data points'
+        out.unit=self.unit+'^2'
+        out.cal=1.0
+        out.dbfs=1.0
         return out
 
-    def resample(self,fs=None):
-        if fs==None:
-            fs=self.fs
-        out = Signal(desc=self.desc+'-->resampled',fs=fs,unit=self.unit,cal=self.cal,dbfs=self.dbfs)      
-        out.values=resample(self.values,round(len(self.values)*out.fs/self.fs))
+    def resample(self,fs):
+        out = self.as_signal(resample(self.raw,round(len(self.raw)*fs/self.fs)))
+        out.desc=self.desc+'-->resampled to '+str(fs)+'Hz'
         return out
 
+    def tfe(self, x, **kwargs):
+        """ Compute transfer function between signal x and the actual signal
+        """
+        if self.fs!=x.fs:
+            raise Exception('Sampling frequencies have to be the same')
+        if self.length!=x.length:
+            raise Exception('Lengths have to be the same')
+        out = Spectral_data(desc='Transfer function between '+x.desc+' and '+self.desc,
+                                fs=self.fs,
+                                unit=self.unit+'/'+x.unit)
+        _, p = welch(x.values, **kwargs)
+        _, c = csd(self.values, x.values, **kwargs)
+        out.values = c/p
+        return out
+
+    def tfe_farina(self, freqs):
+        """ Compute the transfer function between x and the actual signal
+            where x is a log sweep of same duration between freqs[0] and
+            freq[1]
+        """
+        out = Spectral_data(desc='Transfert function between input log sweep and '+self.desc)
+        leng = int(2**np.ceil(np.log2(self.length)))
+        Y = np.fft.rfft(self.values,leng)/self.fs
+        f = np.linspace(0, self.fs/2, num=round(leng/2)+1) # frequency axis
+        L = self.length/self.fs/np.log(freqs[1]/freqs[0])
+        S = 2*np.sqrt(f/L)*np.exp(-1j*2*np.pi*f*L*(1-np.log(f/freqs[0])) + 1j*np.pi/4)
+        S[0] = 0j
+        out.values = Y*S
+        return out
+
+    def to_csvwav(self,filename):
+        with open(filename+'.csv', 'w') as file:
+            writer = csv.writer(file)
+            writer.writerow(['desc',self.desc])
+            writer.writerow(['fs',self.fs])
+            writer.writerow(['unit',self.unit])
+            writer.writerow(['cal',self.cal])
+            writer.writerow(['dbfs',self.dbfs])
+        write(filename+'.wav',int(round(self.fs)),self.raw)
+
+    @classmethod
+    def from_csvwav(cls,filename):
+        out = cls()
+        with open(filename+'.csv', 'r') as file:
+            reader = csv.reader(file)
+            for row in reader:
+                if row[0]=='desc':
+                    out.desc=row[1]
+                if row[0]=='fs':
+                    out.fs=int(row[1])
+                if row[0]=='unit':
+                    out.unit=row[1]
+                if row[0]=='cal':
+                    out.cal=float(row[1])
+                if row[0]=='dbfs':
+                    out.dbfs=float(row[1])
+        _, out._rawvalues = read(filename+'.wav')
+        return out
+
+    @property
+    def raw(self):
+        return self._rawvalues
+    @raw.setter
+    def raw(self,val):
+        self._rawvalues = val
     @property
     def values(self):
-        return self._values
+        return self._rawvalues*self.dbfs/self.cal
     @values.setter
-    def values(self,val):
-        self._values = val
-    @property
-    def values_in_unit(self):
-        return self._values*self.dbfs/self.cal
-    @values_in_unit.setter
     def values_in_unit(self,val):
-        self._values = val*self.cal/self.dbfs
+        self._rawvalues = val*self.cal/self.dbfs
     @property
-    def values_in_volts(self):
-        return self._values*self.dbfs
-    @values_in_volts.setter
-    def values_in_volts(self,val):
-        self._values = val/self.dbfs
+    def volts(self):
+        return self._rawvalues*self.dbfs
+    @volts.setter
+    def volts(self,val):
+        self._rawvalues = val/self.dbfs
     @property
     def time(self):
-        return create_time(self.fs,length=len(self._values))
+        return create_time(self.fs,length=len(self._rawvalues))
+    @property
+    def length(self):
+        return len(self._rawvalues)
 
-class Spectral_data():
+class Spectral_data:
     ''' Class that holds a set of values as function of evenly spaced
         frequencies. Usualy contains tranfert functions, spectral
         densities, etc.
@@ -102,7 +157,7 @@ class Spectral_data():
         using sampling frequencies and length of the values array
         by calling the property freqs. 
     '''
-    def __init__(self,desc,fs,unit):
+    def __init__(self,desc='Spectral data',fs=1,unit='1'):
         self.desc = desc
         self.unit = unit
         self.fs = fs
@@ -154,7 +209,7 @@ def apply_fades(s,fades):
         s[-fades[1]:] = s[-fades[1]:] *  ((np.cos(np.arange(fades[1])/fades[1]*np.pi)+1) / 2)
     return s
 
-def create_noise(fs, dur, out_amp, freqs, fades):
+def noise(fs, dur, out_amp, freqs, fades):
     """ Create band-limited noise """
     t = create_time(fs,dur=dur)
     leng = int(dur*fs)
@@ -194,7 +249,7 @@ def tfe_welch(x, y, fs=None, nperseg=2**12,noverlap=None):
         f, c = csd(y, x, fs=fs, nperseg=nperseg, noverlap=noverlap)
     return f, c/p
 
-def create_log_sweep(fs, dur, out_amp, freqs, fades):
+def log_sweep(fs, dur, out_amp, freqs, fades):
     """ Create log swwep """
     L = dur/np.log(freqs[1]/freqs[0])
     t = create_time(fs, dur=dur)

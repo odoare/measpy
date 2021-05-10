@@ -1,10 +1,7 @@
 import sounddevice as sd
 from measpy.measurement import (Signal,
                     Measurement,
-                    ms,
-                    load_measurement_from_csvwav,
-                    load_measurement_from_pickle,
-                    load_measurement_from_jsonwav)
+                    ms)
 
 import numpy as np
 
@@ -65,6 +62,6 @@ def run_audio_measurement(M,progress=True):
         root.destroy()
     
     for ii in range(len(M.in_map)):
-        M.data[M.in_desc[ii]].values=np.array(y[:,ii],dtype=float)
+        M.data[M.in_desc[ii]].raw=np.array(y[:,ii],dtype=float)
 
 Measurement.run_measurement=run_audio_measurement
