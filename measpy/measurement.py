@@ -314,10 +314,13 @@ class Measurement:
         with open(filename, 'wb') as handle:
             pickle.dump(self.to_dict(), handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    def from_pickle(self,filename):
+    @classmethod
+    def from_pickle(cls,filename):
         with open(filename, 'rb') as handle:
             mesu = pickle.load(handle)
-        self.from_dict(mesu)
+        M = cls()
+        M.from_dict(mesu)
+        return M
 
     def data_to_wav(self,filename):
         n = 0
@@ -376,17 +379,20 @@ class Measurement:
         except:
             print('data_to_wav failed (no data?)')
 
-    def from_csvwav(self,filebase):
+    @classmethod
+    def from_csvwav(cls,filebase):
         """ Load a measurement object from a set of files
                     filebase : string from which two file names are created
                     filebase+'.csv' : All measurement parameters
                     filebase+'.wav' : all input and out channels + time (32 bit float WAV at fs)
         """
-        self.csv_to_params(filebase+'.csv')
+        M=cls()
+        M.csv_to_params(filebase+'.csv')
         try:
-            self.data_from_wav(filebase+'.wav')
+            M.data_from_wav(filebase+'.wav')
         except:
             print('data_from_wav failed (file not present?)')
+        return M
 
     def to_jsonwav(self,filebase):
         """ Saves a Measurement object to a set of files
@@ -400,18 +406,21 @@ class Measurement:
         except:
             print('data_to_wav failed (no data?)')
 
-    def from_jsonwav(self,filebase):
+    @classmethod
+    def from_jsonwav(cls,filebase):
         """ Load a measurement object from a set of files
                     filebase : string from which two file names are created
                     filebase+'.json' : All measurement parameters
                     filebase+'.wav' : all input and out channels + time (32 bit float WAV at fs)
         """
-        self.json_to_params(filebase+'.json')
+        M=cls()
+        M.json_to_params(filebase+'.json')
         try:
-            self.data_from_wav(filebase+'.wav')
+            M.data_from_wav(filebase+'.wav')
         except:
             print('data_from_wav failed (file not present?)')
-
+        return M
+        
     def plot_with_cal(self):
         for ii in range(self.y.shape[1]):
             plt.plot(self.t,self.y[:,ii]/self.in_cal[ii]*self.in_dbfs[ii])
