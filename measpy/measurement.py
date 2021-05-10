@@ -449,20 +449,22 @@ class Measurement:
             ms.plot_tfe(freqs,Hout)
         return freqs, Hout
     
-    def tfe_xy(self,x,y,nperseg=2**16,noverlap=None,plotH=False):
+    def tfe_xy(self,x,y,plotH=False,**kwargs):
         """ Compute transfert function between x and y, where x and y are
             strings representing keys of the dictionnary of the data property
             of the Measurement object. Welch's method is used. Data is calibrated.
         """
-        freqs, Hout =  ms.tfe_welch(self.data[x].values_in_unit,
-                                    self.data[y].values_in_unit,
-                                    nperseg=nperseg,
-                                    noverlap=noverlap,
-                                    fs=self.fs)
+        out = self.data[y].tfe(self.data[x],**kwargs)
+
+        # freqs, Hout =  ms.tfe_welch(self.data[x].values_in_unit,
+        #                             self.data[y].values_in_unit,
+        #                             nperseg=nperseg,
+        #                             noverlap=noverlap,
+        #                             fs=self.fs)
 
         if plotH:
-            ms.plot_tfe(freqs,Hout)
-        return freqs, Hout
+            out.plot()
+        return out
 
     @property
     def x(self):
