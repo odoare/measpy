@@ -51,9 +51,9 @@ class Signal:
         _, out.values = welch(self.values, **kwargs)
         return out
 
-    def rms_smooth(self,nperseg=100):
-        out = self.as_signal(np.sqrt(smooth(self.values**2,nperseg)))
-        out.desc=self.desc+'-->RMS smoothed on '+str(nperseg)+' data points'
+    def rms_smooth(self,l=100):
+        out = self.as_signal(np.sqrt(smooth(self.values**2,l)))
+        out.desc=self.desc+'-->RMS smoothed on '+str(l)+' data points'
         out.unit=self.unit+'^2'
         out.cal=1.0
         out.dbfs=1.0
@@ -78,6 +78,14 @@ class Signal:
         _, c = csd(self.values, x.values, **kwargs)
         out.values = c/p
         return out
+
+    def cut(self,pos):
+        self.desc = self.desc+"-->Cut between "+str(pos[0])+" and "+str(pos[1])
+        self.values = self.values[pos[0]:pos[1]]
+    
+    def fade(self,fades):
+        self.desc = self.desc+"-->Fades"
+        self.values = _apply_fades(self.values,fades)
 
     def tfe_farina(self, freqs):
         """ Compute the transfer function between x and the actual signal
@@ -214,7 +222,7 @@ def create_time(fs,dur=None,length=None):
     else:
         return create_time2(fs,length)
 
-def apply_fades(s,fades):
+def _apply_fades(s,fades):
     if fades[0]>0:
         s[0:fades[0]] = s[0:fades[0]] * ((-np.cos(np.arange(fades[0])/fades[0]*np.pi)+1) / 2)
     if fades[1]>0:
@@ -231,7 +239,7 @@ def noise(fs, dur, out_amp, freqs, fades):
     phase  = 2*np.pi*(np.random.rand(lengs2+1)-0.5)
     fftx = amp*np.exp(1j*phase)
     s = out_amp*np.fft.irfft(fftx)
-    s = apply_fades(s,fades)
+    s = _apply_fades(s,fades)
     return t,s
 
 def tfe_welch(x, y, fs=None, nperseg=2**12,noverlap=None):
@@ -266,7 +274,7 @@ def log_sweep(fs, dur, out_amp, freqs, fades):
     L = dur/np.log(freqs[1]/freqs[0])
     t = create_time(fs, dur=dur)
     s = np.sin(2*np.pi*freqs[0]*L*np.exp(t/L))
-    s = apply_fades(s,fades)
+    s = _apply_fades(s,fades)
     return t,out_amp*s
 
 def tfe_farina(y, fs, freqs):
