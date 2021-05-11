@@ -125,7 +125,9 @@ class Signal:
             where x is a log sweep of same duration between freqs[0] and
             freq[1]
         """
-        out = Spectral_data(desc='Transfert function between input log sweep and '+self.desc)
+        out = Spectral_data(desc='Transfert function between input log sweep and '+self.desc,
+                                fs=self.fs,
+                                unit=self.unit+'/V')
         leng = int(2**np.ceil(np.log2(self.length)))
         Y = np.fft.rfft(self.values,leng)/self.fs
         f = np.linspace(0, self.fs/2, num=round(leng/2)+1) # frequency axis
