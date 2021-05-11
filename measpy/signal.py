@@ -6,7 +6,6 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-#from matplotlib.mlab import psd, csd
 from scipy.signal import welch, csd, coherence, resample
 from scipy.io.wavfile import write, read
 import csv
@@ -15,6 +14,8 @@ import csv
 # - Analysis functions of signals : levels dBSPL, resample
 # - Calibrations
 # - Apply dBA, dBC or any calibration curve to a signal
+
+PREF = 20e-6 # Acoustic pressure reference level
 
 class Signal:
     """ Defines a signal object
@@ -36,6 +37,7 @@ class Signal:
             - dur (duration in seconds)
             - time (time array)
     """
+
     def __init__(self,x=None,desc='A signal',fs=1,unit='1',cal=1.0,dbfs=1.0):
         self._rawvalues = np.array(x)
         self.desc = desc
@@ -63,9 +65,18 @@ class Signal:
         """
         out = self.as_signal(np.sqrt(smooth(self.values**2,l)))
         out.desc=self.desc+'-->RMS smoothed on '+str(l)+' data points'
-        out.unit=self.unit+'^2'
+        out.unit=self.unit
         out.cal=1.0
         out.dbfs=1.0
+        return out
+
+    def dBSPL(self,l=100):
+        """ If the data is an acoustic pressure, computes the Sound
+            Pressure Level in dB, as the 20Log(RMS/Pref)
+        """
+        out = self.rms_smooth()
+        out.values = 20*np.log10(out.values/PREF)
+        out.desc = out.desc+'-->/PREF (in dB)'
         return out
 
     def resample(self,fs):
