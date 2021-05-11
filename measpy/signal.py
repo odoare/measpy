@@ -162,6 +162,7 @@ class Spectral_data:
         self.unit = unit
         self.fs = fs
         self._values = np.array([])
+
     def plot(self,axestype='logdb',xlabel=None,ylabel=None):
         if axestype=='logdb':
             plt.subplot(2,1,1)
@@ -173,10 +174,12 @@ class Spectral_data:
             plt.semilogx(self.freqs,20*np.angle(self.values))
             plt.xlabel('Freq (Hz)')
             plt.ylabel('Arg(H)')
+
     def green(self):
         """ Compute the real inverse Fourier transform
+            of this spectral data set
         """
-        out = Signal(desc='Inverse Fourrier Transform of '+self.desc,
+        out = Signal(desc='IFFT of '+self.desc,
                 fs=self.fs,
                 unit=self.unit)
         out.values=np.fft.irfft(self.values)
