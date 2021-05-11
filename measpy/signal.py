@@ -7,7 +7,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 #from matplotlib.mlab import psd, csd
-from scipy.signal import welch, csd, coherence, resample, convolve
+from scipy.signal import welch, csd, coherence, resample
 from scipy.io.wavfile import write, read
 import csv
 
@@ -47,6 +47,7 @@ class Signal:
         plt.ylabel(self.desc+'  ['+self.unit+']')
 
     def psd(self,**kwargs):
+        """ Compute power spectral density of the signal object """ 
         out = Spectral_data('PSD of '+self.desc,self.fs,self.unit+'^2')
         _, out.values = welch(self.values, **kwargs)
         return out
@@ -78,7 +79,20 @@ class Signal:
         _, c = csd(self.values, x.values, **kwargs)
         out.values = c/p
         return out
-
+    
+    def coh(self, x, **kwargs):
+        """ Compute the coherence between signal x and the actual signal
+        """
+        if self.fs!=x.fs:
+            raise Exception('Sampling frequencies have to be the same')
+        if self.length!=x.length:
+            raise Exception('Lengths have to be the same')
+        out = Spectral_data(desc='Coherence between '+x.desc+' and '+self.desc,
+                                fs=self.fs,
+                                unit=self.unit+'/'+x.unit)
+        _, out.values = coherence(self.values, x.values, **kwargs)
+        return out
+    
     def cut(self,pos):
         self.desc = self.desc+"-->Cut between "+str(pos[0])+" and "+str(pos[1])
         self.values = self.values[pos[0]:pos[1]]
