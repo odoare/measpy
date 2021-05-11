@@ -13,10 +13,8 @@ import csv
 
 # TODO :
 # - Analysis functions of signals : levels dBSPL, resample
-# - Coherence
 # - Calibrations
 # - Apply dBA, dBC or any calibration curve to a signal
-# - add silence before, after
 
 class Signal:
     """ Defines a signal object
@@ -28,7 +26,15 @@ class Signal:
             - cal : The calibration (in V/unit)
             - dbfs : The input voltage for a raw value of 1
             - fs : The sampling frequency
-            - _values : A numpy array of raw values
+            - _rawvalues : A numpy array of raw values
+        
+        Setters and getters properties:
+            - values (values expressed in unit, calibrations applied)
+            - volts (only dbfs applied)
+            - raw (same as _rawvalues)
+            - length (data length)
+            - dur (duration in seconds)
+            - time (time array)
     """
     def __init__(self,x=None,desc='A signal',fs=1,unit='1',cal=1.0,dbfs=1.0):
         self._rawvalues = np.array(x)
@@ -53,6 +59,8 @@ class Signal:
         return out
 
     def rms_smooth(self,l=100):
+        """ Compute the RMS of the Signal over windows of width l
+        """
         out = self.as_signal(np.sqrt(smooth(self.values**2,l)))
         out.desc=self.desc+'-->RMS smoothed on '+str(l)+' data points'
         out.unit=self.unit+'^2'
@@ -169,6 +177,9 @@ class Signal:
     @property
     def length(self):
         return len(self._rawvalues)
+    @property
+    def dur(self):
+        return len(self._rawvalues)/self.fs
 
 class Spectral_data:
     ''' Class that holds a set of values as function of evenly spaced
