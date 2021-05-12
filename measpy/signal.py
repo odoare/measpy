@@ -80,7 +80,7 @@ class Signal:
         return out
 
     def resample(self,fs):
-        out = self.as_signal(resample(self.raw,round(len(self.raw)*fs/self.fs))
+        out = self.as_signal(resample(self.raw,round(len(self.raw)*fs/self.fs)),
                                 fs=fs,
                                 desc=self.desc+'-->resampled to '+str(fs)+'Hz')
         return out
