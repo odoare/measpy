@@ -49,8 +49,13 @@ class Signal:
         self.dbfs = dbfs
         self.fs = fs
         
-    def as_signal(self,x):
-        return Signal(x=x,fs=self.fs,unit=self.unit.format_babel(),cal=self.cal,dbfs=self.dbfs)
+    def as_signal(self,x, **kwargs):
+        fs = kwargs.setdefault("fs",self.fs)
+        desc = kwargs.setdefault("desc",self.desc)
+        unit = kwargs.setdefault("unit",self.unit.format_babel())
+        cal = kwargs.setdefault("cal",self.cal)
+        dbfs = kwargs.setdefault("dbfs",self.dbfs)
+        return Signal(x=x,fs=fs,desc=desc,unit=unit,cal=cal,dbfs=dbfs)
 
     def plot(self):
         plt.plot(self.time,self.values)
