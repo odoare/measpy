@@ -231,6 +231,13 @@ class Spectral_data:
         out.values=np.fft.irfft(self.values)
         return out
 
+    def filterout(self,freqs):
+        """ Cancels values below and above a given frequency
+        """
+        f = self.freqs
+        amp = ((f>freqs[0]) & (f<freqs[1]))
+        self._values = self._values*amp
+
     @property
     def values(self):
         return self._values
