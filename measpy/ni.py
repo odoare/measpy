@@ -53,7 +53,7 @@ def run_ni_measurement(M):
 
     try:
         outtask.timing.cfg_samp_clk_timing(
-            rate=M.device,
+            rate=M.fs,
             source="/" + M.device + "/ai/SampleClock", #"OnboardClock",
             active_edge=niconst.Edge.FALLING,
             sample_mode=niconst.AcquisitionType.FINITE, samps_per_chan=nsamps)
