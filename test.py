@@ -1,14 +1,14 @@
 #%%
 
 #from measpy import measpyaudio as ma
-import measpy.audio as ma
+import measpy.ni as ma
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib
 #plt.style.use('dark_background')
 
-plt.style.use('classic')
-matplotlib.use('TkAgg')
+# plt.style.use('classic')
+# matplotlib.use('TkAgg')
 %matplotlib auto
 
 #%% Define and run a measurement

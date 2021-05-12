@@ -68,9 +68,10 @@ class Signal:
 
             Returns : A Spectral_data object containing the psd
         """ 
-        out = Spectral_data('PSD of '+self.desc,self.fs,self.unit**2)
-        _, out.values = welch(self.values, **kwargs)
-        return out
+        return Spectral_data(x=welch(self.values, **kwargs)[1],
+                                desc='PSD of '+self.desc,
+                                fs=self.fs,
+                                unit=self.unit**2)
 
     def rms_smooth(self,l=100):
         """ Compute the RMS of the Signal over windows of width l
@@ -114,11 +115,11 @@ class Signal:
             raise Exception('Sampling frequencies have to be the same')
         if self.length!=x.length:
             raise Exception('Lengths have to be the same')
-        out = Spectral_data(desc='Coherence between '+x.desc+' and '+self.desc,
+
+        return Spectral_data(x=coherence(self.values, x.values, **kwargs)[1],
+                                desc='Coherence between '+x.desc+' and '+self.desc,
                                 fs=self.fs,
                                 unit=self.unit/x.unit)
-        out.values = coherence(self.values, x.values, **kwargs)[1]
-        return out
     
     def cut(self,pos):
         return self.similar(self.values[pos[0]:pos[1]],
@@ -133,16 +134,16 @@ class Signal:
             where x is a log sweep of same duration between freqs[0] and
             freq[1]
         """
-        out = Spectral_data(desc='Transfert function between input log sweep and '+self.desc,
-                                unit=self.unit/ur.V)
         leng = int(2**np.ceil(np.log2(self.length)))
         Y = np.fft.rfft(self.values,leng)/self.fs
         f = np.linspace(0, self.fs/2, num=round(leng/2)+1) # frequency axis
         L = self.length/self.fs/np.log(freqs[1]/freqs[0])
         S = 2*np.sqrt(f/L)*np.exp(-1j*2*np.pi*f*L*(1-np.log(f/freqs[0])) + 1j*np.pi/4)
         S[0] = 0j
-        out.values = Y*S
-        return out
+        return Spectral_data(x=Y*S,
+                        desc='Transfert function between input log sweep and '+self.desc,
+                        unit=self.unit/ur.V,
+                        fs=self.fs)
 
     def to_csvwav(self,filename):
         with open(filename+'.csv', 'w') as file:
@@ -252,18 +253,17 @@ class Spectral_data:
         """ Compute the real inverse Fourier transform
             of this spectral data set
         """
-        out = Signal(desc='IFFT of '+self.desc,
-                fs=self.fs,
-                unit=self.unit.format_babel())
-        out.values=np.fft.irfft(self.values)
-        return out
+        return Signal(x=np.fft.irfft(self.values),
+                            desc='IFFT of '+self.desc,
+                            fs=self.fs,
+                            unit=self.unit.format_babel())
 
-    def filterout(self,freqs):
+    def filterout(self,freqsrange):
         """ Cancels values below and above a given frequency
         """
-        f = self.freqs
-        amp = ((f>freqs[0]) & (f<freqs[1]))
-        self._values = self._values*amp
+        return self.similar(x=self._values
+                                * ((self.freqs>freqsrange[0]) & (self.freqs<freqsrange[1]))
+                                )
 
     @property
     def values(self):
