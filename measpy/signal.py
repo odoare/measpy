@@ -255,16 +255,16 @@ class Spectral_data:
             of this spectral data set
         """
         return Signal(x=np.fft.irfft(self.values),
-                desc='IFFT of '+self.desc,
-                fs=self.fs,
-                unit=self.unit.format_babel())
+                            desc='IFFT of '+self.desc,
+                            fs=self.fs,
+                            unit=self.unit.format_babel())
 
-    def filterout(self,freqs):
+    def filterout(self,freqsrange):
         """ Cancels values below and above a given frequency
         """
-        f = self.freqs
-        amp = ((f>freqs[0]) & (f<freqs[1]))
-        self._values = self._values*amp
+        return self.similar(x=self._values
+                                * ((self.freqs>freqsrange[0]) & (self.freqs<freqsrange[1]))
+                                )
 
     @property
     def values(self):
