@@ -63,7 +63,12 @@ class Signal:
         plt.ylabel(self.desc+'  ['+self.unit.format_babel()+']')
 
     def psd(self,**kwargs):
-        """ Compute power spectral density of the signal object """ 
+        """ Compute power spectral density of the signal object
+            Optional arguments are the same as the welch function
+            in scipy.signal
+
+            Returns : A Spectral_data object containing the psd
+        """ 
         out = Spectral_data('PSD of '+self.desc,self.fs,self.unit**2)
         _, out.values = welch(self.values, **kwargs)
         return out
@@ -71,9 +76,8 @@ class Signal:
     def rms_smooth(self,l=100):
         """ Compute the RMS of the Signal over windows of width l
         """
-        out = self.as_signal(np.sqrt(smooth(self.values**2,l)),
+        return self.as_signal(np.sqrt(smooth(self.values**2,l)),
                                 desc=self.desc+'-->RMS smoothed on '+str(l)+' data points')
-        return out
 
     def dBSPL(self,l=100):
         """ If the data is an acoustic pressure, computes the Sound
@@ -85,10 +89,9 @@ class Signal:
         return out
 
     def resample(self,fs):
-        out = self.as_signal(resample(self.raw,round(len(self.raw)*fs/self.fs)),
+        return self.as_signal(resample(self.raw,round(len(self.raw)*fs/self.fs)),
                                 fs=fs,
                                 desc=self.desc+'-->resampled to '+str(fs)+'Hz')
-        return out
 
     def tfe(self, x, **kwargs):
         """ Compute transfer function between signal x and the actual signal
