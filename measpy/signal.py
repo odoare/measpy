@@ -115,11 +115,11 @@ class Signal:
             raise Exception('Sampling frequencies have to be the same')
         if self.length!=x.length:
             raise Exception('Lengths have to be the same')
-        out = Spectral_data(desc='Coherence between '+x.desc+' and '+self.desc,
+
+        return Spectral_data(x=coherence(self.values, x.values, **kwargs)[1],
+                                desc='Coherence between '+x.desc+' and '+self.desc,
                                 fs=self.fs,
                                 unit=self.unit/x.unit)
-        out.values = coherence(self.values, x.values, **kwargs)[1]
-        return out
     
     def cut(self,pos):
         return self.similar(self.values[pos[0]:pos[1]],
