@@ -124,6 +124,7 @@ class Signal:
     def cut(self,pos):
         return self.similar(self.values[pos[0]:pos[1]],
                         desc=self.desc+"-->Cut between "+str(pos[0])+" and "+str(pos[1]))
+
     def fade(self,fades):
         return self.similar(_apply_fades(self.values,fades),
                         desc=self.desc+"-->fades")
