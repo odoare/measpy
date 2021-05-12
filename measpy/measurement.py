@@ -475,5 +475,13 @@ class Measurement:
         return np.array([self.data[n].values for n in self.in_desc]).T
 
     @property
+    def x_raw(self):
+        return np.array([self.data[n].raw for n in self.out_desc]).T
+    
+    @property
+    def y_raw(self):
+        return np.array([self.data[n].raw for n in self.in_desc]).T
+
+    @property
     def t(self):
         return ms.create_time(self.fs,dur=self.dur+self.extrat[0]+self.extrat[1])
