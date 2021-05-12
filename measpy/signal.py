@@ -134,17 +134,16 @@ class Signal:
             where x is a log sweep of same duration between freqs[0] and
             freq[1]
         """
-        out = Spectral_data(desc='Transfert function between input log sweep and '+self.desc,
-                                unit=self.unit/ur.V,
-                                fs=self.fs)
         leng = int(2**np.ceil(np.log2(self.length)))
         Y = np.fft.rfft(self.values,leng)/self.fs
         f = np.linspace(0, self.fs/2, num=round(leng/2)+1) # frequency axis
         L = self.length/self.fs/np.log(freqs[1]/freqs[0])
         S = 2*np.sqrt(f/L)*np.exp(-1j*2*np.pi*f*L*(1-np.log(f/freqs[0])) + 1j*np.pi/4)
         S[0] = 0j
-        out.values = Y*S
-        return out
+        return Spectral_data(x=Y*S,
+                        desc='Transfert function between input log sweep and '+self.desc,
+                        unit=self.unit/ur.V,
+                        fs=self.fs)
 
     def to_csvwav(self,filename):
         with open(filename+'.csv', 'w') as file:
