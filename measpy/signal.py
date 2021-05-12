@@ -49,7 +49,7 @@ class Signal:
         self.dbfs = dbfs
         self.fs = fs
         
-    def as_signal(self,x, **kwargs):
+    def similar(self,x, **kwargs):
         fs = kwargs.setdefault("fs",self.fs)
         desc = kwargs.setdefault("desc",self.desc)
         unit = kwargs.setdefault("unit",self.unit.format_babel())
@@ -76,7 +76,7 @@ class Signal:
     def rms_smooth(self,l=100):
         """ Compute the RMS of the Signal over windows of width l
         """
-        return self.as_signal(np.sqrt(smooth(self.values**2,l)),
+        return self.similar(np.sqrt(smooth(self.values**2,l)),
                                 desc=self.desc+'-->RMS smoothed on '+str(l)+' data points')
 
     def dBSPL(self,l=100):
@@ -89,7 +89,7 @@ class Signal:
         return out
 
     def resample(self,fs):
-        return self.as_signal(resample(self.raw,round(len(self.raw)*fs/self.fs)),
+        return self.similar(resample(self.raw,round(len(self.raw)*fs/self.fs)),
                                 fs=fs,
                                 desc=self.desc+'-->resampled to '+str(fs)+'Hz')
 
@@ -103,8 +103,8 @@ class Signal:
         out = Spectral_data(desc='Transfer function between '+x.desc+' and '+self.desc,
                                 fs=self.fs,
                                 unit=self.unit/x.unit)
-        _, p = welch(x.values, **kwargs)
-        _, c = csd(self.values, x.values, **kwargs)
+        p = welch(x.values, **kwargs)[1]
+        c = csd(self.values, x.values, **kwargs)[1]
         out.values = c/p
         return out
     
@@ -118,16 +118,15 @@ class Signal:
         out = Spectral_data(desc='Coherence between '+x.desc+' and '+self.desc,
                                 fs=self.fs,
                                 unit=self.unit/x.unit)
-        _, out.values = coherence(self.values, x.values, **kwargs)
+        out.values = coherence(self.values, x.values, **kwargs)[1]
         return out
     
     def cut(self,pos):
-        self.desc = self.desc+"-->Cut between "+str(pos[0])+" and "+str(pos[1])
-        self.values = self.values[pos[0]:pos[1]]
-    
+        return self.similar(self.values[pos[0]:pos[1]],
+                        desc=self.desc+"-->Cut between "+str(pos[0])+" and "+str(pos[1]))
     def fade(self,fades):
-        self.desc = self.desc+"-->Fades"
-        self.values = _apply_fades(self.values,fades)
+        return self.similar(_apply_fades(self.values,fades),
+                        desc=self.desc+"-->fades")
 
     def tfe_farina(self, freqs):
         """ Compute the transfer function between x and the actual signal
