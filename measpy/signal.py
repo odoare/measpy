@@ -220,21 +220,33 @@ class Spectral_data:
         fs = kwargs.setdefault("fs",self.fs)
         desc = kwargs.setdefault("desc",self.desc)
         unit = kwargs.setdefault("unit",self.unit.format_babel())
-        cal = kwargs.setdefault("cal",self.cal)
-        dbfs = kwargs.setdefault("dbfs",self.dbfs)
         return Spectral_data(x=x,fs=fs,desc=desc,unit=unit)
 
-    def plot(self,axestype='logdb',xlabel=None,ylabel=None):
-        if axestype=='logdb':
+    def plot(self,axestype='logdb_arg',ylabel1=None,ylabel2=None):
+        if axestype=='logdb_arg':
             plt.subplot(2,1,1)
             plt.semilogx(self.freqs,20*np.log10(np.abs(self.values)))
             plt.xlabel('Freq (Hz)')
-            plt.ylabel('20 Log |H|')
+            if ylabel1!=None:
+                plt.ylabel(ylabel1)
+            else:
+                plt.ylabel('20 Log |H|')
             plt.title(self.desc)
             plt.subplot(2,1,2)
             plt.semilogx(self.freqs,20*np.angle(self.values))
             plt.xlabel('Freq (Hz)')
-            plt.ylabel('Arg(H)')
+            if ylabel2!=None:
+                plt.ylabel(ylabel2)
+            else:
+                plt.ylabel('Arg(H)')
+        if axestype=='logdb':
+            plt.semilogx(self.freqs,20*np.log10(np.abs(self.values)))
+            plt.xlabel('Freq (Hz)')
+            if ylabel1!=None:
+                plt.ylabel(ylabel1)
+            else:
+                plt.ylabel('20 Log |H|')
+            plt.title(self.desc)
 
     def green(self):
         """ Compute the real inverse Fourier transform
