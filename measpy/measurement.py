@@ -9,7 +9,7 @@
 # - synchronisation
 
 import measpy.signal as ms
-from measpy.signal import Signal
+from measpy.signal import Signal, ur
 import numpy as np
 import matplotlib.pyplot as plt
 
