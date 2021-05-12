@@ -68,9 +68,10 @@ class Signal:
 
             Returns : A Spectral_data object containing the psd
         """ 
-        out = Spectral_data('PSD of '+self.desc,self.fs,self.unit**2)
-        _, out.values = welch(self.values, **kwargs)
-        return out
+        return Spectral_data(x=welch(self.values, **kwargs)[1],
+                                desc='PSD of '+self.desc,
+                                fs=self.fs,
+                                unit=self.unit**2)
 
     def rms_smooth(self,l=100):
         """ Compute the RMS of the Signal over windows of width l
@@ -134,7 +135,8 @@ class Signal:
             freq[1]
         """
         out = Spectral_data(desc='Transfert function between input log sweep and '+self.desc,
-                                unit=self.unit/ur.V)
+                                unit=self.unit/ur.V,
+                                fs=self.fs)
         leng = int(2**np.ceil(np.log2(self.length)))
         Y = np.fft.rfft(self.values,leng)/self.fs
         f = np.linspace(0, self.fs/2, num=round(leng/2)+1) # frequency axis
