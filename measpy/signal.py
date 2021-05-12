@@ -254,11 +254,10 @@ class Spectral_data:
         """ Compute the real inverse Fourier transform
             of this spectral data set
         """
-        out = Signal(desc='IFFT of '+self.desc,
+        return Signal(x=np.fft.irfft(self.values),
+                desc='IFFT of '+self.desc,
                 fs=self.fs,
                 unit=self.unit.format_babel())
-        out.values=np.fft.irfft(self.values)
-        return out
 
     def filterout(self,freqs):
         """ Cancels values below and above a given frequency
