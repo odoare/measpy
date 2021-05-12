@@ -19,7 +19,6 @@ from pint import UnitRegistry
 PREF = 20e-6 # Acoustic pressure reference level
 ur=UnitRegistry()
 
-
 class Signal:
     """ Defines a signal object
 
@@ -211,11 +210,19 @@ class Spectral_data:
         using sampling frequencies and length of the values array
         by calling the property freqs. 
     '''
-    def __init__(self,desc='Spectral data',fs=1,unit=ur.Unit('1')):
+    def __init__(self,x=None,desc='Spectral data',fs=1,unit=ur.Unit('1')):
+        self._values = np.array(x)
         self.desc = desc
         self.unit = ur.Unit(unit)
         self.fs = fs
-        self._values = np.array([])
+
+    def similar(self,x,**kwargs):
+        fs = kwargs.setdefault("fs",self.fs)
+        desc = kwargs.setdefault("desc",self.desc)
+        unit = kwargs.setdefault("unit",self.unit.format_babel())
+        cal = kwargs.setdefault("cal",self.cal)
+        dbfs = kwargs.setdefault("dbfs",self.dbfs)
+        return Spectral_data(x=x,fs=fs,desc=desc,unit=unit)
 
     def plot(self,axestype='logdb',xlabel=None,ylabel=None):
         if axestype=='logdb':
