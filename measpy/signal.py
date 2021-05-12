@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from scipy.signal import welch, csd, coherence, resample
 from scipy.io.wavfile import write, read
 import csv
-from pint import Unit
+from pint import UnitRegistry
 
 # TODO :
 # - Analysis functions of signals : levels dBSPL, resample
@@ -17,7 +17,8 @@ from pint import Unit
 # - Apply dBA, dBC or any calibration curve to a signal
 
 PREF = 20e-6 # Acoustic pressure reference level
-V = Unit('volt')
+ur=UnitRegistry()
+
 
 class Signal:
     """ Defines a signal object
@@ -43,7 +44,7 @@ class Signal:
     def __init__(self,x=None,desc='A signal',fs=1,unit='1',cal=1.0,dbfs=1.0):
         self._rawvalues = np.array(x)
         self.desc = desc
-        self.unit = Unit(unit)
+        self.unit = ur.Unit(unit)
         self.cal = cal
         self.dbfs = dbfs
         self.fs = fs
@@ -65,11 +66,8 @@ class Signal:
     def rms_smooth(self,l=100):
         """ Compute the RMS of the Signal over windows of width l
         """
-        out = self.as_signal(np.sqrt(smooth(self.values**2,l)))
-        out.desc=self.desc+'-->RMS smoothed on '+str(l)+' data points'
-        out.unit=self.unit
-        out.cal=1.0
-        out.dbfs=1.0
+        out = self.as_signal(np.sqrt(smooth(self.values**2,l)),
+                                desc=self.desc+'-->RMS smoothed on '+str(l)+' data points')
         return out
 
     def dBSPL(self,l=100):
@@ -82,8 +80,9 @@ class Signal:
         return out
 
     def resample(self,fs):
-        out = self.as_signal(resample(self.raw,round(len(self.raw)*fs/self.fs)))
-        out.desc=self.desc+'-->resampled to '+str(fs)+'Hz'
+        out = self.as_signal(resample(self.raw,round(len(self.raw)*fs/self.fs))
+                                fs=fs,
+                                desc=self.desc+'-->resampled to '+str(fs)+'Hz')
         return out
 
     def tfe(self, x, **kwargs):
@@ -128,7 +127,7 @@ class Signal:
             freq[1]
         """
         out = Spectral_data(desc='Transfert function between input log sweep and '+self.desc,
-                                unit=self.unit/Unit('volt'))
+                                unit=self.unit/ur.V)
         leng = int(2**np.ceil(np.log2(self.length)))
         Y = np.fft.rfft(self.values,leng)/self.fs
         f = np.linspace(0, self.fs/2, num=round(leng/2)+1) # frequency axis
@@ -159,7 +158,7 @@ class Signal:
                 if row[0]=='fs':
                     out.fs=int(row[1])
                 if row[0]=='unit':
-                    out.unit=Unit(row[1])
+                    out.unit=ur.Unit(row[1])
                 if row[0]=='cal':
                     out.cal=float(row[1])
                 if row[0]=='dbfs':
@@ -204,9 +203,9 @@ class Spectral_data:
         using sampling frequencies and length of the values array
         by calling the property freqs. 
     '''
-    def __init__(self,desc='Spectral data',fs=1,unit=Unit('1')):
+    def __init__(self,desc='Spectral data',fs=1,unit=ur.Unit('1')):
         self.desc = desc
-        self.unit = Unit(unit)
+        self.unit = ur.Unit(unit)
         self.fs = fs
         self._values = np.array([])
 
