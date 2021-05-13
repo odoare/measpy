@@ -100,11 +100,10 @@ class Measurement:
         
     def create_output(self):
         if self.out_sig=='noise': # White noise output signal
-            _, self.data[self.out_desc[0]].raw = ms.noise(self.fs,
-                                                            self.dur,
-                                                            self.out_amp,
-                                                            self.out_sig_freqs,
-                                                            self.out_sig_fades)
+            self.data[self.out_desc[0]] = self.data[self.out_desc[0]].similar(
+                ms._noise(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
+            ).fade(self.out_sig_fades)
+
             self.data[self.out_desc[0]].raw = np.hstack(
                 (np.zeros(int(np.round(self.extrat[0]*self.fs))),
                 self.data[self.out_desc[0]].raw,
