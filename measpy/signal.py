@@ -67,9 +67,9 @@ class Signal:
             Optional arguments are the same as the welch function
             in scipy.signal
 
-            Returns : A Spectral_data object containing the psd
+            Returns : A Spectral object containing the psd
         """ 
-        return Spectral_data(x=welch(self.values, **kwargs)[1],
+        return Spectral(x=welch(self.values, **kwargs)[1],
                                 desc='PSD of '+self.desc,
                                 fs=self.fs,
                                 unit=self.unit**2)
@@ -103,7 +103,7 @@ class Signal:
         if self.length!=x.length:
             raise Exception('Lengths have to be the same')
 
-        return Spectral_data(
+        return Spectral(
             x=csd(self.values, x.values, **kwargs)[1]/welch(x.values, **kwargs)[1],
             desc='Transfer function between '+x.desc+' and '+self.desc,
             fs=self.fs,
@@ -118,7 +118,7 @@ class Signal:
         if self.length!=x.length:
             raise Exception('Lengths have to be the same')
 
-        return Spectral_data(x=coherence(self.values, x.values, **kwargs)[1],
+        return Spectral(x=coherence(self.values, x.values, **kwargs)[1],
                                 desc='Coherence between '+x.desc+' and '+self.desc,
                                 fs=self.fs,
                                 unit=self.unit/x.unit)
@@ -149,18 +149,18 @@ class Signal:
         L = self.length/self.fs/np.log(freqs[1]/freqs[0])
         S = 2*np.sqrt(f/L)*np.exp(-1j*2*np.pi*f*L*(1-np.log(f/freqs[0])) + 1j*np.pi/4)
         S[0] = 0j
-        return Spectral_data(x=Y*S,
+        return Spectral(x=Y*S,
                         desc='Transfert function between input log sweep and '+self.desc,
                         unit=self.unit/ur.V,
                         fs=self.fs)
     
     def fft(self):
-        return Spectral_data(x=np.fft.fft(self.values),
+        return Spectral(x=np.fft.fft(self.values),
                                 fs=self.fs,
                                 unit=self.unit)
     
     def rfft(self):
-        return Spectral_data(x=np.fft.rfft(self.values),
+        return Spectral(x=np.fft.rfft(self.values),
                                 fs=self.fs,
                                 unit=self.unit)
     
@@ -225,7 +225,7 @@ class Signal:
     def dur(self):
         return len(self._rawvalues)/self.fs
 
-class Spectral_data:
+class Spectral:
     ''' Class that holds a set of values as function of evenly spaced
         frequencies. Usualy contains tranfert functions, spectral
         densities, etc.
@@ -245,7 +245,7 @@ class Spectral_data:
         fs = kwargs.setdefault("fs",self.fs)
         desc = kwargs.setdefault("desc",self.desc)
         unit = kwargs.setdefault("unit",self.unit.format_babel())
-        return Spectral_data(x=x,fs=fs,desc=desc,unit=unit)
+        return Spectral(x=x,fs=fs,desc=desc,unit=unit)
 
     def plot(self,axestype='logdb_arg',ylabel1=None,ylabel2=None):
         if axestype=='logdb_arg':
@@ -309,7 +309,7 @@ class Spectral_data:
     def freqs(self):
         return np.linspace(0, self.fs/2, num=len(self._values))
 
-    # End of Spectral_data
+    # End of Spectral
 
 
 def picv(long):
@@ -368,7 +368,7 @@ def tfe_welch(x, y, fs=None, nperseg=2**12,noverlap=None):
     if type(x) == Signal:
         f, p = welch(x.values_in_unit , fs=x.fs, nperseg=nperseg, noverlap=noverlap )
         f, c = csd(y.values_in_unit ,x.values_in_unit, fs=x.fs, nperseg=nperseg, noverlap=noverlap)
-        out = Spectral_data(desc='Transfer function between '+x.desc+' and '+y.desc,
+        out = Spectral(desc='Transfer function between '+x.desc+' and '+y.desc,
                                 fs=x.fs,
                                 unit = y.unit+'/'+x.unit)
         out.values = c/p
