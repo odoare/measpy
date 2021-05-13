@@ -108,11 +108,15 @@ class Measurement:
                 self._out_map=[1]
 
         elif self.out_sig=='logsweep': # Logarithmic sweep output signal
-            _, self.data[self.out_desc[0]].raw = ms.log_sweep(self.fs,
-                                                            self.dur,
-                                                            self.out_amp,
-                                                            self.out_sig_freqs,
-                                                            self.out_sig_fades)
+            self.data[self.out_desc[0]] = self.data[self.out_desc[0]].similar(
+                ms._logsweep(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
+            ).fade(self.out_sig_fades).add_silence(self.extrat)
+
+            # _, self.data[self.out_desc[0]].raw = ms.log_sweep(self.fs,
+            #                                                 self.dur,
+            #                                                 self.out_amp,
+            #                                                 self.out_sig_freqs,
+            #                                                 self.out_sig_fades)
             if self.out_map==0:
                 self.out_map=[1]
 
