@@ -176,7 +176,7 @@ class Signal:
 
     @classmethod
     def noise(cls,fs=44100,dur=2.0,amp=1.0,freqs=[20.0,20000.0],unit='1',cal=1.0,dbfs=1.0):
-        return cls(x=_noise(fs,dur,amp,freqs),fs=fs,unit=unit,cal=cal,dbfs=dbfs) 
+        return cls(raw=_noise(fs,dur,amp,freqs),fs=fs,unit=unit,cal=cal,dbfs=dbfs) 
 
     @classmethod
     def from_csvwav(cls,filename):
@@ -240,7 +240,8 @@ class Spectral_data:
         self.unit = ur.Unit(unit)
         self.fs = fs
 
-    def similar(self,x,**kwargs):
+    def similar(self,**kwargs):
+        x = kwargs.setdefault("x",self.values)
         fs = kwargs.setdefault("fs",self.fs)
         desc = kwargs.setdefault("desc",self.desc)
         unit = kwargs.setdefault("unit",self.unit.format_babel())
@@ -276,7 +277,7 @@ class Spectral_data:
         """ Compute the real inverse Fourier transform
             of the spectral data set
         """
-        return Signal(x=np.fft.irfft(self.values),
+        return Signal(raw=np.fft.irfft(self.values),
                             desc='IFFT of '+self.desc,
                             fs=self.fs,
                             unit=self.unit)
@@ -285,7 +286,7 @@ class Spectral_data:
         """ Compute the inverse Fourier transform
             of the spectral data set
         """
-        return Signal(x=np.fft.ifft(self.values),
+        return Signal(raw=np.fft.ifft(self.values),
                             desc='IFFT of '+self.desc,
                             fs=self.fs,
                             unit=self.unit)
