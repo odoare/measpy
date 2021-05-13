@@ -100,13 +100,13 @@ class Signal:
             raise Exception('Sampling frequencies have to be the same')
         if self.length!=x.length:
             raise Exception('Lengths have to be the same')
-        out = Spectral_data(desc='Transfer function between '+x.desc+' and '+self.desc,
-                                fs=self.fs,
-                                unit=self.unit/x.unit)
-        p = welch(x.values, **kwargs)[1]
-        c = csd(self.values, x.values, **kwargs)[1]
-        out.values = c/p
-        return out
+            
+        return Spectral_data(
+            x=csd(self.values, x.values, **kwargs)[1]/welch(x.values, **kwargs)[1],
+            desc='Transfer function between '+x.desc+' and '+self.desc,
+            fs=self.fs,
+            unit=self.unit/x.unit
+            )
     
     def coh(self, x, **kwargs):
         """ Compute the coherence between signal x and the actual signal
@@ -323,18 +323,6 @@ def _apply_fades(s,fades):
         s[-fades[1]:] = s[-fades[1]:] *  ((np.cos(np.arange(fades[1])/fades[1]*np.pi)+1) / 2)
     return s
 
-def noise(fs, dur, out_amp, freqs, fades):
-    """ Create band-limited noise """
-    t = _create_time(fs,dur=dur)
-    leng = int(dur*fs)
-    lengs2 = int(leng/2)
-    f = fs*np.arange(lengs2+1,dtype=float)/leng
-    amp = ((f>freqs[0]) & (f<freqs[1]))*np.sqrt(leng)
-    phase  = 2*np.pi*(np.random.rand(lengs2+1)-0.5)
-    fftx = amp*np.exp(1j*phase)
-    s = out_amp*np.fft.irfft(fftx)
-    s = _apply_fades(s,fades)
-    return t,s
 
 def _noise(fs, dur, out_amp, freqs):
     """ Create band-limited noise """
@@ -408,6 +396,20 @@ def plot_tfe(f, H):
 def smooth(in_array,l=20):
     ker = np.ones(l)/l
     return np.convolve(in_array,ker,mode='same')
+
+# def noise(fs, dur, out_amp, freqs, fades):
+#     """ Create band-limited noise """
+#     t = _create_time(fs,dur=dur)
+#     leng = int(dur*fs)
+#     lengs2 = int(leng/2)
+#     f = fs*np.arange(lengs2+1,dtype=float)/leng
+#     amp = ((f>freqs[0]) & (f<freqs[1]))*np.sqrt(leng)
+#     phase  = 2*np.pi*(np.random.rand(lengs2+1)-0.5)
+#     fftx = amp*np.exp(1j*phase)
+#     s = out_amp*np.fft.irfft(fftx)
+#     s = _apply_fades(s,fades)
+#     return t,s
+
 
 # class Signalb(np.ndarray):
 #     def __new__(cls, input_array, fs=44100, cal=1.0, dbfs=1.0, unit='V'):

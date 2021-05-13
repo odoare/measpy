@@ -21,7 +21,7 @@ M1 = ma.Measurement(out_sig='noise',
                     in_cal=[1.0,1.0],
                     in_unit=['Pa','meter/second**2'],
                     in_dbfs=[1.0,1.0],
-                    extrat=[0.0,0.0],
+                    extrat=[1.0,2.0],
                     out_sig_fades=[1000,10000],
                     dur=5)
 M1.run_measurement()
