@@ -155,7 +155,6 @@ class Signal:
                                 fs=self.fs,
                                 unit=self.unit)
     
-
     def to_csvwav(self,filename):
         with open(filename+'.csv', 'w') as file:
             writer = csv.writer(file)
@@ -165,6 +164,10 @@ class Signal:
             writer.writerow(['cal',self.cal])
             writer.writerow(['dbfs',self.dbfs])
         write(filename+'.wav',int(round(self.fs)),self.raw)
+
+    @classmethod
+    def noise(cls,fs=44100,dur=2.0,amp=1.0,freqs=[20.0,20000.0],unit='1',cal=1.0,dbfs=1.0):
+        return cls(x=_noise(fs,dur,amp,freqs),fs=fs,unit=unit,cal=cal,dbfs=dbfs) 
 
     @classmethod
     def from_csvwav(cls,filename):
@@ -205,7 +208,7 @@ class Signal:
         self._rawvalues = val/self.dbfs
     @property
     def time(self):
-        return create_time(self.fs,length=len(self._rawvalues))
+        return _create_time(self.fs,length=len(self._rawvalues))
     @property
     def length(self):
         return len(self._rawvalues)
@@ -222,7 +225,7 @@ class Spectral_data:
         using sampling frequencies and length of the values array
         by calling the property freqs. 
     '''
-    def __init__(self,x=None,desc='Spectral data',fs=1,unit=ur.Unit('1')):
+    def __init__(self,x=None,desc='Spectral data',fs=1,unit='1'):
         self._values = np.array(x)
         self.desc = desc
         self.unit = ur.Unit(unit)
@@ -267,14 +270,15 @@ class Spectral_data:
         return Signal(x=np.fft.irfft(self.values),
                             desc='IFFT of '+self.desc,
                             fs=self.fs,
-                            unit=self.unit.format_babel())
+                            unit=self.unit)
 
     def filterout(self,freqsrange):
         """ Cancels values below and above a given frequency
         """
-        return self.similar(x=self._values
-                                * ((self.freqs>freqsrange[0]) & (self.freqs<freqsrange[1]))
-                                )
+        return self.similar(
+                        x=self._values*
+                        ((self.freqs>freqsrange[0]) & (self.freqs<freqsrange[1]))
+                        )
 
     @property
     def values(self):
@@ -289,21 +293,21 @@ class Spectral_data:
 def picv(long):
     return np.hstack((np.zeros(long),1,np.zeros(long-1)))
 
-def create_time1(fs,dur):
+def _create_time1(fs,dur):
     return np.linspace(0,dur,int(round(dur*fs)))  # time axis
 
-def create_time2(fs,length):
+def _create_time2(fs,length):
     return np.linspace(0,length/fs,length)  # time axis
 
-def create_time(fs,dur=None,length=None):
+def _create_time(fs,dur=None,length=None):
     if dur==None and length==None:
         raise Exception('dur=duration in s or length=number of samples must be specified.')
     if dur!=None and length!=None:
         raise Exception("dur and length can't be both specified.")
     if dur!=None:
-        return create_time1(fs,dur)
+        return _create_time1(fs,dur)
     else:
-        return create_time2(fs,length)
+        return _create_time2(fs,length)
 
 def _apply_fades(s,fades):
     if fades[0]>0:
@@ -314,7 +318,7 @@ def _apply_fades(s,fades):
 
 def noise(fs, dur, out_amp, freqs, fades):
     """ Create band-limited noise """
-    t = create_time(fs,dur=dur)
+    t = _create_time(fs,dur=dur)
     leng = int(dur*fs)
     lengs2 = int(leng/2)
     f = fs*np.arange(lengs2+1,dtype=float)/leng
@@ -324,6 +328,18 @@ def noise(fs, dur, out_amp, freqs, fades):
     s = out_amp*np.fft.irfft(fftx)
     s = _apply_fades(s,fades)
     return t,s
+
+def _noise(fs, dur, out_amp, freqs):
+    """ Create band-limited noise """
+    leng = int(dur*fs)
+    lengs2 = int(leng/2)
+    f = fs*np.arange(lengs2+1,dtype=float)/leng
+    amp = ((f>freqs[0]) & (f<freqs[1]))*np.sqrt(leng)
+    phase  = 2*np.pi*(np.random.rand(lengs2+1)-0.5)
+    fftx = amp*np.exp(1j*phase)
+    s = out_amp*np.fft.irfft(fftx)
+    return s
+
 
 def tfe_welch(x, y, fs=None, nperseg=2**12,noverlap=None):
     """ Transfer function estimate (Welch's method)       
@@ -355,7 +371,7 @@ def tfe_welch(x, y, fs=None, nperseg=2**12,noverlap=None):
 def log_sweep(fs, dur, out_amp, freqs, fades):
     """ Create log swwep """
     L = dur/np.log(freqs[1]/freqs[0])
-    t = create_time(fs, dur=dur)
+    t = _create_time(fs, dur=dur)
     s = np.sin(2*np.pi*freqs[0]*L*np.exp(t/L))
     s = _apply_fades(s,fades)
     return t,out_amp*s

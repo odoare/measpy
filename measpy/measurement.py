@@ -484,4 +484,4 @@ class Measurement:
 
     @property
     def t(self):
-        return ms.create_time(self.fs,dur=self.dur+self.extrat[0]+self.extrat[1])
+        return ms._create_time(self.fs,dur=self.dur+self.extrat[0]+self.extrat[1])
