@@ -339,6 +339,13 @@ class Weighting:
         out.f=np.array(out.f)
         out.AdB=np.array(out.AdB)
 
+    def to_csv(self,filename):
+        with open(filename+'.csv', 'w') as file:
+            writer = csv.writer(file)
+            writer.writerow([self.desc])
+            for n in range(len(self.f)):
+                writer.writerow([self.f,self.AdB])
+
 
 def picv(long):
     return np.hstack((np.zeros(long),1,np.zeros(long-1)))
