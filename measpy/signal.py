@@ -317,6 +317,28 @@ class Spectral:
 
     # END of Spectral
 
+class Weighting:
+    def __init__(self,f,AdB,desc):
+        self.f=f
+        self.AdB=AdB
+        self.desc=desc
+
+    @classmethod
+    def from_csv(cls,filename):
+        out = cls([],[],'Weigting')
+        with open(filename+'.csv', 'r') as file:
+            reader = csv.reader(file)
+            n=0
+            for row in reader:
+                if n==0:
+                    out.desc=str(row)
+                else:
+                    out.f+=[float(row[0])]
+                    out.AdB+=[float(row[1])]
+                n+=1
+        out.f=np.array(out.f)
+        out.AdB=np.array(out.AdB)
+
 
 def picv(long):
     return np.hstack((np.zeros(long),1,np.zeros(long-1)))
