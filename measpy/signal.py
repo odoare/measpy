@@ -7,6 +7,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import welch, csd, coherence, resample
+from scipy.interpolate import interp1d
 import scipy.io.wavfile as wav
 import csv
 from pint import UnitRegistry
@@ -253,32 +254,6 @@ class Spectral:
         unit = kwargs.setdefault("unit",self.unit.format_babel())
         return Spectral(x=x,fs=fs,desc=desc,unit=unit)
 
-    def plot(self,axestype='logdb_arg',ylabel1=None,ylabel2=None):
-        if axestype=='logdb_arg':
-            plt.subplot(2,1,1)
-            plt.semilogx(self.freqs,20*np.log10(np.abs(self.values)))
-            plt.xlabel('Freq (Hz)')
-            if ylabel1!=None:
-                plt.ylabel(ylabel1)
-            else:
-                plt.ylabel('20 Log |H|')
-            plt.title(self.desc)
-            plt.subplot(2,1,2)
-            plt.semilogx(self.freqs,20*np.angle(self.values))
-            plt.xlabel('Freq (Hz)')
-            if ylabel2!=None:
-                plt.ylabel(ylabel2)
-            else:
-                plt.ylabel('Arg(H)')
-        if axestype=='logdb':
-            plt.semilogx(self.freqs,20*np.log10(np.abs(self.values)))
-            plt.xlabel('Freq (Hz)')
-            if ylabel1!=None:
-                plt.ylabel(ylabel1)
-            else:
-                plt.ylabel('20 Log |H|')
-            plt.title(self.desc)
-
     def irfft(self):
         """ Compute the real inverse Fourier transform
             of the spectral data set
@@ -304,6 +279,39 @@ class Spectral:
                         x=self._values*
                         ((self.freqs>freqsrange[0]) & (self.freqs<freqsrange[1]))
                         )
+
+    def apply_weighting(self,w):
+        f=interp1d(w.f,10**(w.AdB/20.0))
+        return self.similar(
+            x=self._values*f(self.freqs),
+            desc=self.desc+"-->"+w.desc
+        )
+
+    def plot(self,axestype='logdb_arg',ylabel1=None,ylabel2=None):
+        if axestype=='logdb_arg':
+            plt.subplot(2,1,1)
+            plt.semilogx(self.freqs,20*np.log10(np.abs(self.values)))
+            plt.xlabel('Freq (Hz)')
+            if ylabel1!=None:
+                plt.ylabel(ylabel1)
+            else:
+                plt.ylabel('20 Log |H|')
+            plt.title(self.desc)
+            plt.subplot(2,1,2)
+            plt.semilogx(self.freqs,20*np.angle(self.values))
+            plt.xlabel('Freq (Hz)')
+            if ylabel2!=None:
+                plt.ylabel(ylabel2)
+            else:
+                plt.ylabel('Arg(H)')
+        if axestype=='logdb':
+            plt.semilogx(self.freqs,20*np.log10(np.abs(self.values)))
+            plt.xlabel('Freq (Hz)')
+            if ylabel1!=None:
+                plt.ylabel(ylabel1)
+            else:
+                plt.ylabel('20 Log |H|')
+            plt.title(self.desc)
 
     @property
     def values(self):
@@ -331,13 +339,14 @@ class Weighting:
             n=0
             for row in reader:
                 if n==0:
-                    out.desc=str(row)
+                    out.desc=row[0]
                 else:
                     out.f+=[float(row[0])]
                     out.AdB+=[float(row[1])]
                 n+=1
         out.f=np.array(out.f)
         out.AdB=np.array(out.AdB)
+        return out
 
     def to_csv(self,filename):
         with open(filename+'.csv', 'w') as file:
