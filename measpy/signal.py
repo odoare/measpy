@@ -40,21 +40,22 @@ class Signal:
             - time (time array)
     """
 
-    def __init__(self,x=None,desc='A signal',fs=1,unit='1',cal=1.0,dbfs=1.0):
-        self._rawvalues = np.array(x)
+    def __init__(self,raw=None,desc='A signal',fs=1,unit='1',cal=1.0,dbfs=1.0):
+        self.raw = np.array(raw)
         self.desc = desc
         self.unit = ur.Unit(unit)
         self.cal = cal
         self.dbfs = dbfs
         self.fs = fs
         
-    def similar(self,x, **kwargs):
+    def similar(self, **kwargs):
+        raw = kwargs.setdefault("x",self.raw)
         fs = kwargs.setdefault("fs",self.fs)
         desc = kwargs.setdefault("desc",self.desc)
         unit = kwargs.setdefault("unit",self.unit.format_babel())
         cal = kwargs.setdefault("cal",self.cal)
         dbfs = kwargs.setdefault("dbfs",self.dbfs)
-        return Signal(x=x,fs=fs,desc=desc,unit=unit,cal=cal,dbfs=dbfs)
+        return Signal(raw=raw,fs=fs,desc=desc,unit=unit,cal=cal,dbfs=dbfs)
 
     def plot(self):
         plt.plot(self.time,self.values)
@@ -76,7 +77,7 @@ class Signal:
     def rms_smooth(self,l=100):
         """ Compute the RMS of the Signal over windows of width l
         """
-        return self.similar(np.sqrt(smooth(self.values**2,l)),
+        return self.similar(raw=np.sqrt(smooth(self.values**2,l)),
                                 desc=self.desc+'-->RMS smoothed on '+str(l)+' data points')
 
     def dBSPL(self,l=100):
@@ -90,7 +91,7 @@ class Signal:
         return out
 
     def resample(self,fs):
-        return self.similar(resample(self.raw,round(len(self.raw)*fs/self.fs)),
+        return self.similar(raw=resample(self.raw,round(len(self.raw)*fs/self.fs)),
                                 fs=fs,
                                 desc=self.desc+'-->resampled to '+str(fs)+'Hz')
 
@@ -123,15 +124,15 @@ class Signal:
                                 unit=self.unit/x.unit)
     
     def cut(self,pos):
-        return self.similar(self.values[pos[0]:pos[1]],
+        return self.similar(raw=self.values[pos[0]:pos[1]],
                         desc=self.desc+"-->Cut between "+str(pos[0])+" and "+str(pos[1]))
 
     def fade(self,fades):
-        return self.similar(_apply_fades(self.values,fades),
+        return self.similar(raw=_apply_fades(self.values,fades),
                         desc=self.desc+"-->fades")
 
     def add_silence(self,extrat=[0,0]):
-        return self.similar(np.hstack(
+        return self.similar(raw=np.hstack(
                 (np.zeros(int(np.round(extrat[0]*self.fs))),
                 self.raw,
                 np.zeros(int(np.round(extrat[1]*self.fs))) ))
