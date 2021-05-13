@@ -83,6 +83,7 @@ class Signal:
         """ If the data is an acoustic pressure, computes the Sound
             Pressure Level in dB, as the 20Log(RMS/Pref)
         """
+        
         out = self.rms_smooth()
         out.values = 20*np.log10(out.values/PREF)
         out.desc = out.desc+'-->/PREF (in dB)'
@@ -270,11 +271,17 @@ class Spectral_data:
                 plt.ylabel('20 Log |H|')
             plt.title(self.desc)
 
-    def green(self):
+    def irfft(self):
         """ Compute the real inverse Fourier transform
             of this spectral data set
         """
         return Signal(x=np.fft.irfft(self.values),
+                            desc='IFFT of '+self.desc,
+                            fs=self.fs,
+                            unit=self.unit)
+
+    def ifft(self):
+        return Signal(x=np.fft.ifft(self.values),
                             desc='IFFT of '+self.desc,
                             fs=self.fs,
                             unit=self.unit)
@@ -296,6 +303,9 @@ class Spectral_data:
     @property
     def freqs(self):
         return np.linspace(0, self.fs/2, num=len(self._values))
+
+    # End of Spectral_data
+
 
 def picv(long):
     return np.hstack((np.zeros(long),1,np.zeros(long-1)))
