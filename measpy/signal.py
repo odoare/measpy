@@ -144,6 +144,17 @@ class Signal:
                         desc='Transfert function between input log sweep and '+self.desc,
                         unit=self.unit/ur.V,
                         fs=self.fs)
+    
+    def fft(self):
+        return Spectral_data(x=np.fft.fft(self.values),
+                                fs=self.fs,
+                                unit=self.unit)
+    
+    def rfft(self):
+        return Spectral_data(x=np.fft.rfft(self.values),
+                                fs=self.fs,
+                                unit=self.unit)
+    
 
     def to_csvwav(self,filename):
         with open(filename+'.csv', 'w') as file:
