@@ -229,6 +229,8 @@ class Signal:
     def dur(self):
         return len(self._rawvalues)/self.fs
 
+    # END of Signal
+
 class Spectral:
     ''' Class that holds a set of values as function of evenly spaced
         frequencies. Usualy contains tranfert functions, spectral
@@ -313,7 +315,7 @@ class Spectral:
     def freqs(self):
         return np.linspace(0, self.fs/2, num=len(self._values))
 
-    # End of Spectral
+    # END of Spectral
 
 
 def picv(long):

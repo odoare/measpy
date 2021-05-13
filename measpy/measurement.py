@@ -109,14 +109,9 @@ class Measurement:
 
         elif self.out_sig=='logsweep': # Logarithmic sweep output signal
             self.data[self.out_desc[0]] = self.data[self.out_desc[0]].similar(
-                ms._logsweep(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
+                ms._log_sweep(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
             ).fade(self.out_sig_fades).add_silence(self.extrat)
 
-            # _, self.data[self.out_desc[0]].raw = ms.log_sweep(self.fs,
-            #                                                 self.dur,
-            #                                                 self.out_amp,
-            #                                                 self.out_sig_freqs,
-            #                                                 self.out_sig_fades)
             if self.out_map==0:
                 self.out_map=[1]
 
@@ -145,15 +140,15 @@ class Measurement:
                 self.out_map=list(range(1,x.shape[1]+1))
             elif (nchan!=len(self.out_map)):
                 print("Warning:")
-                print("  Size of out_map and number of channels do not correspond.")
+                print("Size of out_map and number of channels do not correspond.")
                 if (x.shape[1]<len(self.out_map)):
+                    print("  Truncating current out_map...")
                     self.out_map=self.out_map[0:nchan]
                     self.out_desc=self.out_desc[0:nchan]
                     self.out_dbfs=self.out_dbfs[0:nchan]
-                    print("  Truncating current out_map...")
                 else:
-                    x=x[:,0:len(self.out_map)]
                     print("  Truncating channels of the output signal...")
+                    x=x[:,0:len(self.out_map)]
             if x.dtype == 'int16':
                 for ii in range(len(self.out_map)):
                     self.data[self.out_desc[ii]].raw=np.array(x[:,ii],dtype=float)/32768
