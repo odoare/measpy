@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 
 from copy import copy
 
-from scipy.io.wavfile import write, read
+import scipy.io.wavfile as wav
 import csv
 import pickle
 import json
@@ -118,7 +118,7 @@ class Measurement:
 
         elif self.out_sig.upper().endswith('.WAV'): # Wave file output signal
 
-            rate, x = read(self.out_sig)
+            rate, x = wav.read(self.out_sig)
 
             if len(x.shape)==1:
                 nchan = 1
@@ -304,10 +304,10 @@ class Measurement:
             else:
                 out = np.block([out,self.data[key].raw[:,None]])
                 n += 1
-        write(filename,int(round(self.fs)),out)
+        wav.write(filename,int(round(self.fs)),out)
 
     def data_from_wav(self,filename):
-        _, dat = read(filename)
+        _, dat = wav.read(filename)
         n = 0
         for key in self.data_keys:
             self.data[key].raw = dat[:,n]

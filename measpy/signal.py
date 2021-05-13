@@ -7,7 +7,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import welch, csd, coherence, resample
-from scipy.io.wavfile import write, read
+import scipy.io.wavfile as wav
 import csv
 from pint import UnitRegistry
 
@@ -171,7 +171,7 @@ class Signal:
             writer.writerow(['unit',self.unit.format_babel()])
             writer.writerow(['cal',self.cal])
             writer.writerow(['dbfs',self.dbfs])
-        write(filename+'.wav',int(round(self.fs)),self.raw)
+        wav.write(filename+'.wav',int(round(self.fs)),self.raw)
 
     @classmethod
     def noise(cls,fs=44100,dur=2.0,amp=1.0,freqs=[20.0,20000.0],unit='1',cal=1.0,dbfs=1.0):
@@ -193,7 +193,7 @@ class Signal:
                     out.cal=float(row[1])
                 if row[0]=='dbfs':
                     out.dbfs=float(row[1])
-        _, out._rawvalues = read(filename+'.wav')
+        _, out._rawvalues = wav.read(filename+'.wav')
         return out
 
     @property
@@ -273,7 +273,7 @@ class Spectral_data:
 
     def irfft(self):
         """ Compute the real inverse Fourier transform
-            of this spectral data set
+            of the spectral data set
         """
         return Signal(x=np.fft.irfft(self.values),
                             desc='IFFT of '+self.desc,
@@ -281,6 +281,9 @@ class Spectral_data:
                             unit=self.unit)
 
     def ifft(self):
+        """ Compute the inverse Fourier transform
+            of the spectral data set
+        """
         return Signal(x=np.fft.ifft(self.values),
                             desc='IFFT of '+self.desc,
                             fs=self.fs,
