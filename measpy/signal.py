@@ -129,6 +129,13 @@ class Signal:
         return self.similar(_apply_fades(self.values,fades),
                         desc=self.desc+"-->fades")
 
+    def add_silence(self,extrat=[0,0]):
+        return self.similar(np.hstack(
+                (np.zeros(int(np.round(extrat[0]*self.fs))),
+                self.raw,
+                np.zeros(int(np.round(extrat[1]*self.fs))) ))
+                )
+
     def tfe_farina(self, freqs):
         """ Compute the transfer function between x and the actual signal
             where x is a log sweep of same duration between freqs[0] and
