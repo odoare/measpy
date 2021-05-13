@@ -7,7 +7,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import welch, csd, coherence, resample
-from scipy.io.wavfile import write, read
+import scipy.io.wavfile as wav
 import csv
 from pint import UnitRegistry
 
@@ -16,8 +16,8 @@ from pint import UnitRegistry
 # - Calibrations
 # - Apply dBA, dBC or any calibration curve to a signal
 
-PREF = 20e-6 # Acoustic pressure reference level
 ur=UnitRegistry()
+PREF = 20e-6*ur.Pa # Acoustic pressure reference level
 
 class Signal:
     """ Defines a signal object
@@ -40,21 +40,22 @@ class Signal:
             - time (time array)
     """
 
-    def __init__(self,x=None,desc='A signal',fs=1,unit='1',cal=1.0,dbfs=1.0):
-        self._rawvalues = np.array(x)
+    def __init__(self,raw=None,desc='A signal',fs=1,unit='1',cal=1.0,dbfs=1.0):
+        self.raw = np.array(raw)
         self.desc = desc
         self.unit = ur.Unit(unit)
         self.cal = cal
         self.dbfs = dbfs
         self.fs = fs
         
-    def similar(self,x, **kwargs):
+    def similar(self, **kwargs):
+        raw = kwargs.setdefault("x",self.raw)
         fs = kwargs.setdefault("fs",self.fs)
         desc = kwargs.setdefault("desc",self.desc)
         unit = kwargs.setdefault("unit",self.unit.format_babel())
         cal = kwargs.setdefault("cal",self.cal)
         dbfs = kwargs.setdefault("dbfs",self.dbfs)
-        return Signal(x=x,fs=fs,desc=desc,unit=unit,cal=cal,dbfs=dbfs)
+        return Signal(raw=raw,fs=fs,desc=desc,unit=unit,cal=cal,dbfs=dbfs)
 
     def plot(self):
         plt.plot(self.time,self.values)
@@ -66,9 +67,9 @@ class Signal:
             Optional arguments are the same as the welch function
             in scipy.signal
 
-            Returns : A Spectral_data object containing the psd
+            Returns : A Spectral object containing the psd
         """ 
-        return Spectral_data(x=welch(self.values, **kwargs)[1],
+        return Spectral(x=welch(self.values, **kwargs)[1],
                                 desc='PSD of '+self.desc,
                                 fs=self.fs,
                                 unit=self.unit**2)
@@ -76,20 +77,21 @@ class Signal:
     def rms_smooth(self,l=100):
         """ Compute the RMS of the Signal over windows of width l
         """
-        return self.similar(np.sqrt(smooth(self.values**2,l)),
+        return self.similar(raw=np.sqrt(smooth(self.values**2,l)),
                                 desc=self.desc+'-->RMS smoothed on '+str(l)+' data points')
 
     def dBSPL(self,l=100):
         """ If the data is an acoustic pressure, computes the Sound
             Pressure Level in dB, as the 20Log(RMS/Pref)
         """
+        
         out = self.rms_smooth()
         out.values = 20*np.log10(out.values/PREF)
         out.desc = out.desc+'-->/PREF (in dB)'
         return out
 
     def resample(self,fs):
-        return self.similar(resample(self.raw,round(len(self.raw)*fs/self.fs)),
+        return self.similar(raw=resample(self.raw,round(len(self.raw)*fs/self.fs)),
                                 fs=fs,
                                 desc=self.desc+'-->resampled to '+str(fs)+'Hz')
 
@@ -100,13 +102,13 @@ class Signal:
             raise Exception('Sampling frequencies have to be the same')
         if self.length!=x.length:
             raise Exception('Lengths have to be the same')
-        out = Spectral_data(desc='Transfer function between '+x.desc+' and '+self.desc,
-                                fs=self.fs,
-                                unit=self.unit/x.unit)
-        p = welch(x.values, **kwargs)[1]
-        c = csd(self.values, x.values, **kwargs)[1]
-        out.values = c/p
-        return out
+
+        return Spectral(
+            x=csd(self.values, x.values, **kwargs)[1]/welch(x.values, **kwargs)[1],
+            desc='Transfer function between '+x.desc+' and '+self.desc,
+            fs=self.fs,
+            unit=self.unit/x.unit
+            )
     
     def coh(self, x, **kwargs):
         """ Compute the coherence between signal x and the actual signal
@@ -116,21 +118,21 @@ class Signal:
         if self.length!=x.length:
             raise Exception('Lengths have to be the same')
 
-        return Spectral_data(x=coherence(self.values, x.values, **kwargs)[1],
+        return Spectral(x=coherence(self.values, x.values, **kwargs)[1],
                                 desc='Coherence between '+x.desc+' and '+self.desc,
                                 fs=self.fs,
                                 unit=self.unit/x.unit)
     
     def cut(self,pos):
-        return self.similar(self.values[pos[0]:pos[1]],
+        return self.similar(raw=self.values[pos[0]:pos[1]],
                         desc=self.desc+"-->Cut between "+str(pos[0])+" and "+str(pos[1]))
 
     def fade(self,fades):
-        return self.similar(_apply_fades(self.values,fades),
+        return self.similar(raw=_apply_fades(self.values,fades),
                         desc=self.desc+"-->fades")
 
     def add_silence(self,extrat=[0,0]):
-        return self.similar(np.hstack(
+        return self.similar(raw=np.hstack(
                 (np.zeros(int(np.round(extrat[0]*self.fs))),
                 self.raw,
                 np.zeros(int(np.round(extrat[1]*self.fs))) ))
@@ -147,18 +149,18 @@ class Signal:
         L = self.length/self.fs/np.log(freqs[1]/freqs[0])
         S = 2*np.sqrt(f/L)*np.exp(-1j*2*np.pi*f*L*(1-np.log(f/freqs[0])) + 1j*np.pi/4)
         S[0] = 0j
-        return Spectral_data(x=Y*S,
+        return Spectral(x=Y*S,
                         desc='Transfert function between input log sweep and '+self.desc,
                         unit=self.unit/ur.V,
                         fs=self.fs)
     
     def fft(self):
-        return Spectral_data(x=np.fft.fft(self.values),
+        return Spectral(x=np.fft.fft(self.values),
                                 fs=self.fs,
                                 unit=self.unit)
     
     def rfft(self):
-        return Spectral_data(x=np.fft.rfft(self.values),
+        return Spectral(x=np.fft.rfft(self.values),
                                 fs=self.fs,
                                 unit=self.unit)
     
@@ -170,11 +172,15 @@ class Signal:
             writer.writerow(['unit',self.unit.format_babel()])
             writer.writerow(['cal',self.cal])
             writer.writerow(['dbfs',self.dbfs])
-        write(filename+'.wav',int(round(self.fs)),self.raw)
+        wav.write(filename+'.wav',int(round(self.fs)),self.raw)
 
     @classmethod
     def noise(cls,fs=44100,dur=2.0,amp=1.0,freqs=[20.0,20000.0],unit='1',cal=1.0,dbfs=1.0):
-        return cls(x=_noise(fs,dur,amp,freqs),fs=fs,unit=unit,cal=cal,dbfs=dbfs) 
+        return cls(raw=_noise(fs,dur,amp,freqs),fs=fs,unit=unit,cal=cal,dbfs=dbfs) 
+
+    @classmethod
+    def log_sweep(cls,fs=44100,dur=2.0,amp=1.0,freqs=[20.0,20000.0],unit='1',cal=1.0,dbfs=1.0):
+        return cls(raw=_log_sweep(fs,dur,amp,freqs),fs=fs,unit=unit,cal=cal,dbfs=dbfs) 
 
     @classmethod
     def from_csvwav(cls,filename):
@@ -192,7 +198,7 @@ class Signal:
                     out.cal=float(row[1])
                 if row[0]=='dbfs':
                     out.dbfs=float(row[1])
-        _, out._rawvalues = read(filename+'.wav')
+        _, out._rawvalues = wav.read(filename+'.wav')
         return out
 
     @property
@@ -223,7 +229,7 @@ class Signal:
     def dur(self):
         return len(self._rawvalues)/self.fs
 
-class Spectral_data:
+class Spectral:
     ''' Class that holds a set of values as function of evenly spaced
         frequencies. Usualy contains tranfert functions, spectral
         densities, etc.
@@ -238,11 +244,12 @@ class Spectral_data:
         self.unit = ur.Unit(unit)
         self.fs = fs
 
-    def similar(self,x,**kwargs):
+    def similar(self,**kwargs):
+        x = kwargs.setdefault("x",self.values)
         fs = kwargs.setdefault("fs",self.fs)
         desc = kwargs.setdefault("desc",self.desc)
         unit = kwargs.setdefault("unit",self.unit.format_babel())
-        return Spectral_data(x=x,fs=fs,desc=desc,unit=unit)
+        return Spectral(x=x,fs=fs,desc=desc,unit=unit)
 
     def plot(self,axestype='logdb_arg',ylabel1=None,ylabel2=None):
         if axestype=='logdb_arg':
@@ -270,11 +277,20 @@ class Spectral_data:
                 plt.ylabel('20 Log |H|')
             plt.title(self.desc)
 
-    def green(self):
+    def irfft(self):
         """ Compute the real inverse Fourier transform
-            of this spectral data set
+            of the spectral data set
         """
-        return Signal(x=np.fft.irfft(self.values),
+        return Signal(raw=np.fft.irfft(self.values),
+                            desc='IFFT of '+self.desc,
+                            fs=self.fs,
+                            unit=self.unit)
+
+    def ifft(self):
+        """ Compute the inverse Fourier transform
+            of the spectral data set
+        """
+        return Signal(raw=np.fft.ifft(self.values),
                             desc='IFFT of '+self.desc,
                             fs=self.fs,
                             unit=self.unit)
@@ -296,6 +312,9 @@ class Spectral_data:
     @property
     def freqs(self):
         return np.linspace(0, self.fs/2, num=len(self._values))
+
+    # End of Spectral
+
 
 def picv(long):
     return np.hstack((np.zeros(long),1,np.zeros(long-1)))
@@ -323,18 +342,6 @@ def _apply_fades(s,fades):
         s[-fades[1]:] = s[-fades[1]:] *  ((np.cos(np.arange(fades[1])/fades[1]*np.pi)+1) / 2)
     return s
 
-def noise(fs, dur, out_amp, freqs, fades):
-    """ Create band-limited noise """
-    t = _create_time(fs,dur=dur)
-    leng = int(dur*fs)
-    lengs2 = int(leng/2)
-    f = fs*np.arange(lengs2+1,dtype=float)/leng
-    amp = ((f>freqs[0]) & (f<freqs[1]))*np.sqrt(leng)
-    phase  = 2*np.pi*(np.random.rand(lengs2+1)-0.5)
-    fftx = amp*np.exp(1j*phase)
-    s = out_amp*np.fft.irfft(fftx)
-    s = _apply_fades(s,fades)
-    return t,s
 
 def _noise(fs, dur, out_amp, freqs):
     """ Create band-limited noise """
@@ -365,7 +372,7 @@ def tfe_welch(x, y, fs=None, nperseg=2**12,noverlap=None):
     if type(x) == Signal:
         f, p = welch(x.values_in_unit , fs=x.fs, nperseg=nperseg, noverlap=noverlap )
         f, c = csd(y.values_in_unit ,x.values_in_unit, fs=x.fs, nperseg=nperseg, noverlap=noverlap)
-        out = Spectral_data(desc='Transfer function between '+x.desc+' and '+y.desc,
+        out = Spectral(desc='Transfer function between '+x.desc+' and '+y.desc,
                                 fs=x.fs,
                                 unit = y.unit+'/'+x.unit)
         out.values = c/p
@@ -382,6 +389,13 @@ def log_sweep(fs, dur, out_amp, freqs, fades):
     s = np.sin(2*np.pi*freqs[0]*L*np.exp(t/L))
     s = _apply_fades(s,fades)
     return t,out_amp*s
+
+def _log_sweep(fs, dur, out_amp, freqs):
+    """ Create log swwep """
+    L = dur/np.log(freqs[1]/freqs[0])
+    t = _create_time(fs, dur=dur)
+    s = np.sin(2*np.pi*freqs[0]*L*np.exp(t/L))
+    return out_amp*s
 
 def tfe_farina(y, fs, freqs):
     """ Transfer function estimate
@@ -408,6 +422,20 @@ def plot_tfe(f, H):
 def smooth(in_array,l=20):
     ker = np.ones(l)/l
     return np.convolve(in_array,ker,mode='same')
+
+# def noise(fs, dur, out_amp, freqs, fades):
+#     """ Create band-limited noise """
+#     t = _create_time(fs,dur=dur)
+#     leng = int(dur*fs)
+#     lengs2 = int(leng/2)
+#     f = fs*np.arange(lengs2+1,dtype=float)/leng
+#     amp = ((f>freqs[0]) & (f<freqs[1]))*np.sqrt(leng)
+#     phase  = 2*np.pi*(np.random.rand(lengs2+1)-0.5)
+#     fftx = amp*np.exp(1j*phase)
+#     s = out_amp*np.fft.irfft(fftx)
+#     s = _apply_fades(s,fades)
+#     return t,s
+
 
 # class Signalb(np.ndarray):
 #     def __new__(cls, input_array, fs=44100, cal=1.0, dbfs=1.0, unit='V'):
