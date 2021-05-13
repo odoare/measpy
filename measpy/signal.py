@@ -16,8 +16,8 @@ from pint import UnitRegistry
 # - Calibrations
 # - Apply dBA, dBC or any calibration curve to a signal
 
-PREF = 20e-6 # Acoustic pressure reference level
 ur=UnitRegistry()
+PREF = 20e-6*ur.Pa # Acoustic pressure reference level
 
 class Signal:
     """ Defines a signal object
@@ -100,7 +100,7 @@ class Signal:
             raise Exception('Sampling frequencies have to be the same')
         if self.length!=x.length:
             raise Exception('Lengths have to be the same')
-            
+
         return Spectral_data(
             x=csd(self.values, x.values, **kwargs)[1]/welch(x.values, **kwargs)[1],
             desc='Transfer function between '+x.desc+' and '+self.desc,
