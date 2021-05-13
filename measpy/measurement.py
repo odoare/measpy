@@ -100,15 +100,10 @@ class Measurement:
         
     def create_output(self):
         if self.out_sig=='noise': # White noise output signal
-            _, self.data[self.out_desc[0]].raw = ms.noise(self.fs,
-                                                            self.dur,
-                                                            self.out_amp,
-                                                            self.out_sig_freqs,
-                                                            self.out_sig_fades)
-            self.data[self.out_desc[0]].raw = np.hstack(
-                (np.zeros(int(np.round(self.extrat[0]*self.fs))),
-                self.data[self.out_desc[0]].raw,
-                np.zeros(int(np.round(self.extrat[1]*self.fs))) ))
+            self.data[self.out_desc[0]] = self.data[self.out_desc[0]].similar(
+                ms._noise(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
+            ).fade(self.out_sig_fades).add_silence(self.extrat)
+
             if self.out_map==0:
                 self._out_map=[1]
 
@@ -484,4 +479,4 @@ class Measurement:
 
     @property
     def t(self):
-        return ms.create_time(self.fs,dur=self.dur+self.extrat[0]+self.extrat[1])
+        return ms._create_time(self.fs,dur=self.dur+self.extrat[0]+self.extrat[1])
