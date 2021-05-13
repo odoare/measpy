@@ -179,6 +179,10 @@ class Signal:
         return cls(raw=_noise(fs,dur,amp,freqs),fs=fs,unit=unit,cal=cal,dbfs=dbfs) 
 
     @classmethod
+    def log_sweep(cls,fs=44100,dur=2.0,amp=1.0,freqs=[20.0,20000.0],unit='1',cal=1.0,dbfs=1.0):
+        return cls(raw=_log_sweep(fs,dur,amp,freqs),fs=fs,unit=unit,cal=cal,dbfs=dbfs) 
+
+    @classmethod
     def from_csvwav(cls,filename):
         out = cls()
         with open(filename+'.csv', 'r') as file:
@@ -385,6 +389,13 @@ def log_sweep(fs, dur, out_amp, freqs, fades):
     s = np.sin(2*np.pi*freqs[0]*L*np.exp(t/L))
     s = _apply_fades(s,fades)
     return t,out_amp*s
+
+def _log_sweep(fs, dur, out_amp, freqs):
+    """ Create log swwep """
+    L = dur/np.log(freqs[1]/freqs[0])
+    t = _create_time(fs, dur=dur)
+    s = np.sin(2*np.pi*freqs[0]*L*np.exp(t/L))
+    return out_amp*s
 
 def tfe_farina(y, fs, freqs):
     """ Transfer function estimate
