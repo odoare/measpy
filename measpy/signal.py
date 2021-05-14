@@ -492,13 +492,13 @@ def smooth(in_array,l=20):
 
 def nth_octave_bands(n):
     ''' Calculate Third Octave Bands (base 2) in Matlab '''
-    nmin = np.ceil(n*np.log2(10**-3))
-    nmax = np.ceil(n*np.log2(20e3*10**-3))
+    nmin = int(np.ceil(n*np.log2(10**-3)))
+    nmax = int(np.ceil(n*np.log2(20e3*10**-3)))
     indices = range(nmin,nmax+1)
-    f_centre = 1000 * (2**(array(indices)/n))
+    f_centre = 1000 * (2**(np.array(indices)/n))
     f2 = 2**(1/n/2)
-    f_upper = f_centre * fd
-    f_lower = f_centre / fd
+    f_upper = f_centre * f2
+    f_lower = f_centre / f2
     return f_centre, f_lower, f_upper
 
 # def noise(fs, dur, out_amp, freqs, fades):
