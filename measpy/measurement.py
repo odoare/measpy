@@ -10,6 +10,9 @@
 
 import measpy.signal as ms
 from measpy.signal import Signal, ur
+
+from measpy._tools import csv_to_dict, convl, convl1
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -19,19 +22,6 @@ import scipy.io.wavfile as wav
 import csv
 import pickle
 import json
-
-def csv_to_dict(filename):
-    """ Conversion from a CSV (produced by the class Measurement) to a dict
-          Default separator is (,)
-          First row is the key string
-          The value is a list
-    """
-    dd={}
-    with open(filename, 'r') as file:
-        reader = csv.reader(file)
-        for row in reader:
-            dd[row[0]]=row[1:]
-    return dd
 
 class Measurement:
     """ The class Measurement allows to simply define and perform
@@ -237,21 +227,6 @@ class Measurement:
         """ Converts a dict to a Measurement object,
             generally loaded from a file.
         """
-
-        def convl(fun,xx):
-            if type(xx)==list:
-                yy=list(map(fun,xx))
-            else:
-                yy=fun(xx) 
-            return yy
-
-        def convl1(fun,xx):
-            if type(xx)==list:
-                yy=fun(xx[0])
-            else:
-                yy=fun(xx) 
-            return yy
-
         self.fs=convl1(float,mesu['fs'])
         self.dur=convl1(float,mesu['dur'])
         self.in_map=convl(int,mesu['in_map'])
