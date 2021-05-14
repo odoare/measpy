@@ -253,6 +253,13 @@ class Signal:
 
     # END of Signal
 
+
+####################
+##                ##
+## Spectral class ##
+##                ##
+####################
+
 class Spectral:
     ''' Class that holds a set of values as function of evenly spaced
         frequencies. Usualy contains tranfert functions, spectral
@@ -274,6 +281,18 @@ class Spectral:
         desc = kwargs.setdefault("desc",self.desc)
         unit = kwargs.setdefault("unit",self.unit.format_babel())
         return Spectral(x=x,fs=fs,desc=desc,unit=unit)
+
+    def nth_octave_smooth(self,n):
+        """ Nth octave smoothing """
+        fc,f1,f2 = nth_octave_bands(n)
+        val = np.zeros_like(fc)
+        for n in range(len(fc)):
+            val[n] = np.mean(self.values[ (self.freqs>f1[n]) & (self.freqs<f2[n]) ])
+        return Weighting(
+            f=fc,
+            A=val,
+            desc=self.desc+'-->1/'+str(n)+' octave smoothing'
+        )
 
     def irfft(self):
         """ Compute the real inverse Fourier transform
@@ -302,7 +321,9 @@ class Spectral:
                         )
 
     def apply_weighting(self,w):
-        f=interp1d(w.f,10**(w.AdB/20.0))
+        # f=interp1d(w.f,10**(w.AdB/20.0))
+        # We use coeffs now instead of dB
+        f = interp1d(w.f,w.A,fill_value='extrapolate')
         return self.similar(
             x=self._values*f(self.freqs),
             desc=self.desc+"-->"+w.desc
@@ -351,13 +372,13 @@ class Spectral:
     # END of Spectral
 
 class Weighting:
-    def __init__(self,f,AdB,desc):
+    def __init__(self,f,A,desc):
         self.f=f
-        self.AdB=AdB
+        self.A=A
         self.desc=desc
 
     @classmethod
-    def from_csv(cls,filename):
+    def from_csv(cls,filename,asdB=True):
         out = cls([],[],'Weigting')
         with open(filename+'.csv', 'r') as file:
             reader = csv.reader(file)
@@ -367,18 +388,25 @@ class Weighting:
                     out.desc=row[0]
                 else:
                     out.f+=[float(row[0])]
-                    out.AdB+=[float(row[1])]
+                    out.A+=[float(row[1])]
                 n+=1
         out.f=np.array(out.f)
-        out.AdB=np.array(out.AdB)
+        if asdB:
+            out.A=10**(np.array(out.A)/20.0)
+        else:
+            out.A=np.array(out.A)
         return out
 
-    def to_csv(self,filename):
+    def to_csv(self,filename,asdB):
         with open(filename+'.csv', 'w') as file:
             writer = csv.writer(file)
             writer.writerow([self.desc])
-            for n in range(len(self.f)):
-                writer.writerow([self.f[n],self.AdB[n]])
+            if asdB:
+                for n in range(len(self.f)):
+                    writer.writerow([self.f[n],20*np.log10(self.A[n])])
+            else:
+                for n in range(len(self.f)):
+                    writer.writerow([self.f[n],self.A[n]])
 
     # END of Weighting
 
