@@ -1,6 +1,8 @@
 import sounddevice as sd
 from measpy.measurement import (Signal,
+                    Spectral,
                     Measurement,
+                    Weighting,
                     ms)
 
 import numpy as np
