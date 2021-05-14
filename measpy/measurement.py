@@ -9,7 +9,7 @@
 # - synchronisation
 
 import measpy.signal as ms
-from measpy.signal import Signal, Spectral, Weighting, ur
+from measpy.signal import Signal, Spectral, Weighting
 
 from measpy._tools import csv_to_dict, convl, convl1
 
@@ -22,6 +22,8 @@ import scipy.io.wavfile as wav
 import csv
 import pickle
 import json
+
+from pint import Unit
 
 class Measurement:
     """ The class Measurement allows to simply define and perform
@@ -271,6 +273,8 @@ class Measurement:
             mesu = pickle.load(handle)
         M = cls()
         M.from_dict(mesu)
+        for key in M.datakeys:
+            M.data[key].unit=Unit(M.data[key].unit.format_babel())
         return M
 
     def data_to_wav(self,filename):

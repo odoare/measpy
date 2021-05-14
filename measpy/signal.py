@@ -10,15 +10,20 @@ from scipy.signal import welch, csd, coherence, resample
 from scipy.interpolate import interp1d
 import scipy.io.wavfile as wav
 import csv
-from pint import UnitRegistry
+from pint import Unit
 
 # TODO :
 # - Analysis functions of signals : levels dBSPL, resample
 # - Calibrations
 # - Apply dBA, dBC or any calibration curve to a signal
 
-ur=UnitRegistry()
-PREF = 20e-6*ur.Pa # Acoustic pressure reference level
+PREF = 20e-6*Unit('Pa') # Acoustic pressure reference level
+
+##################
+##              ##
+## Signal class ##
+##              ##
+##################
 
 class Signal:
     """ Defines a signal object
@@ -44,7 +49,7 @@ class Signal:
     def __init__(self,raw=None,desc='A signal',fs=1,unit='1',cal=1.0,dbfs=1.0):
         self._rawvalues = np.array(raw)
         self.desc = desc
-        self.unit = ur.Unit(unit)
+        self.unit = Unit(unit)
         self.cal = cal
         self.dbfs = dbfs
         self.fs = fs
@@ -158,7 +163,8 @@ class Signal:
         S[0] = 0j
         return Spectral(x=Y*S,
             desc='Transfert function between input log sweep and '+self.desc,
-            unit=self.unit/ur.V,
+            #unit=Unit(self.unit.format_babel()+'/V'),
+            unit=self.unit/Unit('V'),
             fs=self.fs
         )
     
@@ -215,7 +221,7 @@ class Signal:
                 if row[0]=='fs':
                     out.fs=int(row[1])
                 if row[0]=='unit':
-                    out.unit=ur.Unit(row[1])
+                    out.unit=Unit(row[1])
                 if row[0]=='cal':
                     out.cal=float(row[1])
                 if row[0]=='dbfs':
@@ -272,7 +278,7 @@ class Spectral:
     def __init__(self,x=None,desc='Spectral data',fs=1,unit='1'):
         self._values = np.array(x)
         self.desc = desc
-        self.unit = ur.Unit(unit)
+        self.unit = Unit(unit)
         self.fs = fs
 
     def similar(self,**kwargs):
@@ -387,6 +393,12 @@ class Spectral:
         return np.linspace(0, self.fs/2, num=len(self._values))
 
     # END of Spectral
+
+#####################
+##                 ##
+## Weighting Class ##
+##                 ##
+#####################
 
 class Weighting:
     def __init__(self,f,A,desc):
@@ -536,7 +548,7 @@ def smooth(in_array,l=20):
     return np.convolve(in_array,ker,mode='same')
 
 def nth_octave_bands(n):
-    ''' Calculate Third Octave Bands (base 2) in Matlab '''
+    """ 1/nth octave band frequency range calculation """
     nmin = int(np.ceil(n*np.log2(10**-3)))
     nmax = int(np.ceil(n*np.log2(20e3*10**-3)))
     indices = range(nmin,nmax+1)
