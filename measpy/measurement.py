@@ -9,7 +9,7 @@
 # - synchronisation
 
 import measpy.signal as ms
-from measpy.signal import Signal, ur
+from measpy.signal import Signal, Spectral, Weighting, ur
 
 from measpy._tools import csv_to_dict, convl, convl1
 
@@ -424,12 +424,6 @@ class Measurement:
             of the Measurement object. Welch's method is used. Data is calibrated.
         """
         out = self.data[y].tfe(self.data[x],**kwargs)
-
-        # freqs, Hout =  ms.tfe_welch(self.data[x].values_in_unit,
-        #                             self.data[y].values_in_unit,
-        #                             nperseg=nperseg,
-        #                             noverlap=noverlap,
-        #                             fs=self.fs)
 
         if plotH:
             out.plot()
