@@ -490,6 +490,17 @@ def smooth(in_array,l=20):
     ker = np.ones(l)/l
     return np.convolve(in_array,ker,mode='same')
 
+def nth_octave_bands(n):
+    ''' Calculate Third Octave Bands (base 2) in Matlab '''
+    nmin = np.ceil(n*np.log2(10**-3))
+    nmax = np.ceil(n*np.log2(20e3*10**-3))
+    indices = range(nmin,nmax+1)
+    f_centre = 1000 * (2**(array(indices)/n))
+    f2 = 2**(1/n/2)
+    f_upper = f_centre * fd
+    f_lower = f_centre / fd
+    return f_centre, f_lower, f_upper
+
 # def noise(fs, dur, out_amp, freqs, fades):
 #     """ Create band-limited noise """
 #     t = _create_time(fs,dur=dur)
