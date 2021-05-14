@@ -1,6 +1,8 @@
 # _tools.py
 #
 # Various tools for measpy
+#
+# (c) OD, 2021
 
 import csv
 

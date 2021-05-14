@@ -334,6 +334,10 @@ class Spectral:
                 plt.ylabel('20 Log |H|')
             plt.title(self.desc)
 
+    @classmethod
+    def tfe(cls,x,y):
+        return y.tfe(x)
+
     @property
     def values(self):
         return self._values
