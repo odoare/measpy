@@ -111,6 +111,7 @@ class Measurement:
 
             if len(x.shape)==1:
                 nchan = 1
+                x=x[:,None]
             else:
                 nchan = x.shape[1]
 
@@ -139,15 +140,18 @@ class Measurement:
                 else:
                     print("  Truncating channels of the output signal...")
                     x=x[:,0:len(self.out_map)]
+
             if x.dtype == 'int16':
-                for ii in range(len(self.out_map)):
-                    self.data[self.out_desc[ii]].raw=np.array(x[:,ii],dtype=float)/32768
+                vmax=32768
             elif x.dtype == 'int32':
-                for ii in range(len(self.out_map)):
-                    self.data[self.out_desc[ii]].raw=np.array(x[:,ii],dtype=float)/2147483648
+                vmax=2147483648
             else:
-                for ii in range(len(self.out_map)):
-                    self.data[self.out_desc[ii]].raw=np.array(x[:,ii],dtype=float)
+                vmax=1.0
+                
+            for ii in range(len(self.out_map)):
+                self.data[self.out_desc[ii]]=self.data[self.out_desc[ii]].similar(
+                    np.array(x[:,ii],dtype=float)/vmax
+                ).fade(self.out_sig_fades).add_silence(self.extrat)
 
     def show(self):
         """ Pretty prints the measurement properties """
