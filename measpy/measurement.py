@@ -91,7 +91,7 @@ class Measurement:
     def create_output(self):
         if self.out_sig=='noise': # White noise output signal
             self.data[self.out_desc[0]] = self.data[self.out_desc[0]].similar(
-                ms._noise(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
+                raw=ms._noise(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
             ).fade(self.out_sig_fades).add_silence(self.extrat)
 
             if self.out_map==0:
@@ -99,7 +99,7 @@ class Measurement:
 
         elif self.out_sig=='logsweep': # Logarithmic sweep output signal
             self.data[self.out_desc[0]] = self.data[self.out_desc[0]].similar(
-                ms._log_sweep(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
+                raw=ms._log_sweep(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
             ).fade(self.out_sig_fades).add_silence(self.extrat)
 
             if self.out_map==0:

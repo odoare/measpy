@@ -42,7 +42,7 @@ class Signal:
     """
 
     def __init__(self,raw=None,desc='A signal',fs=1,unit='1',cal=1.0,dbfs=1.0):
-        self.raw = np.array(raw)
+        self._rawvalues = np.array(raw)
         self.desc = desc
         self.unit = ur.Unit(unit)
         self.cal = cal
@@ -50,7 +50,7 @@ class Signal:
         self.fs = fs
         
     def similar(self, **kwargs):
-        raw = kwargs.setdefault("x",self.raw)
+        raw = kwargs.setdefault("raw",self.raw)
         fs = kwargs.setdefault("fs",self.fs)
         desc = kwargs.setdefault("desc",self.desc)
         unit = kwargs.setdefault("unit",self.unit.format_babel())
@@ -128,7 +128,7 @@ class Signal:
     
     def cut(self,pos):
         return self.similar(
-            raw=self.values[pos[0]:pos[1]],
+            raw=self.raw[pos[0]:pos[1]],
             desc=self.desc+"-->Cut between "+str(pos[0])+" and "+str(pos[1])
         )
 
