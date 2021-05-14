@@ -23,7 +23,9 @@ def run_audio_measurement(M,progress=True):
     now = datetime.now()
     M.date = now.strftime("%Y/%m/%d")
     M.time = now.strftime("%H:%M:%S")
-    M.create_output()
+    
+    # Now done at initialization
+    # M.create_output()
 
     if progress:
         root = tk.Tk()

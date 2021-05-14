@@ -10,15 +10,20 @@ from scipy.signal import welch, csd, coherence, resample
 from scipy.interpolate import interp1d
 import scipy.io.wavfile as wav
 import csv
-from pint import UnitRegistry
+from pint import Unit
 
 # TODO :
 # - Analysis functions of signals : levels dBSPL, resample
 # - Calibrations
 # - Apply dBA, dBC or any calibration curve to a signal
 
-ur=UnitRegistry()
-PREF = 20e-6*ur.Pa # Acoustic pressure reference level
+PREF = 20e-6*Unit('Pa') # Acoustic pressure reference level
+
+##################
+##              ##
+## Signal class ##
+##              ##
+##################
 
 class Signal:
     """ Defines a signal object
@@ -42,15 +47,15 @@ class Signal:
     """
 
     def __init__(self,raw=None,desc='A signal',fs=1,unit='1',cal=1.0,dbfs=1.0):
-        self.raw = np.array(raw)
+        self._rawvalues = np.array(raw)
         self.desc = desc
-        self.unit = ur.Unit(unit)
+        self.unit = Unit(unit)
         self.cal = cal
         self.dbfs = dbfs
         self.fs = fs
         
     def similar(self, **kwargs):
-        raw = kwargs.setdefault("x",self.raw)
+        raw = kwargs.setdefault("raw",self.raw)
         fs = kwargs.setdefault("fs",self.fs)
         desc = kwargs.setdefault("desc",self.desc)
         unit = kwargs.setdefault("unit",self.unit.format_babel())
@@ -128,7 +133,7 @@ class Signal:
     
     def cut(self,pos):
         return self.similar(
-            raw=self.values[pos[0]:pos[1]],
+            raw=self.raw[pos[0]:pos[1]],
             desc=self.desc+"-->Cut between "+str(pos[0])+" and "+str(pos[1])
         )
 
@@ -158,7 +163,8 @@ class Signal:
         S[0] = 0j
         return Spectral(x=Y*S,
             desc='Transfert function between input log sweep and '+self.desc,
-            unit=self.unit/ur.V,
+            #unit=Unit(self.unit.format_babel()+'/V'),
+            unit=self.unit/Unit('V'),
             fs=self.fs
         )
     
@@ -215,7 +221,7 @@ class Signal:
                 if row[0]=='fs':
                     out.fs=int(row[1])
                 if row[0]=='unit':
-                    out.unit=ur.Unit(row[1])
+                    out.unit=Unit(row[1])
                 if row[0]=='cal':
                     out.cal=float(row[1])
                 if row[0]=='dbfs':
@@ -253,6 +259,13 @@ class Signal:
 
     # END of Signal
 
+
+####################
+##                ##
+## Spectral class ##
+##                ##
+####################
+
 class Spectral:
     ''' Class that holds a set of values as function of evenly spaced
         frequencies. Usualy contains tranfert functions, spectral
@@ -265,7 +278,7 @@ class Spectral:
     def __init__(self,x=None,desc='Spectral data',fs=1,unit='1'):
         self._values = np.array(x)
         self.desc = desc
-        self.unit = ur.Unit(unit)
+        self.unit = Unit(unit)
         self.fs = fs
 
     def similar(self,**kwargs):
@@ -273,7 +286,30 @@ class Spectral:
         fs = kwargs.setdefault("fs",self.fs)
         desc = kwargs.setdefault("desc",self.desc)
         unit = kwargs.setdefault("unit",self.unit.format_babel())
-        return Spectral(x=x,fs=fs,desc=desc,unit=unit)
+        out = Spectral(x=x,fs=fs,desc=desc,unit=unit)
+        if 'W' in kwargs:
+            W = kwargs['W']
+            f = interp1d(W.f,W.A,fill_value='extrapolate')
+            out.values = f(self.freqs)
+        return out
+
+    def nth_oct_smooth_to_weight(self,n):
+        """ Nth octave smoothing """
+        fc,f1,f2 = nth_octave_bands(n)
+        val = np.zeros_like(fc)
+        for n in range(len(fc)):
+            val[n] = np.mean(self.values[ (self.freqs>f1[n]) & (self.freqs<f2[n]) ])
+        return Weighting(
+            f=fc,
+            A=val,
+            desc=self.desc+'-->1/'+str(n)+' octave smoothing'
+        )
+
+    def nth_oct_smooth(self,n):
+        return self.similar(
+            W=self.nth_oct_smooth_to_weight(n),
+            desc=self.desc+' 1/'+str(n)+'th oct. smooth'
+        )
 
     def irfft(self):
         """ Compute the real inverse Fourier transform
@@ -302,7 +338,15 @@ class Spectral:
                         )
 
     def apply_weighting(self,w):
-        f=interp1d(w.f,10**(w.AdB/20.0))
+        # f=interp1d(w.f,10**(w.AdB/20.0))
+        # We use coeffs now instead of dB
+        
+        # Smooth on dB
+        # f = 10**(interp1d(w.f,20*np.log10(w.A),fill_value='extrapolate')/20)
+        
+        # Smooth on actual values ?
+        f = interp1d(w.f,w.A,fill_value='extrapolate')
+        
         return self.similar(
             x=self._values*f(self.freqs),
             desc=self.desc+"-->"+w.desc
@@ -334,6 +378,10 @@ class Spectral:
                 plt.ylabel('20 Log |H|')
             plt.title(self.desc)
 
+    @classmethod
+    def tfe(cls,x,y):
+        return y.tfe(x)
+
     @property
     def values(self):
         return self._values
@@ -346,14 +394,20 @@ class Spectral:
 
     # END of Spectral
 
+#####################
+##                 ##
+## Weighting Class ##
+##                 ##
+#####################
+
 class Weighting:
-    def __init__(self,f,AdB,desc):
+    def __init__(self,f,A,desc):
         self.f=f
-        self.AdB=AdB
+        self.A=A
         self.desc=desc
 
     @classmethod
-    def from_csv(cls,filename):
+    def from_csv(cls,filename,asdB=True):
         out = cls([],[],'Weigting')
         with open(filename+'.csv', 'r') as file:
             reader = csv.reader(file)
@@ -363,18 +417,25 @@ class Weighting:
                     out.desc=row[0]
                 else:
                     out.f+=[float(row[0])]
-                    out.AdB+=[float(row[1])]
+                    out.A+=[float(row[1])]
                 n+=1
         out.f=np.array(out.f)
-        out.AdB=np.array(out.AdB)
+        if asdB:
+            out.A=10**(np.array(out.A)/20.0)
+        else:
+            out.A=np.array(out.A)
         return out
 
-    def to_csv(self,filename):
+    def to_csv(self,filename,asdB):
         with open(filename+'.csv', 'w') as file:
             writer = csv.writer(file)
             writer.writerow([self.desc])
-            for n in range(len(self.f)):
-                writer.writerow([self.f[n],self.AdB[n]])
+            if asdB:
+                for n in range(len(self.f)):
+                    writer.writerow([self.f[n],20*np.log10(self.A[n])])
+            else:
+                for n in range(len(self.f)):
+                    writer.writerow([self.f[n],self.A[n]])
 
     # END of Weighting
 
@@ -485,6 +546,17 @@ def plot_tfe(f, H):
 def smooth(in_array,l=20):
     ker = np.ones(l)/l
     return np.convolve(in_array,ker,mode='same')
+
+def nth_octave_bands(n):
+    """ 1/nth octave band frequency range calculation """
+    nmin = int(np.ceil(n*np.log2(10**-3)))
+    nmax = int(np.ceil(n*np.log2(20e3*10**-3)))
+    indices = range(nmin,nmax+1)
+    f_centre = 1000 * (2**(np.array(indices)/n))
+    f2 = 2**(1/n/2)
+    f_upper = f_centre * f2
+    f_lower = f_centre / f2
+    return f_centre, f_lower, f_upper
 
 # def noise(fs, dur, out_amp, freqs, fades):
 #     """ Create band-limited noise """

@@ -9,7 +9,7 @@
 # - synchronisation
 
 import measpy.signal as ms
-from measpy.signal import Signal, Spectral, Weighting, ur
+from measpy.signal import Signal, Spectral, Weighting
 
 from measpy._tools import csv_to_dict, convl, convl1
 
@@ -22,6 +22,8 @@ import scipy.io.wavfile as wav
 import csv
 import pickle
 import json
+
+from pint import Unit
 
 class Measurement:
     """ The class Measurement allows to simply define and perform
@@ -91,7 +93,7 @@ class Measurement:
     def create_output(self):
         if self.out_sig=='noise': # White noise output signal
             self.data[self.out_desc[0]] = self.data[self.out_desc[0]].similar(
-                ms._noise(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
+                raw=ms._noise(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
             ).fade(self.out_sig_fades).add_silence(self.extrat)
 
             if self.out_map==0:
@@ -99,7 +101,7 @@ class Measurement:
 
         elif self.out_sig=='logsweep': # Logarithmic sweep output signal
             self.data[self.out_desc[0]] = self.data[self.out_desc[0]].similar(
-                ms._log_sweep(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
+                raw=ms._log_sweep(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
             ).fade(self.out_sig_fades).add_silence(self.extrat)
 
             if self.out_map==0:
@@ -111,6 +113,7 @@ class Measurement:
 
             if len(x.shape)==1:
                 nchan = 1
+                x=x[:,None]
             else:
                 nchan = x.shape[1]
 
@@ -139,15 +142,18 @@ class Measurement:
                 else:
                     print("  Truncating channels of the output signal...")
                     x=x[:,0:len(self.out_map)]
+
             if x.dtype == 'int16':
-                for ii in range(len(self.out_map)):
-                    self.data[self.out_desc[ii]].raw=np.array(x[:,ii],dtype=float)/32768
+                vmax=32768
             elif x.dtype == 'int32':
-                for ii in range(len(self.out_map)):
-                    self.data[self.out_desc[ii]].raw=np.array(x[:,ii],dtype=float)/2147483648
+                vmax=2147483648
             else:
-                for ii in range(len(self.out_map)):
-                    self.data[self.out_desc[ii]].raw=np.array(x[:,ii],dtype=float)
+                vmax=1.0
+                
+            for ii in range(len(self.out_map)):
+                self.data[self.out_desc[ii]]=self.data[self.out_desc[ii]].similar(
+                    np.array(x[:,ii],dtype=float)/vmax
+                ).fade(self.out_sig_fades).add_silence(self.extrat)
 
     def show(self):
         """ Pretty prints the measurement properties """
@@ -267,6 +273,8 @@ class Measurement:
             mesu = pickle.load(handle)
         M = cls()
         M.from_dict(mesu)
+        for key in M.datakeys:
+            M.data[key].unit=Unit(M.data[key].unit.format_babel())
         return M
 
     def data_to_wav(self,filename):
