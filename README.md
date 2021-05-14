@@ -3,13 +3,14 @@
 measpy is a set of classes and methods to help the data acquisition and analysis of signals. It is mainly acoustics and vibrations oriented.
 
 The base classes are:
-- Signal: It is basically a class that contain a 1D numpy array, an a few other properties to describe the data as: sampling frequency, calibration and unit.
-- Spectral: A spectral data class that contains the complex amplitudes as a 1D numpy array for frequencies up to the Nyquist frequency, and some properties as sampling frequency, unit, description
-- Measurement : A class that describe a data acquisition process, its outputs (Signal objects), its inputs (Signal objects)...
+- ```Signal```: It is basically a class that contain a 1D numpy array, an a few other properties to describe the data as: sampling frequency, calibration and unit.
+- ```Spectral```: A spectral data class that contains the complex amplitudes as a 1D numpy array for frequencies up to the Nyquist frequency, and some properties as sampling frequency, unit, description
+- ```Measurement``` : A class that describe a data acquisition process, its outputs (Signal objects), its inputs (Signal objects)...
+- ```Weighting``` : Weighting spectral functions
 
 For now, these daq devices are implemented :
-    - Audio cards, via the ```sounddevice``` package,
-    - NI DAQ cards, via the ```nidaqmx``` package.
+- Audio cards, via the ```sounddevice``` package,
+- NI DAQ cards, via the ```nidaqmx``` package.
 
 ## Usage example
 
