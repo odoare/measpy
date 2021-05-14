@@ -119,18 +119,24 @@ class Signal:
         if self.length!=x.length:
             raise Exception('Lengths have to be the same')
 
-        return Spectral(x=coherence(self.values, x.values, **kwargs)[1],
-                                desc='Coherence between '+x.desc+' and '+self.desc,
-                                fs=self.fs,
-                                unit=self.unit/x.unit)
+        return Spectral(
+            x=coherence(self.values, x.values, **kwargs)[1],
+            desc='Coherence between '+x.desc+' and '+self.desc,
+            fs=self.fs,
+            unit=self.unit/x.unit
+        )
     
     def cut(self,pos):
-        return self.similar(raw=self.values[pos[0]:pos[1]],
-                        desc=self.desc+"-->Cut between "+str(pos[0])+" and "+str(pos[1]))
+        return self.similar(
+            raw=self.values[pos[0]:pos[1]],
+            desc=self.desc+"-->Cut between "+str(pos[0])+" and "+str(pos[1])
+        )
 
     def fade(self,fades):
-        return self.similar(raw=_apply_fades(self.values,fades),
-                        desc=self.desc+"-->fades")
+        return self.similar(
+            raw=_apply_fades(self.values,fades),
+            desc=self.desc+"-->fades"
+        )
 
     def add_silence(self,extrat=[0,0]):
         return self.similar(raw=np.hstack(
@@ -151,9 +157,10 @@ class Signal:
         S = 2*np.sqrt(f/L)*np.exp(-1j*2*np.pi*f*L*(1-np.log(f/freqs[0])) + 1j*np.pi/4)
         S[0] = 0j
         return Spectral(x=Y*S,
-                        desc='Transfert function between input log sweep and '+self.desc,
-                        unit=self.unit/ur.V,
-                        fs=self.fs)
+            desc='Transfert function between input log sweep and '+self.desc,
+            unit=self.unit/ur.V,
+            fs=self.fs
+        )
     
     def fft(self):
         return Spectral(x=np.fft.fft(self.values),
@@ -177,11 +184,25 @@ class Signal:
 
     @classmethod
     def noise(cls,fs=44100,dur=2.0,amp=1.0,freqs=[20.0,20000.0],unit='1',cal=1.0,dbfs=1.0):
-        return cls(raw=_noise(fs,dur,amp,freqs),fs=fs,unit=unit,cal=cal,dbfs=dbfs) 
+        return cls(
+            raw=_noise(fs,dur,amp,freqs),
+            fs=fs,
+            unit=unit,
+            cal=cal,
+            dbfs=dbfs,
+            desc='Noise '+str(freqs[0])+'-'+str(freqs[1])+'Hz'
+        ) 
 
     @classmethod
     def log_sweep(cls,fs=44100,dur=2.0,amp=1.0,freqs=[20.0,20000.0],unit='1',cal=1.0,dbfs=1.0):
-        return cls(raw=_log_sweep(fs,dur,amp,freqs),fs=fs,unit=unit,cal=cal,dbfs=dbfs) 
+        return cls(
+            raw=_log_sweep(fs,dur,amp,freqs),
+            fs=fs,
+            unit=unit,
+            cal=cal,
+            dbfs=dbfs,
+            desc='Logsweep '+str(freqs[0])+'-'+str(freqs[1])+'Hz'
+        ) 
 
     @classmethod
     def from_csvwav(cls,filename):
@@ -354,6 +375,8 @@ class Weighting:
             writer.writerow([self.desc])
             for n in range(len(self.f)):
                 writer.writerow([self.f,self.AdB])
+
+    # END of Weighting
 
 
 def picv(long):
