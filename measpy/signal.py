@@ -280,9 +280,14 @@ class Spectral:
         fs = kwargs.setdefault("fs",self.fs)
         desc = kwargs.setdefault("desc",self.desc)
         unit = kwargs.setdefault("unit",self.unit.format_babel())
-        return Spectral(x=x,fs=fs,desc=desc,unit=unit)
+        out = Spectral(x=x,fs=fs,desc=desc,unit=unit)
+        if 'W' in kwargs:
+            W = kwargs['W']
+            f = interp1d(W.f,W.A,fill_value='extrapolate')
+            out.values = f(self.freqs)
+        return out
 
-    def nth_octave_smooth(self,n):
+    def nth_oct_smooth_to_weight(self,n):
         """ Nth octave smoothing """
         fc,f1,f2 = nth_octave_bands(n)
         val = np.zeros_like(fc)
@@ -292,6 +297,12 @@ class Spectral:
             f=fc,
             A=val,
             desc=self.desc+'-->1/'+str(n)+' octave smoothing'
+        )
+
+    def nth_oct_smooth(self,n):
+        return self.similar(
+            W=self.nth_oct_smooth_to_weight(n),
+            desc=self.desc+' 1/'+str(n)+'th oct. smooth'
         )
 
     def irfft(self):
@@ -323,7 +334,13 @@ class Spectral:
     def apply_weighting(self,w):
         # f=interp1d(w.f,10**(w.AdB/20.0))
         # We use coeffs now instead of dB
+        
+        # Smooth on dB
+        # f = 10**(interp1d(w.f,20*np.log10(w.A),fill_value='extrapolate')/20)
+        
+        # Smooth on actual values ?
         f = interp1d(w.f,w.A,fill_value='extrapolate')
+        
         return self.similar(
             x=self._values*f(self.freqs),
             desc=self.desc+"-->"+w.desc
