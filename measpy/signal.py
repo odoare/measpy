@@ -374,7 +374,7 @@ class Weighting:
             writer = csv.writer(file)
             writer.writerow([self.desc])
             for n in range(len(self.f)):
-                writer.writerow([self.f,self.AdB])
+                writer.writerow([self.f[n],self.AdB[n]])
 
     # END of Weighting
 
