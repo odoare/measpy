@@ -17,12 +17,17 @@ def run_audio_measurement(M,progress=True):
     if M.device_type!='audio':
         print("Warning: deviceType != 'audio'. Changing to 'audio'.")
         M.device_type='audio'
-    if M.device=='':
+    if M.in_device=='':
         print("Warning: no device specified, changing to None")
-        M.device=None
+        M.in_device=None
+    if M.out_device=='':
+        print("Warning: no device specified, changing to None")
+        M.out_device=None
     now = datetime.now()
     M.date = now.strftime("%Y/%m/%d")
     M.time = now.strftime("%H:%M:%S")
+
+    sd.default.device=(M.in_device,M.out_device)
     
     # Now done at initialization
     # M.create_output()
@@ -39,13 +44,11 @@ def run_audio_measurement(M,progress=True):
     if M.out_sig==None:
         y = sd.rec(int(M.dur * M.fs),
                     samplerate=M.fs,
-                    device=M.device,
                     mapping=M.in_map,
                     blocking=False)
     else:
         y = sd.playrec(M.x,
                     samplerate=M.fs,
-                    device=M.device,
                     input_mapping=M.in_map,
                     output_mapping=M.out_map,
                     blocking=False)     
@@ -66,6 +69,6 @@ def run_audio_measurement(M,progress=True):
         root.destroy()
     
     for ii in range(len(M.in_map)):
-        M.data[M.in_desc[ii]].raw=np.array(y[:,ii],dtype=float)
+        M.data[M.in_name[ii]].raw=np.array(y[:,ii],dtype=float)
 
 Measurement.run_measurement=run_audio_measurement

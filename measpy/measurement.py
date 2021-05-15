@@ -75,7 +75,8 @@ class Measurement:
             self.io_sync = params.setdefault("io_sync",0)
             self.out_sig_fades = params.setdefault("out_sig_fades",[0,0])
         self.device_type = params.setdefault("device_type",'')
-        self.device = params.setdefault("device",'')
+        self.in_device = params.setdefault("in_device",'')
+        self.out_device = params.setdefault("out_device",'')
         self.data = {}
         for n in range(len(self.out_name)):
             self.data[self.out_name[n]]=Signal(desc=self.out_desc[n],
@@ -161,7 +162,8 @@ class Measurement:
         """ Pretty prints the measurement properties """
         print("Measurement with the following properties:")
         print("| Type of device: device_type="+self.device_type)
-        print("| Device: device="+str(self.device))
+        print("| Input device: device="+str(self.in_device))
+        print("| Output device: device="+str(self.out_device))
         print("| Sampling frequency (Hz): fs="+str(self.fs))
         print("| Duration (s): dur="+str(self.dur))
         st = str(self.in_map)
@@ -200,7 +202,8 @@ class Measurement:
         out += "fs="+str(self.fs)
         out += ", dur="+str(self.dur)
         out += ", device_type='"+str(self.device_type)+"'"
-        out += ", device='"+str(self.device)+"'"
+        out += ", in_device='"+str(self.in_device)+"'"
+        out += ", out_device='"+str(self.out_device)+"'"
         out += ', in_name='+str(self.in_name)
         out += ', in_desc='+str(self.in_desc)
         out += ', in_map='+str(self.in_map)
@@ -267,7 +270,8 @@ class Measurement:
             self.out_sig_fades=convl(float,mesu['out_sig_fades'])
             self.io_sync=convl1(int,mesu['io_sync'])
             self.out_dbfs=convl(float,mesu['out_dbfs'])
-        self.device=convl1(str,mesu['device'])
+        self.in_device=convl1(str,mesu['in_device'])
+        self.out_device=convl1(str,mesu['out_device'])
         self.device_type=convl1(str,mesu['device_type'])
         self.data_keys=convl(str,mesu['data_keys'])
 
