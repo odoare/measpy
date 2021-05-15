@@ -273,20 +273,35 @@ class Signal:
 ####################
 
 class Spectral:
-    ''' Class that holds a set of values as function of evenly spaced
+    """ Class that holds a set of values as function of evenly spaced
         frequencies. Usualy contains tranfert functions, spectral
         densities, etc.
 
         Frequencies are not stored. If needed they are constructed
         using sampling frequencies and length of the values array
-        by calling the property freqs. 
-    '''
-    def __init__(self,values=None,dur=None,desc='Spectral data',fs=1,unit='1'):
-        if (values!=None and dur!=None):
-            raise Exception('Cannot specify both values and dur')
-        self._values = np.array(values)
-        if dur!=None:
-            self._values=np.zeros(int(round(fs*dur)))
+        by calling the property freqs.
+
+        Creation arguments:
+        - fs: sampling frequency (int)
+        - desc: Description (str)
+        - unit: Unit (string understandable by pint)
+        - dur: duration in s (float)
+        - values: values
+
+        values and dur cannot be both specified.
+        If dur is given, values are initialised at 0 
+    """
+    def __init__(self,**kwargs):
+        if ('values' in kwargs) and ('dur' in kwargs):
+            raise Exception('Error: values and dur cannot be both specified.')
+        values = kwargs.setdefault("values",None)
+        fs = kwargs.setdefault("fs",1)
+        desc = kwargs.setdefault("desc",'Spectral data')
+        unit = kwargs.setdefault("unit",'1')
+        if 'dur' in kwargs:
+            self._values=np.zeros(int(round(fs*kwargs['dur'])))
+        else:
+            self._values=values
         self.desc = desc
         self.unit = Unit(unit)
         self.fs = fs

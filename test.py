@@ -29,9 +29,9 @@ M1.run_measurement()
 M1.plot_with_cal()
 
 #%% Save in three different formats
-M1.to_jsonwav('j1')
-M1.to_csvwav('c1')
-M1.to_pickle('1.pck')
+M1.to_jsonwav('jtest')
+M1.to_csvwav('jtest')
+M1.to_pickle('test.pck')
 
 # %%
 
@@ -53,7 +53,7 @@ M1.plot_with_cal()
 # %% Test weightings
 wa=ma.Weighting.from_csv('measpy/data/dBA.csv')
 wc=ma.Weighting.from_csv('measpy/data/dBC.csv')
-sp=ma.Spectral(x=np.arange(44100),fs=44100)
+sp=ma.Spectral(values=np.arange(44100),fs=44100)
 spa=sp.similar(w=wa,desc='dBA')
 spc=sp.similar(w=wc,desc='dBC')
 
