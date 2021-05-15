@@ -7,7 +7,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import welch, csd, coherence, resample
-from scipy.interpolate import interp1d
+from scipy.interpolate import interp1d, splev, splrep, InterpolatedUnivariateSpline, UnivariateSpline
 import scipy.io.wavfile as wav
 import csv
 from pint import Unit
@@ -314,8 +314,8 @@ class Spectral:
         out = Spectral(values=values,fs=fs,desc=desc,unit=unit)
         if 'w' in kwargs:
             w = kwargs['w']
-            f = interp1d(w.f,w.a,fill_value='extrapolate')
-            out.values = f(self.freqs)
+            spl = InterpolatedUnivariateSpline(w.f,w.a,ext=1)
+            out.values = spl(self.freqs)
         return out
 
     def nth_oct_smooth_to_weight(self,n):
@@ -334,7 +334,7 @@ class Spectral:
 
     def nth_oct_smooth(self,n):
         return self.similar(
-            W=self.nth_oct_smooth_to_weight(n),
+            w=self.nth_oct_smooth_to_weight(n),
             desc=self.desc+'-->1/'+str(n)+'th oct. smooth'
         )
 
@@ -360,9 +360,9 @@ class Spectral:
         """ Cancels values below and above a given frequency
         """
         return self.similar(
-                        values=self._values*
-                        ((self.freqs>freqsrange[0]) & (self.freqs<freqsrange[1]))
-                        )
+            values=self._values*(
+                (self.freqs>freqsrange[0]) & (self.freqs<freqsrange[1]))
+            )
 
     def abs(self):
         return self.similar(
@@ -371,17 +371,9 @@ class Spectral:
         )
 
     def apply_weighting(self,w):
-        # f=interp1d(w.f,10**(w.AdB/20.0))
-        # We use coeffs now instead of dB
-        
-        # Smooth on dB ?
-        # f = 10**(interp1d(w.f,20*np.log10(w.A),fill_value='extrapolate')/20)
-        
-        # Smooth on actual values ?
-        f = interp1d(w.f,w.a,fill_value='extrapolate')
-        
+        spl = InterpolatedUnivariateSpline(w.f,w.a,ext=1)
         return self.similar(
-            values=self._values*f(self.freqs),
+            values=self._values*spl(self.freqs),
             desc=self.desc+"-->"+w.desc
         )
 
@@ -586,7 +578,7 @@ def smooth(in_array,l=20):
 
 def nth_octave_bands(n):
     """ 1/nth octave band frequency range calculation """
-    nmin = int(np.ceil(n*np.log2(10**-3)))
+    nmin = int(np.ceil(n*np.log2(5*10**-3)))
     nmax = int(np.ceil(n*np.log2(20e3*10**-3)))
     indices = range(nmin,nmax+1)
     f_centre = 1000 * (2**(np.array(indices)/n))
