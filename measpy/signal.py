@@ -99,7 +99,7 @@ class Signal:
             dbfs=1.0,
             cal=1.0,
             unit=Unit('decibel'),
-            desc=add_step(self.desc,'dB ref '+str(ref))
+            desc=add_step(self.desc,'dB ref '+'{:.2e}'.format(ref.magnitude)+ref.units.format_babel())
         )
 
     def resample(self,fs):
