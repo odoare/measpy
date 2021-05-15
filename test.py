@@ -10,7 +10,7 @@ import matplotlib
 
 # plt.style.use('classic')
 # matplotlib.use('TkAgg')
-# %matplotlib auto
+%matplotlib auto
 
 #%% Define and run a measurement
 M1 = ma.Measurement(out_sig='logsweep',
@@ -24,7 +24,9 @@ M1 = ma.Measurement(out_sig='logsweep',
                     in_dbfs=[1.0,1.0],
                     extrat=[0,0],
                     out_sig_fades=[1000,10000],
-                    dur=5)
+                    dur=5,
+                    in_device='default',
+                    out_device='default')
 M1.run_measurement()
 M1.plot_with_cal()
 
@@ -76,10 +78,18 @@ sp1=sig1.tfe_farina(m.out_sig_freqs)
 plt.figure(2)
 sp1.plot()
 
-w1=sp1.abs().nth_oct_smooth_to_weight(12)
+w1=sp1.abs().nth_oct_smooth_to_weight(24)
 plt.figure(2)
 plt.subplot(2,1,1)
 plt.plot(w1.f,w1.adb,'*')
+
+sp1s=sp1.abs().nth_oct_smooth(24)
+plt.figure(2)
+sp1s.plot()
+plt.subplot(2,1,1)
+plt.xlim([10,20000])
+plt.subplot(2,1,2)
+plt.xlim([10,20000])
 
 # %% Test smooth and dBSPL of signals
 m=ma.Measurement.from_pickle('test.mpk')
