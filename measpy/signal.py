@@ -12,6 +12,8 @@ import scipy.io.wavfile as wav
 import csv
 from pint import Unit
 
+from measpy._tools import add_step
+
 # TODO :
 # - Analysis functions of signals : levels dBSPL, resample
 # - Calibrations
@@ -75,26 +77,30 @@ class Signal:
 
             Returns : A Spectral object containing the psd
         """ 
-        return Spectral(x=welch(self.values, **kwargs)[1],
-                                desc='PSD of '+self.desc,
+        return Spectral(values=welch(self.values, **kwargs)[1],
+                                desc=add_step(self.desc,'PSD'),
                                 fs=self.fs,
                                 unit=self.unit**2)
 
     def rms_smooth(self,l=100):
         """ Compute the RMS of the Signal over windows of width l
         """
-        return self.similar(raw=np.sqrt(smooth(self.values**2,l)),
-                                desc=self.desc+'-->RMS smoothed on '+str(l)+' data points')
+        return self.similar(
+            raw=np.sqrt(smooth(self.values**2,l)),
+            desc=add_step(self.desc,'RMS smoothed on '+str(l)+' data points')
+        )
 
-    def dBSPL(self,l=100):
+    def dB(self,ref):
         """ If the data is an acoustic pressure, computes the Sound
             Pressure Level in dB, as the 20Log(RMS/Pref)
         """
-        
-        out = self.rms_smooth()
-        out.values = 20*np.log10(out.values/PREF)
-        out.desc = out.desc+'-->/PREF (in dB)'
-        return out
+        return self.similar(
+            raw=20*np.log10(self.values*self.unit/ref),
+            dbfs=1.0,
+            cal=1.0,
+            unit=Unit('decibel'),
+            desc=add_step(self.desc,'dB ref '+'{:.2e}'.format(ref.magnitude)+ref.units.format_babel())
+        )
 
     def resample(self,fs):
         return self.similar(raw=resample(self.raw,round(len(self.raw)*fs/self.fs)),
@@ -110,7 +116,7 @@ class Signal:
             raise Exception('Lengths have to be the same')
 
         return Spectral(
-            x=csd(self.values, x.values, **kwargs)[1]/welch(x.values, **kwargs)[1],
+            values=csd(self.values, x.values, **kwargs)[1]/welch(x.values, **kwargs)[1],
             desc='Transfer function between '+x.desc+' and '+self.desc,
             fs=self.fs,
             unit=self.unit/x.unit
@@ -125,7 +131,7 @@ class Signal:
             raise Exception('Lengths have to be the same')
 
         return Spectral(
-            x=coherence(self.values, x.values, **kwargs)[1],
+            values=coherence(self.values, x.values, **kwargs)[1],
             desc='Coherence between '+x.desc+' and '+self.desc,
             fs=self.fs,
             unit=self.unit/x.unit
@@ -161,7 +167,7 @@ class Signal:
         L = self.length/self.fs/np.log(freqs[1]/freqs[0])
         S = 2*np.sqrt(f/L)*np.exp(-1j*2*np.pi*f*L*(1-np.log(f/freqs[0])) + 1j*np.pi/4)
         S[0] = 0j
-        return Spectral(x=Y*S,
+        return Spectral(values=Y*S,
             desc='Transfert function between input log sweep and '+self.desc,
             #unit=Unit(self.unit.format_babel()+'/V'),
             unit=self.unit/Unit('V'),
@@ -169,12 +175,12 @@ class Signal:
         )
     
     def fft(self):
-        return Spectral(x=np.fft.fft(self.values),
+        return Spectral(values=np.fft.fft(self.values),
                                 fs=self.fs,
                                 unit=self.unit)
     
     def rfft(self):
-        return Spectral(x=np.fft.rfft(self.values),
+        return Spectral(values=np.fft.rfft(self.values),
                                 fs=self.fs,
                                 unit=self.unit)
     
@@ -267,26 +273,45 @@ class Signal:
 ####################
 
 class Spectral:
-    ''' Class that holds a set of values as function of evenly spaced
+    """ Class that holds a set of values as function of evenly spaced
         frequencies. Usualy contains tranfert functions, spectral
         densities, etc.
 
         Frequencies are not stored. If needed they are constructed
         using sampling frequencies and length of the values array
-        by calling the property freqs. 
-    '''
-    def __init__(self,x=None,desc='Spectral data',fs=1,unit='1'):
-        self._values = np.array(x)
+        by calling the property freqs.
+
+        Creation arguments:
+        - fs: sampling frequency (int)
+        - desc: Description (str)
+        - unit: Unit (string understandable by pint)
+        - dur: duration in s (float)
+        - values: values
+
+        values and dur cannot be both specified.
+        If dur is given, values are initialised at 0 
+    """
+    def __init__(self,**kwargs):
+        if ('values' in kwargs) and ('dur' in kwargs):
+            raise Exception('Error: values and dur cannot be both specified.')
+        values = kwargs.setdefault("values",None)
+        fs = kwargs.setdefault("fs",1)
+        desc = kwargs.setdefault("desc",'Spectral data')
+        unit = kwargs.setdefault("unit",'1')
+        if 'dur' in kwargs:
+            self._values=np.zeros(int(round(fs*kwargs['dur'])))
+        else:
+            self._values=values
         self.desc = desc
         self.unit = Unit(unit)
         self.fs = fs
 
     def similar(self,**kwargs):
-        x = kwargs.setdefault("x",self.values)
+        values = kwargs.setdefault("values",self.values)
         fs = kwargs.setdefault("fs",self.fs)
         desc = kwargs.setdefault("desc",self.desc)
         unit = kwargs.setdefault("unit",self.unit.format_babel())
-        out = Spectral(x=x,fs=fs,desc=desc,unit=unit)
+        out = Spectral(values=values,fs=fs,desc=desc,unit=unit)
         if 'w' in kwargs:
             w = kwargs['w']
             f = interp1d(w.f,w.a,fill_value='extrapolate')
@@ -335,13 +360,13 @@ class Spectral:
         """ Cancels values below and above a given frequency
         """
         return self.similar(
-                        x=self._values*
+                        values=self._values*
                         ((self.freqs>freqsrange[0]) & (self.freqs<freqsrange[1]))
                         )
 
     def abs(self):
         return self.similar(
-            x=np.abs(self.values),
+            values=np.abs(self.values),
             desc=self.desc+"-->abs"
         )
 
@@ -356,7 +381,7 @@ class Spectral:
         f = interp1d(w.f,w.a,fill_value='extrapolate')
         
         return self.similar(
-            x=self._values*f(self.freqs),
+            values=self._values*f(self.freqs),
             desc=self.desc+"-->"+w.desc
         )
 

@@ -5,8 +5,8 @@
 # OD - 2021
 
 # TODO :
-# - tbefore, tafter
 # - synchronisation
+# - Different device for input and output
 
 import measpy.signal as ms
 from measpy.signal import Signal, Spectral, Weighting
@@ -58,31 +58,34 @@ class Measurement:
         self.fs = params.setdefault("fs",44100)
         self.dur = params.setdefault("dur",2.0)
         self.in_map = params.setdefault("in_map",[1,2])
-        self.in_cal = params.setdefault("in_cal",[1.0,1.0])
-        self.in_dbfs = params.setdefault("in_dbfs",[1.0,1.0])
-        self.in_unit = params.setdefault("in_unit",['V','V'])
-        self.in_desc = params.setdefault("in_desc",['In1','In2'])
+        self.in_cal = params.setdefault("in_cal",list(1.0 for b in self.in_map))
+        self.in_dbfs = params.setdefault("in_dbfs",list(1.0 for b in self.in_map))
+        self.in_unit = params.setdefault("in_unit",list('V' for b in self.in_map))
+        self.in_name = params.setdefault("in_name",list('In'+str(b) for b in self.in_map))
+        self.in_desc = params.setdefault("in_desc",list('This is input '+str(b) for b in self.in_map))
         self.out_sig = params.setdefault("out_sig",'noise')
         self.extrat = params.setdefault("extrat",[0.0,0.0])
         if self.out_sig!=None:
             self.out_map = params.setdefault("out_map",[1])
             self.out_amp =  params.setdefault("out_amp",1.0)
-            self.out_dbfs = params.setdefault("out_dbfs",[1.0])
-            self.out_desc =  params.setdefault("out_desc",['Out1'])
+            self.out_dbfs = params.setdefault("out_dbfs",list(1.0 for b in self.out_map))
+            self.out_name = params.setdefault("out_name",list('Out'+str(b) for b in self.out_map))
+            self.out_desc =  params.setdefault("out_desc",list('This is output '+str(b) for b in self.out_map))
             self.out_sig_freqs =  params.setdefault("out_sig_freqs",[20.0,20000.0])
             self.io_sync = params.setdefault("io_sync",0)
             self.out_sig_fades = params.setdefault("out_sig_fades",[0,0])
         self.device_type = params.setdefault("device_type",'')
-        self.device = params.setdefault("device",'')
+        self.in_device = params.setdefault("in_device",'')
+        self.out_device = params.setdefault("out_device",'')
         self.data = {}
-        for n in range(len(self.out_desc)):
-            self.data[self.out_desc[n]]=Signal(desc=self.out_desc[n],
+        for n in range(len(self.out_name)):
+            self.data[self.out_name[n]]=Signal(desc=self.out_desc[n],
                                                 fs=self.fs,
                                                 unit='V',
                                                 cal=1.0,
                                                 dbfs=self.out_dbfs[n])
-        for n in range(len(self.in_desc)):
-            self.data[self.in_desc[n]]=Signal(desc=self.in_desc[n],
+        for n in range(len(self.in_name)):
+            self.data[self.in_name[n]]=Signal(desc=self.in_desc[n],
                                                 fs=self.fs,
                                                 unit=self.in_unit[n],
                                                 cal=self.in_cal[n],
@@ -92,7 +95,7 @@ class Measurement:
         
     def create_output(self):
         if self.out_sig=='noise': # White noise output signal
-            self.data[self.out_desc[0]] = self.data[self.out_desc[0]].similar(
+            self.data[self.out_name[0]] = self.data[self.out_name[0]].similar(
                 raw=ms._noise(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
             ).fade(self.out_sig_fades).add_silence(self.extrat)
 
@@ -100,7 +103,7 @@ class Measurement:
                 self._out_map=[1]
 
         elif self.out_sig=='logsweep': # Logarithmic sweep output signal
-            self.data[self.out_desc[0]] = self.data[self.out_desc[0]].similar(
+            self.data[self.out_name[0]] = self.data[self.out_name[0]].similar(
                 raw=ms._log_sweep(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
             ).fade(self.out_sig_fades).add_silence(self.extrat)
 
@@ -137,7 +140,7 @@ class Measurement:
                 if (x.shape[1]<len(self.out_map)):
                     print("  Truncating current out_map...")
                     self.out_map=self.out_map[0:nchan]
-                    self.out_desc=self.out_desc[0:nchan]
+                    self.out_name=self.out_name[0:nchan]
                     self.out_dbfs=self.out_dbfs[0:nchan]
                 else:
                     print("  Truncating channels of the output signal...")
@@ -151,7 +154,7 @@ class Measurement:
                 vmax=1.0
                 
             for ii in range(len(self.out_map)):
-                self.data[self.out_desc[ii]]=self.data[self.out_desc[ii]].similar(
+                self.data[self.out_name[ii]]=self.data[self.out_name[ii]].similar(
                     np.array(x[:,ii],dtype=float)/vmax
                 ).fade(self.out_sig_fades).add_silence(self.extrat)
 
@@ -159,7 +162,8 @@ class Measurement:
         """ Pretty prints the measurement properties """
         print("Measurement with the following properties:")
         print("| Type of device: device_type="+self.device_type)
-        print("| Device: device="+self.device)
+        print("| Input device: device="+str(self.in_device))
+        print("| Output device: device="+str(self.out_device))
         print("| Sampling frequency (Hz): fs="+str(self.fs))
         print("| Duration (s): dur="+str(self.dur))
         st = str(self.in_map)
@@ -170,8 +174,10 @@ class Measurement:
         print("| Input 0dBFS (V): in_dbfs="+st)
         st = "', '".join(self.in_unit)
         print('| Input units: in_unit='+"['"+st+"']")
+        st = "', '".join(self.in_name)
+        print('| Input names: in_name='+"['"+st+"']")        
         st = "', '".join(self.in_desc)
-        print('| Input units: in_desc='+"['"+st+"']")        
+        print('| Input descriptions: in_desc='+"['"+st+"']")        
         print('| Extra time before and after: extrat='+str(self.extrat))
         if self.out_sig!=None:
             st = str(self.out_map)
@@ -196,7 +202,9 @@ class Measurement:
         out += "fs="+str(self.fs)
         out += ", dur="+str(self.dur)
         out += ", device_type='"+str(self.device_type)+"'"
-        out += ", device='"+str(self.device)+"'"
+        out += ", in_device='"+str(self.in_device)+"'"
+        out += ", out_device='"+str(self.out_device)+"'"
+        out += ', in_name='+str(self.in_name)
         out += ', in_desc='+str(self.in_desc)
         out += ', in_map='+str(self.in_map)
         out += ', in_cal='+str(self.in_cal)
@@ -209,6 +217,7 @@ class Measurement:
         except:
             pass
         if self.out_sig!=None:
+            out += ', out_name='+str(self.out_name)
             out += ', out_desc='+str(self.out_desc)
             out += ', out_map='+str(self.out_map)
             out += ', out_dbfs='+str(self.out_dbfs)
@@ -239,6 +248,7 @@ class Measurement:
         self.in_cal=convl(float,mesu['in_cal'])
         self.in_dbfs=convl(float,mesu['in_dbfs'])
         self.in_unit=convl(str,mesu['in_unit'])
+        self.in_name=convl(str,mesu['in_name'])
         self.in_desc=convl(str,mesu['in_desc'])
         self.extrat=convl(float,mesu['extrat'])
         try:
@@ -253,13 +263,15 @@ class Measurement:
         if self.out_sig!=None:
             self.out_map=convl(int,mesu['out_map'])
             self.out_amp=convl1(float,mesu['out_amp'])
+            self.out_name=convl(str,mesu['out_name'])
             self.out_desc=convl(str,mesu['out_desc'])
             self.out_sig=convl1(str,mesu['out_sig'])
             self.out_sig_freqs=convl(float,mesu['out_sig_freqs'])
             self.out_sig_fades=convl(float,mesu['out_sig_fades'])
             self.io_sync=convl1(int,mesu['io_sync'])
             self.out_dbfs=convl(float,mesu['out_dbfs'])
-        self.device=convl1(str,mesu['device'])
+        self.in_device=convl1(str,mesu['in_device'])
+        self.out_device=convl1(str,mesu['out_device'])
         self.device_type=convl1(str,mesu['device_type'])
         self.data_keys=convl(str,mesu['data_keys'])
 
@@ -384,7 +396,7 @@ class Measurement:
         plt.xlabel('Time(s)')
         legende = []
         for ii in range(self.y.shape[1]):
-            legende+=[self.in_desc[ii]+'('+self.in_unit[ii]+')']
+            legende+=[self.in_name[ii]+'('+self.in_unit[ii]+')']
         legende+=['limits']
         plt.legend(legende)
         plt.title('Measurement date: '+str(self.date)+"   "+str(self.time))
@@ -439,19 +451,19 @@ class Measurement:
 
     @property
     def x(self):
-        return np.array([self.data[n].values for n in self.out_desc]).T
+        return np.array([self.data[n].values for n in self.out_name]).T
     
     @property
     def y(self):
-        return np.array([self.data[n].values for n in self.in_desc]).T
+        return np.array([self.data[n].values for n in self.in_name]).T
 
     @property
     def x_raw(self):
-        return np.array([self.data[n].raw for n in self.out_desc]).T
+        return np.array([self.data[n].raw for n in self.out_name]).T
     
     @property
     def y_raw(self):
-        return np.array([self.data[n].raw for n in self.in_desc]).T
+        return np.array([self.data[n].raw for n in self.in_name]).T
 
     @property
     def t(self):

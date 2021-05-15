@@ -32,3 +32,7 @@ def convl1(fun,xx):
     else:
         yy=fun(xx) 
     return yy
+
+def add_step(a,b):
+    return a+'\n -->'+b
+    
