@@ -77,7 +77,7 @@ class Signal:
 
             Returns : A Spectral object containing the psd
         """ 
-        return Spectral(x=welch(self.values, **kwargs)[1],
+        return Spectral(values=welch(self.values, **kwargs)[1],
                                 desc=add_step(self.desc,'PSD'),
                                 fs=self.fs,
                                 unit=self.unit**2)
@@ -116,7 +116,7 @@ class Signal:
             raise Exception('Lengths have to be the same')
 
         return Spectral(
-            x=csd(self.values, x.values, **kwargs)[1]/welch(x.values, **kwargs)[1],
+            values=csd(self.values, x.values, **kwargs)[1]/welch(x.values, **kwargs)[1],
             desc='Transfer function between '+x.desc+' and '+self.desc,
             fs=self.fs,
             unit=self.unit/x.unit
@@ -131,7 +131,7 @@ class Signal:
             raise Exception('Lengths have to be the same')
 
         return Spectral(
-            x=coherence(self.values, x.values, **kwargs)[1],
+            values=coherence(self.values, x.values, **kwargs)[1],
             desc='Coherence between '+x.desc+' and '+self.desc,
             fs=self.fs,
             unit=self.unit/x.unit
@@ -167,7 +167,7 @@ class Signal:
         L = self.length/self.fs/np.log(freqs[1]/freqs[0])
         S = 2*np.sqrt(f/L)*np.exp(-1j*2*np.pi*f*L*(1-np.log(f/freqs[0])) + 1j*np.pi/4)
         S[0] = 0j
-        return Spectral(x=Y*S,
+        return Spectral(values=Y*S,
             desc='Transfert function between input log sweep and '+self.desc,
             #unit=Unit(self.unit.format_babel()+'/V'),
             unit=self.unit/Unit('V'),
@@ -175,12 +175,12 @@ class Signal:
         )
     
     def fft(self):
-        return Spectral(x=np.fft.fft(self.values),
+        return Spectral(values=np.fft.fft(self.values),
                                 fs=self.fs,
                                 unit=self.unit)
     
     def rfft(self):
-        return Spectral(x=np.fft.rfft(self.values),
+        return Spectral(values=np.fft.rfft(self.values),
                                 fs=self.fs,
                                 unit=self.unit)
     
@@ -281,18 +281,22 @@ class Spectral:
         using sampling frequencies and length of the values array
         by calling the property freqs. 
     '''
-    def __init__(self,x=None,desc='Spectral data',fs=1,unit='1'):
-        self._values = np.array(x)
+    def __init__(self,values=None,dur=None,desc='Spectral data',fs=1,unit='1'):
+        if (values!=None and dur!=None):
+            raise Exception('Cannot specify both values and dur')
+        self._values = np.array(values)
+        if dur!=None:
+            self._values=np.zeros(int(round(fs*dur)))
         self.desc = desc
         self.unit = Unit(unit)
         self.fs = fs
 
     def similar(self,**kwargs):
-        x = kwargs.setdefault("x",self.values)
+        values = kwargs.setdefault("values",self.values)
         fs = kwargs.setdefault("fs",self.fs)
         desc = kwargs.setdefault("desc",self.desc)
         unit = kwargs.setdefault("unit",self.unit.format_babel())
-        out = Spectral(x=x,fs=fs,desc=desc,unit=unit)
+        out = Spectral(values=values,fs=fs,desc=desc,unit=unit)
         if 'w' in kwargs:
             w = kwargs['w']
             f = interp1d(w.f,w.a,fill_value='extrapolate')
@@ -341,13 +345,13 @@ class Spectral:
         """ Cancels values below and above a given frequency
         """
         return self.similar(
-                        x=self._values*
+                        values=self._values*
                         ((self.freqs>freqsrange[0]) & (self.freqs<freqsrange[1]))
                         )
 
     def abs(self):
         return self.similar(
-            x=np.abs(self.values),
+            values=np.abs(self.values),
             desc=self.desc+"-->abs"
         )
 
@@ -362,7 +366,7 @@ class Spectral:
         f = interp1d(w.f,w.a,fill_value='extrapolate')
         
         return self.similar(
-            x=self._values*f(self.freqs),
+            values=self._values*f(self.freqs),
             desc=self.desc+"-->"+w.desc
         )
 
