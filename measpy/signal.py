@@ -53,7 +53,7 @@ class Signal:
         self.cal = cal
         self.dbfs = dbfs
         self.fs = fs
-        
+    
     def similar(self, **kwargs):
         raw = kwargs.setdefault("raw",self.raw)
         fs = kwargs.setdefault("fs",self.fs)
@@ -139,7 +139,7 @@ class Signal:
 
     def fade(self,fades):
         return self.similar(
-            raw=_apply_fades(self.values,fades),
+            raw=_apply_fades(self.raw,fades),
             desc=self.desc+"-->fades"
         )
 
@@ -297,8 +297,10 @@ class Spectral:
         """ Nth octave smoothing """
         fc,f1,f2 = nth_octave_bands(n)
         val = np.zeros_like(fc)
-        for n in range(len(fc)):
-            val[n] = np.mean(self.values[ (self.freqs>f1[n]) & (self.freqs<f2[n]) ])
+        for ii in range(len(fc)):
+            val[ii] = np.mean(
+                self.values[ (self.freqs>f1[ii]) & (self.freqs<f2[ii]) ]
+            )
         return Weighting(
             f=fc,
             a=val,
@@ -308,7 +310,7 @@ class Spectral:
     def nth_oct_smooth(self,n):
         return self.similar(
             W=self.nth_oct_smooth_to_weight(n),
-            desc=self.desc+' 1/'+str(n)+'th oct. smooth'
+            desc=self.desc+'-->1/'+str(n)+'th oct. smooth'
         )
 
     def irfft(self):
@@ -336,6 +338,12 @@ class Spectral:
                         x=self._values*
                         ((self.freqs>freqsrange[0]) & (self.freqs<freqsrange[1]))
                         )
+
+    def abs(self):
+        return self.similar(
+            x=np.abs(self.values),
+            desc=self.desc+"-->abs"
+        )
 
     def apply_weighting(self,w):
         # f=interp1d(w.f,10**(w.AdB/20.0))

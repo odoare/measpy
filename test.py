@@ -9,8 +9,7 @@ import matplotlib
 
 # plt.style.use('classic')
 # matplotlib.use('TkAgg')
-%matplotlib auto
-
+# %matplotlib auto
 
 #%% Define and run a measurement
 M1 = ma.Measurement(out_sig='logsweep',
@@ -32,10 +31,6 @@ M1.plot_with_cal()
 M1.to_jsonwav('j1')
 M1.to_csvwav('c1')
 M1.to_pickle('1.pck')
-
-#%% Load from file 
-M3=ma.load_measurement_from_pickle('1.pck')
-plt.plot(M3.t,M3.x)
 
 # %%
 
@@ -69,5 +64,20 @@ plt.plot(wc.f,wc.adb,'*')
 plt.title('dBA and dBC weighting functions')
 plt.xlim([10,20000])
 
+
+# %% Test measurement to weighting
+m=ma.Measurement.from_pickle('test.mpk')
+sig1=m.data['In1']
+plt.figure(1)
+sig1.plot()
+
+sp1=sig1.tfe_farina(m.out_sig_freqs)
+plt.figure(2)
+sp1.plot()
+
+w1=sp1.abs().nth_oct_smooth_to_weight(12)
+plt.figure(2)
+plt.subplot(2,1,1)
+plt.plot(w1.f,w1.adb,'*')
 
 # %%
