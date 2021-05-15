@@ -287,9 +287,9 @@ class Spectral:
         desc = kwargs.setdefault("desc",self.desc)
         unit = kwargs.setdefault("unit",self.unit.format_babel())
         out = Spectral(x=x,fs=fs,desc=desc,unit=unit)
-        if 'W' in kwargs:
-            W = kwargs['W']
-            f = interp1d(W.f,W.A,fill_value='extrapolate')
+        if 'w' in kwargs:
+            w = kwargs['w']
+            f = interp1d(w.f,w.a,fill_value='extrapolate')
             out.values = f(self.freqs)
         return out
 
@@ -301,7 +301,7 @@ class Spectral:
             val[n] = np.mean(self.values[ (self.freqs>f1[n]) & (self.freqs<f2[n]) ])
         return Weighting(
             f=fc,
-            A=val,
+            a=val,
             desc=self.desc+'-->1/'+str(n)+' octave smoothing'
         )
 
@@ -341,11 +341,11 @@ class Spectral:
         # f=interp1d(w.f,10**(w.AdB/20.0))
         # We use coeffs now instead of dB
         
-        # Smooth on dB
+        # Smooth on dB ?
         # f = 10**(interp1d(w.f,20*np.log10(w.A),fill_value='extrapolate')/20)
         
         # Smooth on actual values ?
-        f = interp1d(w.f,w.A,fill_value='extrapolate')
+        f = interp1d(w.f,w.a,fill_value='extrapolate')
         
         return self.similar(
             x=self._values*f(self.freqs),
@@ -401,15 +401,15 @@ class Spectral:
 #####################
 
 class Weighting:
-    def __init__(self,f,A,desc):
+    def __init__(self,f,a,desc):
         self.f=f
-        self.A=A
+        self.a=a
         self.desc=desc
 
     @classmethod
     def from_csv(cls,filename,asdB=True):
         out = cls([],[],'Weigting')
-        with open(filename+'.csv', 'r') as file:
+        with open(filename, 'r') as file:
             reader = csv.reader(file)
             n=0
             for row in reader:
@@ -417,25 +417,29 @@ class Weighting:
                     out.desc=row[0]
                 else:
                     out.f+=[float(row[0])]
-                    out.A+=[float(row[1])]
+                    out.a+=[float(row[1])]
                 n+=1
         out.f=np.array(out.f)
         if asdB:
-            out.A=10**(np.array(out.A)/20.0)
+            out.a=10**(np.array(out.a)/20.0)
         else:
-            out.A=np.array(out.A)
+            out.a=np.array(out.a)
         return out
 
     def to_csv(self,filename,asdB):
-        with open(filename+'.csv', 'w') as file:
+        with open(filename, 'w') as file:
             writer = csv.writer(file)
             writer.writerow([self.desc])
             if asdB:
                 for n in range(len(self.f)):
-                    writer.writerow([self.f[n],20*np.log10(self.A[n])])
+                    writer.writerow([self.f[n],20*np.log10(self.a[n])])
             else:
                 for n in range(len(self.f)):
-                    writer.writerow([self.f[n],self.A[n]])
+                    writer.writerow([self.f[n],self.a[n]])
+
+    @property
+    def adb(self):
+        return 20*np.log10(self.a)
 
     # END of Weighting
 
