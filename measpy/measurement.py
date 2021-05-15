@@ -161,7 +161,7 @@ class Measurement:
         """ Pretty prints the measurement properties """
         print("Measurement with the following properties:")
         print("| Type of device: device_type="+self.device_type)
-        print("| Device: device="+self.device)
+        print("| Device: device="+str(self.device))
         print("| Sampling frequency (Hz): fs="+str(self.fs))
         print("| Duration (s): dur="+str(self.dur))
         st = str(self.in_map)

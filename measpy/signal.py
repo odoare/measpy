@@ -12,6 +12,8 @@ import scipy.io.wavfile as wav
 import csv
 from pint import Unit
 
+from measpy._tools import add_step
+
 # TODO :
 # - Analysis functions of signals : levels dBSPL, resample
 # - Calibrations
@@ -76,25 +78,29 @@ class Signal:
             Returns : A Spectral object containing the psd
         """ 
         return Spectral(x=welch(self.values, **kwargs)[1],
-                                desc='PSD of '+self.desc,
+                                desc=add_step(self.desc,'PSD'),
                                 fs=self.fs,
                                 unit=self.unit**2)
 
     def rms_smooth(self,l=100):
         """ Compute the RMS of the Signal over windows of width l
         """
-        return self.similar(raw=np.sqrt(smooth(self.values**2,l)),
-                                desc=self.desc+'-->RMS smoothed on '+str(l)+' data points')
+        return self.similar(
+            raw=np.sqrt(smooth(self.values**2,l)),
+            desc=add_step(self.desc,'RMS smoothed on '+str(l)+' data points')
+        )
 
-    def dBSPL(self,l=100):
+    def dB(self,ref):
         """ If the data is an acoustic pressure, computes the Sound
             Pressure Level in dB, as the 20Log(RMS/Pref)
         """
-        
-        out = self.rms_smooth()
-        out.values = 20*np.log10(out.values/PREF)
-        out.desc = out.desc+'-->/PREF (in dB)'
-        return out
+        return self.similar(
+            raw=20*np.log10(self.values*self.unit/ref),
+            dbfs=1.0,
+            cal=1.0,
+            unit=Unit('decibel'),
+            desc=add_step(self.desc,'dB ref '+str(ref))
+        )
 
     def resample(self,fs):
         return self.similar(raw=resample(self.raw,round(len(self.raw)*fs/self.fs)),
