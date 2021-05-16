@@ -81,15 +81,14 @@ sp1.plot()
 w1=sp1.abs().nth_oct_smooth_to_weight(24)
 plt.figure(2)
 plt.subplot(2,1,1)
-plt.plot(w1.f,w1.adb,'*')
+plt.plot(w1.f,20*np.log10(np.abs(w1.a)),'*')
+plt.subplot(2,1,2)
+plt.plot(w1.f,np.unwrap(np.angle(w1.a)),'*')
 
 sp1s=sp1.abs().nth_oct_smooth(24)
 plt.figure(2)
 sp1s.plot()
-plt.subplot(2,1,1)
-plt.xlim([10,20000])
-plt.subplot(2,1,2)
-plt.xlim([10,20000])
+
 
 # %% Test smooth and dBSPL of signals
 m=ma.Measurement.from_pickle('test.mpk')

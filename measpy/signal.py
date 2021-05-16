@@ -7,7 +7,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import welch, csd, coherence, resample
-from scipy.interpolate import interp1d, splev, splrep, InterpolatedUnivariateSpline, UnivariateSpline
+from scipy.interpolate import InterpolatedUnivariateSpline
 import scipy.io.wavfile as wav
 import csv
 from pint import Unit
@@ -57,6 +57,15 @@ class Signal:
         self.fs = fs
     
     def similar(self, **kwargs):
+        """ Returns a copy of the Signal object
+            with properties changed as specified
+            by the optionnal arguments:
+            - raw: array of raw values
+            - fs: sampling frequency
+            - desc: description of the signal
+            - cal: calibration
+            - dbfs: volts for raw=1
+        """
         raw = kwargs.setdefault("raw",self.raw)
         fs = kwargs.setdefault("fs",self.fs)
         desc = kwargs.setdefault("desc",self.desc)
@@ -66,6 +75,7 @@ class Signal:
         return Signal(raw=raw,fs=fs,desc=desc,unit=unit,cal=cal,dbfs=dbfs)
 
     def plot(self):
+        """ Basic plotting of the signal """
         plt.plot(self.time,self.values)
         plt.xlabel('Time (s)')
         plt.ylabel(self.desc+'  ['+self.unit.format_babel()+']')
@@ -75,37 +85,47 @@ class Signal:
             Optional arguments are the same as the welch function
             in scipy.signal
 
+            Arguments are the same as scipy.welch()
+
             Returns : A Spectral object containing the psd
         """ 
-        return Spectral(values=welch(self.values, **kwargs)[1],
-                                desc=add_step(self.desc,'PSD'),
-                                fs=self.fs,
-                                unit=self.unit**2)
+        return Spectral(
+            values=welch(self.values, **kwargs)[1],
+            desc=add_step(self.desc,'PSD'),
+            fs=self.fs,
+            unit=self.unit**2
+        )
 
-    def rms_smooth(self,l=100):
-        """ Compute the RMS of the Signal over windows of width l
-        """
+    def rms_smooth(self,nperseg=100):
+        """ Compute the RMS of the Signal over windows of width nperseg samples """
         return self.similar(
             raw=np.sqrt(smooth(self.values**2,l)),
             desc=add_step(self.desc,'RMS smoothed on '+str(l)+' data points')
         )
 
     def dB(self,ref):
-        """ If the data is an acoustic pressure, computes the Sound
-            Pressure Level in dB, as the 20Log(RMS/Pref)
+        """ Computes 20*log10(self.values/ref)
+            If the data is a smoothed RMS acoustic pressure, and ref is PREF,
+            computes the Sound Pressure Level in dB,
+            as the 20Log(P/Pref)
         """
         return self.similar(
             raw=20*np.log10(self.values*self.unit/ref),
             dbfs=1.0,
             cal=1.0,
             unit=Unit('decibel'),
-            desc=add_step(self.desc,'dB ref '+'{:.2e}'.format(ref.magnitude)+ref.units.format_babel())
+            desc=add_step(
+                self.desc,
+                'dB ref '+'{:.2e}'.format(ref.magnitude)+ref.units.format_babel()
+            )
         )
 
     def resample(self,fs):
-        return self.similar(raw=resample(self.raw,round(len(self.raw)*fs/self.fs)),
-                                fs=fs,
-                                desc=self.desc+'-->resampled to '+str(fs)+'Hz')
+        return self.similar(
+            raw=resample(self.raw,round(len(self.raw)*fs/self.fs)),
+            fs=fs,
+            desc=add_step(self.desc,'resampled to '+str(fs)+'Hz')
+        )
 
     def tfe(self, x, **kwargs):
         """ Compute transfer function between signal x and the actual signal
@@ -119,8 +139,9 @@ class Signal:
             values=csd(self.values, x.values, **kwargs)[1]/welch(x.values, **kwargs)[1],
             desc='Transfer function between '+x.desc+' and '+self.desc,
             fs=self.fs,
-            unit=self.unit/x.unit
-            )
+            unit=self.unit/x.unit,
+            full=False
+        )
     
     def coh(self, x, **kwargs):
         """ Compute the coherence between signal x and the actual signal
@@ -134,19 +155,20 @@ class Signal:
             values=coherence(self.values, x.values, **kwargs)[1],
             desc='Coherence between '+x.desc+' and '+self.desc,
             fs=self.fs,
-            unit=self.unit/x.unit
+            unit=self.unit/x.unit,
+            full=False
         )
     
     def cut(self,pos):
         return self.similar(
             raw=self.raw[pos[0]:pos[1]],
-            desc=self.desc+"-->Cut between "+str(pos[0])+" and "+str(pos[1])
+            desc=add_step(self.desc,"Cut between "+str(pos[0])+" and "+str(pos[1]))
         )
 
     def fade(self,fades):
         return self.similar(
             raw=_apply_fades(self.raw,fades),
-            desc=self.desc+"-->fades"
+            desc=add_step(self.desc,"fades")
         )
 
     def add_silence(self,extrat=[0,0]):
@@ -168,21 +190,29 @@ class Signal:
         S = 2*np.sqrt(f/L)*np.exp(-1j*2*np.pi*f*L*(1-np.log(f/freqs[0])) + 1j*np.pi/4)
         S[0] = 0j
         return Spectral(values=Y*S,
-            desc='Transfert function between input log sweep and '+self.desc,
-            #unit=Unit(self.unit.format_babel()+'/V'),
+            desc='Transfer function between input log sweep and '+self.desc,
             unit=self.unit/Unit('V'),
-            fs=self.fs
+            fs=self.fs,
+            full=False
         )
     
     def fft(self):
+        """ FFT of the signal
+            Returns a Spectral object
+        """
         return Spectral(values=np.fft.fft(self.values),
                                 fs=self.fs,
-                                unit=self.unit)
+                                unit=self.unit,
+                                full=True)
     
     def rfft(self):
+        """ Real FFT of the signal
+            Returns a Spectral object
+        """
         return Spectral(values=np.fft.rfft(self.values),
                                 fs=self.fs,
-                                unit=self.unit)
+                                unit=self.unit,
+                                full=False)
     
     def to_csvwav(self,filename):
         with open(filename+'.csv', 'w') as file:
@@ -287,6 +317,8 @@ class Spectral:
         - unit: Unit (string understandable by pint)
         - dur: duration in s (float)
         - values: values
+        - full: If True, the full spectrum is given (between 0 and fs).
+            If false, half spectrum is given (between 0 and fs/2)
 
         values and dur cannot be both specified.
         If dur is given, values are initialised at 0 
@@ -298,20 +330,23 @@ class Spectral:
         fs = kwargs.setdefault("fs",1)
         desc = kwargs.setdefault("desc",'Spectral data')
         unit = kwargs.setdefault("unit",'1')
+        full = kwargs.setdefault("full",False)
         if 'dur' in kwargs:
-            self._values=np.zeros(int(round(fs*kwargs['dur'])))
+            self._values=np.zeros(int(round(fs*kwargs['dur'])),dtype=complex)
         else:
             self._values=values
         self.desc = desc
         self.unit = Unit(unit)
         self.fs = fs
+        self.full = full
 
     def similar(self,**kwargs):
         values = kwargs.setdefault("values",self.values)
         fs = kwargs.setdefault("fs",self.fs)
         desc = kwargs.setdefault("desc",self.desc)
         unit = kwargs.setdefault("unit",self.unit.format_babel())
-        out = Spectral(values=values,fs=fs,desc=desc,unit=unit)
+        full = kwargs.setdefault("full",self.full)
+        out = Spectral(values=values,fs=fs,desc=desc,unit=unit,full=full)
         if 'w' in kwargs:
             w = kwargs['w']
             spl = InterpolatedUnivariateSpline(w.f,w.a,ext=1)
@@ -326,24 +361,46 @@ class Spectral:
             val[ii] = np.mean(
                 self.values[ (self.freqs>f1[ii]) & (self.freqs<f2[ii]) ]
             )
+        # Check for NaN values (generally at low frequencies)
+        for ii in range(len(fc)-1,-1,-1):
+            if val[ii]!=val[ii]:
+                val[ii]=val[ii+1]
         return Weighting(
             f=fc,
             a=val,
-            desc=self.desc+'-->1/'+str(n)+' octave smoothing'
+            desc=add_step(self.desc,'1/'+str(n)+'th oct. smooth')
+        )
+
+    def nth_oct_smooth_to_weight_complex(self,n):
+        """ Nth octave smoothing """
+        fc,f1,f2 = nth_octave_bands(n)
+        val = np.zeros_like(fc,dtype=complex)
+        for ii in range(len(fc)):
+            module = np.abs(self.values[ (self.freqs>f1[ii]) & (self.freqs<f2[ii]) ])
+            phase = np.unwrap(
+                np.angle(self.values[(self.freqs>f1[ii]) & (self.freqs<f2[ii])])
+            )
+            val[ii] = np.mean(module) * np.exp(1j*np.mean(phase))
+        return Weighting(
+            f=fc,
+            a=val,
+            desc=add_step(self.desc,'1/'+str(n)+'th oct. smooth (complex)')
         )
 
     def nth_oct_smooth(self,n):
         return self.similar(
             w=self.nth_oct_smooth_to_weight(n),
-            desc=self.desc+'-->1/'+str(n)+'th oct. smooth'
+            desc=add_step(self.desc,'1/'+str(n)+'th oct. smooth')
         )
 
     def irfft(self):
         """ Compute the real inverse Fourier transform
             of the spectral data set
         """
+        if self.full:
+            raise Exception('Error: the spectrum is full, use ifft instead')
         return Signal(raw=np.fft.irfft(self.values),
-                            desc='IFFT of '+self.desc,
+                            desc=add_step(self.desc,'IFFT'),
                             fs=self.fs,
                             unit=self.unit)
 
@@ -351,14 +408,15 @@ class Spectral:
         """ Compute the inverse Fourier transform
             of the spectral data set
         """
+        if not(self.full):
+            raise Exception('Error: the spectrum is not full, use irfft instead')
         return Signal(raw=np.fft.ifft(self.values),
-                            desc='IFFT of '+self.desc,
+                            desc=add_step(self.desc,'IFFT'),
                             fs=self.fs,
                             unit=self.unit)
 
     def filterout(self,freqsrange):
-        """ Cancels values below and above a given frequency
-        """
+        """ Cancels values below and above a given frequency """
         return self.similar(
             values=self._values*(
                 (self.freqs>freqsrange[0]) & (self.freqs<freqsrange[1]))
@@ -367,14 +425,14 @@ class Spectral:
     def abs(self):
         return self.similar(
             values=np.abs(self.values),
-            desc=self.desc+"-->abs"
+            desc=add_step(self.desc,"abs")
         )
 
     def apply_weighting(self,w):
         spl = InterpolatedUnivariateSpline(w.f,w.a,ext=1)
         return self.similar(
             values=self._values*spl(self.freqs),
-            desc=self.desc+"-->"+w.desc
+            desc=add_step(self.desc,w.desc)
         )
 
     def plot(self,axestype='logdb_arg',ylabel1=None,ylabel2=None):
@@ -388,7 +446,7 @@ class Spectral:
                 plt.ylabel('20 Log |H|')
             plt.title(self.desc)
             plt.subplot(2,1,2)
-            plt.semilogx(self.freqs,20*np.angle(self.values))
+            plt.semilogx(self.freqs,np.unwrap(np.angle(self.values)))
             plt.xlabel('Freq (Hz)')
             if ylabel2!=None:
                 plt.ylabel(ylabel2)
@@ -415,7 +473,10 @@ class Spectral:
         self._values = val
     @property
     def freqs(self):
-        return np.linspace(0, self.fs/2, num=len(self._values))
+        if self.full:
+            return np.linspace(0, self.fs, num=len(self._values))
+        else:
+            return np.linspace(0, self.fs/2, num=len(self._values))
 
     # END of Spectral
 
@@ -464,10 +525,12 @@ class Weighting:
 
     @property
     def adb(self):
-        return 20*np.log10(self.a)
+        return 20*np.log10(np.abs(self.a))
 
     # END of Weighting
 
+
+# Below are functions that should be removed or moved elsewhere
 
 def picv(long):
     return np.hstack((np.zeros(long),1,np.zeros(long-1)))
@@ -578,7 +641,7 @@ def smooth(in_array,l=20):
 
 def nth_octave_bands(n):
     """ 1/nth octave band frequency range calculation """
-    nmin = int(np.ceil(n*np.log2(5*10**-3)))
+    nmin = int(np.ceil(n*np.log2(1*10**-3)))
     nmax = int(np.ceil(n*np.log2(20e3*10**-3)))
     indices = range(nmin,nmax+1)
     f_centre = 1000 * (2**(np.array(indices)/n))
