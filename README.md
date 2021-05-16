@@ -94,7 +94,7 @@ You might want to compute the transfer function between ```M1.data['Acceleration
 tfap = M1.data['Acceleration'].tfe_welch(M1.data['Pressure'],nperseg=2**12)
 ```
 
-And use this ```Signal``` object to compute the impulse response:
+And use this ```Spectral``` object to compute the impulse response:
 ```python
 Gap = tfap.irfft()
 ```
