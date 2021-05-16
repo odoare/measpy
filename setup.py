@@ -13,7 +13,7 @@ setup(
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
     packages=find_packages(),
-    install_requires=['numpy','matplotlib'],
+    install_requires=['numpy','matplotlib','pint'],
     keywords=['Python', 'Measurements', 'Data acquisition'],
     classifiers=[
         "Development Status :: 3 - Alpha",
