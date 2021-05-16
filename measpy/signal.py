@@ -32,23 +32,26 @@ class Signal:
 
         A signal is a temporal series of values.
         The object has the following properties :
-        - desc : The description of the signal (string)
-        - unit : The physical unit
-        - cal : The calibration (in V/unit)
-        - dbfs : The input voltage for a raw value of 1
-        - fs : The sampling frequency
-        - _rawvalues : A numpy array of raw values
+
+        * desc : The description of the signal (string)
+        * unit : The physical unit
+        * cal : The calibration (in V/unit)
+        * dbfs : The input voltage for a raw value of 1
+        * fs : The sampling frequency
+        * _rawvalues : A numpy array of raw values
         
         Setters and getters properties:
-        - values (values expressed in unit, calibrations applied)
-        - volts (only dbfs applied)
-        - raw (same as _rawvalues)
-        - length (data length)
-        - dur (duration in seconds)
-        - time (time array)
+
+        * values (values expressed in unit, calibrations applied)
+        * volts (only dbfs applied)
+        * raw (same as _rawvalues)
+        * length (data length)
+        * dur (duration in seconds)
+        * time (time array)
     """
 
     def __init__(self,raw=None,desc='A signal',fs=1,unit='1',cal=1.0,dbfs=1.0):
+        """ Initializes a Signal object with the specified entries """
         self._rawvalues = np.array(raw)
         self.desc = desc
         self.unit = Unit(unit)
@@ -60,11 +63,12 @@ class Signal:
         """ Returns a copy of the Signal object
             with properties changed as specified
             by the optionnal arguments:
-            - raw: array of raw values
-            - fs: sampling frequency
-            - desc: description of the signal
-            - cal: calibration
-            - dbfs: volts for raw=1
+
+            * raw: array of raw values
+            * fs: sampling frequency
+            * desc: description of the signal
+            * cal: calibration
+            * dbfs: volts for raw=1
         """
         raw = kwargs.setdefault("raw",self.raw)
         fs = kwargs.setdefault("fs",self.fs)
@@ -162,8 +166,9 @@ class Signal:
     def cut(self,**kwargs):
         """ Cut signal between positions.
             Optionnal arguments:
-            - pos: specify positions as indices
-            - dur: specify positions as duration
+
+            * pos: specify positions as indices
+            * dur: specify positions as duration
         """
         if ('dur' in kwargs) and ('pos' in kwargs):
             raise Exception('Error: dur and pos cannot be both specified')
