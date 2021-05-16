@@ -96,7 +96,7 @@ class Measurement:
     def create_output(self):
         if self.out_sig=='noise': # White noise output signal
             self.data[self.out_name[0]] = self.data[self.out_name[0]].similar(
-                raw=ms._noise(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
+                raw=ms.noise(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
             ).fade(self.out_sig_fades).add_silence(self.extrat)
 
             if self.out_map==0:
@@ -104,7 +104,7 @@ class Measurement:
 
         elif self.out_sig=='logsweep': # Logarithmic sweep output signal
             self.data[self.out_name[0]] = self.data[self.out_name[0]].similar(
-                raw=ms._log_sweep(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
+                raw=ms.log_sweep(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
             ).fade(self.out_sig_fades).add_silence(self.extrat)
 
             if self.out_map==0:
@@ -401,14 +401,71 @@ class Measurement:
         plt.legend(legende)
         plt.title('Measurement date: '+str(self.date)+"   "+str(self.time))
         plt.grid('on',color='grey',linestyle=':')
-    
+
     def tfe(self,nperseg=2**16,noverlap=None,plotH=False):
         """ Helper function that calculates the transfer function between
             the output channel x and all the input channels y. Works only
             if x has only one channel.
             If out_sig='logsweep', the method of Farina is used, Welch's
             method is used otherwise.
+
+            Retruns: a dict of Spectral class objects
         """
+        if (self.out_sig=='noise') or (self.out_sig.upper().endswith('.WAV')):
+            if self.x.shape[1]>1:
+                print("tfe : This basic helper function works only if out_sig has only one channel")
+                return None
+            out={}
+            for key in self.in_name:
+                out[key]=self.data[key].tfe_welch(self.data[self.out_name[0]],nperseg=nperseg,noverlap=noverlap)                
+        elif self.out_sig=='logsweep':
+            if self.x.shape[1]>1:
+                print("tfe : This basic helper function works only if out_sig has only one channel")
+                return None
+            out = {}
+            for key in self.in_name:
+                out[key]=self.data[key].tfe_farina(self.out_sig_freqs)
+        else:
+            print("tfe : This basic helper function works only if ouSig='noise' or 'logsweep'")
+            return None, None
+        if plotH:
+            for key in self.in_name:
+                out[key].plot()
+        return out
+
+    @property
+    def x(self):
+        return np.array([self.data[n].values for n in self.out_name]).T
+    
+    @property
+    def y(self):
+        return np.array([self.data[n].values for n in self.in_name]).T
+
+    @property
+    def x_raw(self):
+        return np.array([self.data[n].raw for n in self.out_name]).T
+    
+    @property
+    def y_raw(self):
+        return np.array([self.data[n].raw for n in self.in_name]).T
+
+    @property
+    def t(self):
+        return ms.create_time(self.fs,dur=self.dur+self.extrat[0]+self.extrat[1])
+
+
+    # Old tfe function (deprecated)
+    def tfeb(self,nperseg=2**16,noverlap=None,plotH=False):
+        """ DEPRECATED
+            Helper function that calculates the transfer function between
+            the output channel x and all the input channels y. Works only
+            if x has only one channel.
+            If out_sig='logsweep', the method of Farina is used, Welch's
+            method is used otherwise.
+
+            Returns : 1D f array and 2D H array 
+        """
+        print('Warning: DEPRECATED')
         if (self.out_sig=='noise') or (self.out_sig.upper().endswith('.WAV')):
             if self.x.shape[1]>1:
                 print("tfe : This basic helper function works only if out_sig has only one channel")
@@ -437,34 +494,16 @@ class Measurement:
         if plotH:
             ms.plot_tfe(freqs,Hout)
         return freqs, Hout
-    
+
     def tfe_xy(self,x,y,plotH=False,**kwargs):
-        """ Compute transfert function between x and y, where x and y are
+        """ DEPRECATED
+            Compute transfert function between x and y, where x and y are
             strings representing keys of the dictionnary of the data property
             of the Measurement object. Welch's method is used. Data is calibrated.
         """
-        out = self.data[y].tfe(self.data[x],**kwargs)
+        print('Warning: DEPRECATED')
+        out = self.data[y].tfe_welch(self.data[x],**kwargs)
 
         if plotH:
             out.plot()
         return out
-
-    @property
-    def x(self):
-        return np.array([self.data[n].values for n in self.out_name]).T
-    
-    @property
-    def y(self):
-        return np.array([self.data[n].values for n in self.in_name]).T
-
-    @property
-    def x_raw(self):
-        return np.array([self.data[n].raw for n in self.out_name]).T
-    
-    @property
-    def y_raw(self):
-        return np.array([self.data[n].raw for n in self.in_name]).T
-
-    @property
-    def t(self):
-        return ms._create_time(self.fs,dur=self.dur+self.extrat[0]+self.extrat[1])

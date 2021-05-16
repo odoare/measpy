@@ -99,8 +99,8 @@ class Signal:
     def rms_smooth(self,nperseg=100):
         """ Compute the RMS of the Signal over windows of width nperseg samples """
         return self.similar(
-            raw=np.sqrt(smooth(self.values**2,l)),
-            desc=add_step(self.desc,'RMS smoothed on '+str(l)+' data points')
+            raw=np.sqrt(smooth(self.values**2,nperseg)),
+            desc=add_step(self.desc,'RMS smoothed on '+str(nperseg)+' data points')
         )
 
     def dB(self,ref):
@@ -127,7 +127,7 @@ class Signal:
             desc=add_step(self.desc,'resampled to '+str(fs)+'Hz')
         )
 
-    def tfe(self, x, **kwargs):
+    def tfe_welch(self, x, **kwargs):
         """ Compute transfer function between signal x and the actual signal
         """
         if self.fs!=x.fs:
@@ -159,7 +159,20 @@ class Signal:
             full=False
         )
     
-    def cut(self,pos):
+    def cut(self,**kwargs):
+        """ Cut signal between positions.
+            Optionnal arguments:
+            - pos: specify positions as indices
+            - dur: specify positions as duration
+        """
+        if ('dur' in kwargs) and ('pos' in kwargs):
+            raise Exception('Error: dur and pos cannot be both specified')
+        if ('dur' in kwargs):
+            pos = (int(round(kwargs['dur'][0]*self.fs)),int(round(kwargs['dur'][1]*self.fs)))
+        if ('pos' in kwargs):
+            pos = (kwargs['pos'][0],kwargs['dur'][1])
+        else:
+            pos = (0,-1)
         return self.similar(
             raw=self.raw[pos[0]:pos[1]],
             desc=add_step(self.desc,"Cut between "+str(pos[0])+" and "+str(pos[1]))
@@ -227,7 +240,7 @@ class Signal:
     @classmethod
     def noise(cls,fs=44100,dur=2.0,amp=1.0,freqs=[20.0,20000.0],unit='1',cal=1.0,dbfs=1.0):
         return cls(
-            raw=_noise(fs,dur,amp,freqs),
+            raw=noise(fs,dur,amp,freqs),
             fs=fs,
             unit=unit,
             cal=cal,
@@ -238,7 +251,7 @@ class Signal:
     @classmethod
     def log_sweep(cls,fs=44100,dur=2.0,amp=1.0,freqs=[20.0,20000.0],unit='1',cal=1.0,dbfs=1.0):
         return cls(
-            raw=_log_sweep(fs,dur,amp,freqs),
+            raw=log_sweep(fs,dur,amp,freqs),
             fs=fs,
             unit=unit,
             cal=cal,
@@ -285,7 +298,7 @@ class Signal:
         self._rawvalues = val/self.dbfs
     @property
     def time(self):
-        return _create_time(self.fs,length=len(self._rawvalues))
+        return create_time(self.fs,length=len(self._rawvalues))
     @property
     def length(self):
         return len(self._rawvalues)
@@ -530,9 +543,10 @@ class Weighting:
     # END of Weighting
 
 
-# Below are functions that should be removed or moved elsewhere
+# Below are functions that may be useful (some cleaning should be done)
 
 def picv(long):
+    """ Create a 1D-array of length long with a unitary peak in the middle """
     return np.hstack((np.zeros(long),1,np.zeros(long-1)))
 
 def _create_time1(fs,dur):
@@ -541,7 +555,7 @@ def _create_time1(fs,dur):
 def _create_time2(fs,length):
     return np.linspace(0,length/fs,length)  # time axis
 
-def _create_time(fs,dur=None,length=None):
+def create_time(fs,dur=None,length=None):
     if dur==None and length==None:
         raise Exception('dur=duration in s or length=number of samples must be specified.')
     if dur!=None and length!=None:
@@ -559,7 +573,7 @@ def _apply_fades(s,fades):
     return s
 
 
-def _noise(fs, dur, out_amp, freqs):
+def noise(fs, dur, out_amp, freqs):
     """ Create band-limited noise """
     leng = int(dur*fs)
     lengs2 = int(leng/2)
@@ -598,18 +612,11 @@ def tfe_welch(x, y, fs=None, nperseg=2**12,noverlap=None):
         f, c = csd(y, x, fs=fs, nperseg=nperseg, noverlap=noverlap)
     return f, c/p
 
-def log_sweep(fs, dur, out_amp, freqs, fades):
-    """ Create log swwep """
-    L = dur/np.log(freqs[1]/freqs[0])
-    t = _create_time(fs, dur=dur)
-    s = np.sin(2*np.pi*freqs[0]*L*np.exp(t/L))
-    s = _apply_fades(s,fades)
-    return t,out_amp*s
 
-def _log_sweep(fs, dur, out_amp, freqs):
+def log_sweep(fs, dur, out_amp, freqs):
     """ Create log swwep """
     L = dur/np.log(freqs[1]/freqs[0])
-    t = _create_time(fs, dur=dur)
+    t = create_time(fs, dur=dur)
     s = np.sin(2*np.pi*freqs[0]*L*np.exp(t/L))
     return out_amp*s
 
@@ -634,6 +641,7 @@ def plot_tfe(f, H):
     plt.semilogx(f,20*np.angle(H))
     plt.xlabel('Freq (Hz)')
     plt.ylabel('Arg(H)')
+
 
 def smooth(in_array,l=20):
     ker = np.ones(l)/l
@@ -662,6 +670,14 @@ def nth_octave_bands(n):
 #     s = out_amp*np.fft.irfft(fftx)
 #     s = _apply_fades(s,fades)
 #     return t,s
+
+# def log_sweep(fs, dur, out_amp, freqs, fades):
+#     """ Create log swwep """
+#     L = dur/np.log(freqs[1]/freqs[0])
+#     t = _create_time(fs, dur=dur)
+#     s = np.sin(2*np.pi*freqs[0]*L*np.exp(t/L))
+#     s = _apply_fades(s,fades)
+#     return t,out_amp*s
 
 
 # class Signalb(np.ndarray):
