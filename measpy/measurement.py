@@ -28,6 +28,19 @@ from pint import Unit
 class Measurement:
     """ The class Measurement allows to simply define and perform
         a measurement
+
+        :param fs: Sampling frequency, defaults to 44100
+        :type fs: int
+        :param dur: Duration in seconds, defaults to 2.0
+        :type dur: float
+        :param in_map: Map of the inputs used on the device, defaults to [1,2]
+        :type in_map: list(int)
+        :param in_cal: Calibrations of the incoming signals, in volts/units, defaults to a list of 1.0
+        :type in_cal: list(str)
+        :param in_unit: Measurement units, defaults to a list of 'V'
+        :type in_unit: list(str)
+        
+
     """
     def __init__(self, **params):
         """ Optionnal parameters (param=default)
