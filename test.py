@@ -97,4 +97,11 @@ print(sig1.desc)
 sig2=sig1.dB(0.1*ma.ms.PREF)
 print(sig2.desc)
 sig2.plot()
+# %% Test impulse responses
+m=ma.Measurement.from_pickle('test.mpk')
+Gap = m.data['In1'].tfe_farina(m.out_sig_freqs).filterout([20,20000]).irfft()
+Gap0 = m.data['In1'].tfe_farina(m.out_sig_freqs).irfft()
+Gap0.plot()
+Gap.plot()
+
 # %%

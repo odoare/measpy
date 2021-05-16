@@ -12,6 +12,12 @@ For now, these daq devices are implemented :
 - Audio cards, via the ```sounddevice``` package,
 - NI DAQ cards, via the ```nidaqmx``` package.
 
+To import the package and perform data acquisition with sound cards:
+```python
+import measpy.audio as mp
+```
+This will import the classes ```mp.Measurement```, ```mp.Signal```, ```mp.Spectral``` and ```mp.Weighting```, plus some other function in ```mp.ms. ...```
+
 ## Usage example
 
 Consider the following experiment:
@@ -24,10 +30,10 @@ Consider the following experiment:
 - the duration of the measurement is 5s
 
 ```python
-import measpy.audio as ma
+import measpy.audio as mp
 import matplotlib.pyplot as plt
 
-M1 = ma.Measurement(out_sig='noise',
+M1 = mp.Measurement(out_sig='noise',
                     out_map=[1],
                     out_desc=['Output noise'],
                     in_map=[1,2],
@@ -52,12 +58,12 @@ M1.to_pickle('file.mck')
 
 Load a measurement file into the Measurement object M2:
 ```python
-M2=ma.Measurement()
+M2=mp.Measurement()
 M2.from_pickle('file.mck')
 ```
 Or simply:
 ```python
-M2=ma.load_measurement_from_pickle('file.mck')
+M2=mp.load_measurement_from_pickle('file.mck')
 ```
 Other formats are possible : A combination of a cvs file and wave files, or a json+wave files. See from_csvwav() or from_jsonwav() methods.
 
@@ -78,7 +84,33 @@ Calculate the power spectral density of the pressure (Welch's method on 2**12 po
 PressPSD = M1.data['Pressure'].psd(nperseg=2**12)
 ```
 
-PressPSD is now a ```Spectral``` class object. It has its own methods. For instance, to plot the data:
+```PressPSD``` is now a ```Spectral``` class object. It has its own methods. For instance, to plot the data:
 ```python
 PressPSD.plot()
 ```
+
+You might want to compute the transfer function between ```M1.data['Acceleration']``` and ```M1.data['Pressure']```:
+```python
+tfap = M1.data['Acceleration'].tfe_welch(M1.data['Pressure'],nperseg=2**12)
+```
+
+And use this ```Signal``` object to compute the impulse response:
+```python
+Gap = tfap.irfft()
+```
+
+This could be done in one step:
+```python
+Gap = M1.data['Acceleration'].tfe_welch(M1.data['Pressure'],nperseg=2**12).irfft()
+```
+
+To remove frequencies below 20Hz and above 20kHz before computing the impulse:
+```python
+Gap = M1.data['Acceleration'].tfe_welch(M1.data['Pressure'],nperseg=2**12).filterout([20,20000]).irfft()
+```
+
+Units are preserved during the operations:
+```python
+print(Gap.unit)
+```
+should give something like pascal * second**2 / m
