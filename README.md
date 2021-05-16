@@ -18,6 +18,17 @@ import measpy.audio as mp
 ```
 This will import the classes ```mp.Measurement```, ```mp.Signal```, ```mp.Spectral``` and ```mp.Weighting```, plus some other function in ```mp.ms. ...```
 
+## TODO
+
+Things to improve, implement, fix:
+- Many processing methods have to be implemented
+- Improve plotting methods
+- In/Out synchronization
+- More documentation
+- More testing scripts
+- Multiple devices ?
+- GUI ?
+
 ## Usage example
 
 Consider the following experiment:
