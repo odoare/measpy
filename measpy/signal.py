@@ -139,7 +139,8 @@ class Signal:
             values=csd(self.values, x.values, **kwargs)[1]/welch(x.values, **kwargs)[1],
             desc='Transfer function between '+x.desc+' and '+self.desc,
             fs=self.fs,
-            unit=self.unit/x.unit
+            unit=self.unit/x.unit,
+            full=False
         )
     
     def coh(self, x, **kwargs):
@@ -154,7 +155,8 @@ class Signal:
             values=coherence(self.values, x.values, **kwargs)[1],
             desc='Coherence between '+x.desc+' and '+self.desc,
             fs=self.fs,
-            unit=self.unit/x.unit
+            unit=self.unit/x.unit,
+            full=False
         )
     
     def cut(self,pos):
@@ -190,7 +192,8 @@ class Signal:
         return Spectral(values=Y*S,
             desc='Transfer function between input log sweep and '+self.desc,
             unit=self.unit/Unit('V'),
-            fs=self.fs
+            fs=self.fs,
+            full=False
         )
     
     def fft(self):
@@ -314,7 +317,8 @@ class Spectral:
         - unit: Unit (string understandable by pint)
         - dur: duration in s (float)
         - values: values
-        - full: If True, the full spectrum is given (between fs and fs/2)
+        - full: If True, the full spectrum is given (between 0 and fs).
+            If false, half spectrum is given (between 0 and fs/2)
 
         values and dur cannot be both specified.
         If dur is given, values are initialised at 0 
@@ -328,7 +332,7 @@ class Spectral:
         unit = kwargs.setdefault("unit",'1')
         full = kwargs.setdefault("full",False)
         if 'dur' in kwargs:
-            self._values=np.zeros(int(round(fs*kwargs['dur'])))
+            self._values=np.zeros(int(round(fs*kwargs['dur'])),dtype=complex)
         else:
             self._values=values
         self.desc = desc
@@ -357,6 +361,10 @@ class Spectral:
             val[ii] = np.mean(
                 self.values[ (self.freqs>f1[ii]) & (self.freqs<f2[ii]) ]
             )
+        # Check for NaN values (generally at low frequencies)
+        for ii in range(len(fc)-1,-1,-1):
+            if val[ii]!=val[ii]:
+                val[ii]=val[ii+1]
         return Weighting(
             f=fc,
             a=val,
@@ -517,7 +525,7 @@ class Weighting:
 
     @property
     def adb(self):
-        return 20*np.log10(self.a)
+        return 20*np.log10(np.abs(self.a))
 
     # END of Weighting
 
@@ -633,7 +641,7 @@ def smooth(in_array,l=20):
 
 def nth_octave_bands(n):
     """ 1/nth octave band frequency range calculation """
-    nmin = int(np.ceil(n*np.log2(5*10**-3)))
+    nmin = int(np.ceil(n*np.log2(1*10**-3)))
     nmax = int(np.ceil(n*np.log2(20e3*10**-3)))
     indices = range(nmin,nmax+1)
     f_centre = 1000 * (2**(np.array(indices)/n))
