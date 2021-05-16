@@ -32,20 +32,20 @@ class Signal:
 
         A signal is a temporal series of values.
         The object has the following properties :
-            - desc : The description of the signal (string)
-            - unit : The physical unit
-            - cal : The calibration (in V/unit)
-            - dbfs : The input voltage for a raw value of 1
-            - fs : The sampling frequency
-            - _rawvalues : A numpy array of raw values
+        - desc : The description of the signal (string)
+        - unit : The physical unit
+        - cal : The calibration (in V/unit)
+        - dbfs : The input voltage for a raw value of 1
+        - fs : The sampling frequency
+        - _rawvalues : A numpy array of raw values
         
         Setters and getters properties:
-            - values (values expressed in unit, calibrations applied)
-            - volts (only dbfs applied)
-            - raw (same as _rawvalues)
-            - length (data length)
-            - dur (duration in seconds)
-            - time (time array)
+        - values (values expressed in unit, calibrations applied)
+        - volts (only dbfs applied)
+        - raw (same as _rawvalues)
+        - length (data length)
+        - dur (duration in seconds)
+        - time (time array)
     """
 
     def __init__(self,raw=None,desc='A signal',fs=1,unit='1',cal=1.0,dbfs=1.0):
@@ -331,7 +331,7 @@ class Spectral:
         - dur: duration in s (float)
         - values: values
         - full: If True, the full spectrum is given (between 0 and fs).
-            If false, half spectrum is given (between 0 and fs/2)
+        If false, half spectrum is given (between 0 and fs/2)
 
         values and dur cannot be both specified.
         If dur is given, values are initialised at 0 
@@ -429,13 +429,18 @@ class Spectral:
                             unit=self.unit)
 
     def filterout(self,freqsrange):
-        """ Cancels values below and above a given frequency """
+        """ Cancels values below and above a given frequency
+            Returns a Spectral class object
+        """
         return self.similar(
             values=self._values*(
                 (self.freqs>freqsrange[0]) & (self.freqs<freqsrange[1]))
             )
 
     def abs(self):
+        """ Absolute value
+            Returns a Spectral class object
+        """
         return self.similar(
             values=np.abs(self.values),
             desc=add_step(self.desc,"abs")
@@ -500,6 +505,8 @@ class Spectral:
 #####################
 
 class Weighting:
+    """ Class for weighting functions
+    """
     def __init__(self,f,a,desc):
         self.f=f
         self.a=a
