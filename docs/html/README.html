@@ -1,0 +1,307 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>measpy - Measurements with Python &#8212; measpy  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/pydoctheme.css" />
+    
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="copyright" title="Copyright" href="copyright.html" />
+    <link rel="next" title="GNU LESSER GENERAL PUBLIC LICENSE" href="copyright.html" />
+    <link rel="prev" title="Welcome to measpy’s documentation!" href="index.html" />
+    <link rel="shortcut icon" type="image/png" href="_static/py.png" />
+    <script async defer src="https://buttons.github.io/buttons.js"></script>
+    
+    <script type="text/javascript" src="_static/copybutton.js"></script>
+    
+     
+
+  </head><body>  
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="copyright.html" title="GNU LESSER GENERAL PUBLIC LICENSE"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to measpy’s documentation!"
+             accesskey="P">previous</a> |</li>
+    
+    <li><img src="_static/github-logo.png" alt=""
+             style="vertical-align: middle; margin-top: -1px"/></li>
+    <li><a href="https://github.com/odoare/measpy">measpy</a> &#187;</li>
+    
+    
+    <a href="index.html">measpy  documentation</a> &#187;
+    
+
+        <li class="nav-item nav-item-this"><a href="">measpy - Measurements with Python</a></li>
+    <li class="right">
+        <a href="search.html" title="Search">search</a>
+         |
+    </li>
+
+      </ul>
+    </div>    
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="measpy-measurements-with-python">
+<h1>measpy - Measurements with Python<a class="headerlink" href="#measpy-measurements-with-python" title="Permalink to this headline">¶</a></h1>
+<p>measpy is a set of classes and methods to help the data acquisition and analysis of signals. It is mainly acoustics and vibrations oriented.</p>
+<p>The base classes are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Signal</span></code>: It is basically a class that contain a 1D numpy array, an a few other properties to describe the data as: sampling frequency, calibration and unit.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Spectral</span></code>: A spectral data class that contains the complex amplitudes as a 1D numpy array for frequencies up to the Nyquist frequency, and some properties as sampling frequency, unit, description</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Measurement</span></code> : A class that describe a data acquisition process, its outputs (Signal objects), its inputs (Signal objects)…</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Weighting</span></code> : Weighting spectral functions</p></li>
+</ul>
+<p>For now, these daq devices are implemented :</p>
+<ul class="simple">
+<li><p>Audio cards, via the <code class="docutils literal notranslate"><span class="pre">sounddevice</span></code> package,</p></li>
+<li><p>NI DAQ cards, via the <code class="docutils literal notranslate"><span class="pre">nidaqmx</span></code> package.</p></li>
+</ul>
+<p>To import the package and perform data acquisition with sound cards:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">measpy.audio</span> <span class="k">as</span> <span class="nn">mp</span>
+</pre></div>
+</div>
+<p>This will import the classes <code class="docutils literal notranslate"><span class="pre">mp.Measurement</span></code>, <code class="docutils literal notranslate"><span class="pre">mp.Signal</span></code>, <code class="docutils literal notranslate"><span class="pre">mp.Spectral</span></code> and <code class="docutils literal notranslate"><span class="pre">mp.Weighting</span></code>, plus some other function in <code class="docutils literal notranslate"><span class="pre">mp.ms.</span> <span class="pre">...</span></code></p>
+<section id="todo">
+<h2>TODO<a class="headerlink" href="#todo" title="Permalink to this headline">¶</a></h2>
+<p>Things to improve, implement, fix:</p>
+<ul class="simple">
+<li><p>Many processing methods have to be implemented</p></li>
+<li><p>Improve plotting methods</p></li>
+<li><p>In/Out synchronization</p></li>
+<li><p>More documentation</p></li>
+<li><p>More testing scripts</p></li>
+<li><p>Multiple devices ?</p></li>
+<li><p>GUI ?</p></li>
+</ul>
+</section>
+<section id="usage-example">
+<h2>Usage example<a class="headerlink" href="#usage-example" title="Permalink to this headline">¶</a></h2>
+<p>Consider the following experiment:</p>
+<ul class="simple">
+<li><p>a white noise between 20Hz and 20kHz is sent to output 1 of the soundcard</p></li>
+<li><p>a pressure is acquired at input 1 (Unit pascals)</p></li>
+<li><p>an acceleration is acquired at input 2 (unit m/s^2)</p></li>
+<li><p>the sampling frequency is 44100Hz</p></li>
+<li><p>the calibration of signal conditionners are : 1V/pascal, 0.1V/(m/s^2)</p></li>
+<li><p>the soundcard input is 5V for a unit sample (input or output)</p></li>
+<li><p>the duration of the measurement is 5s</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">measpy.audio</span> <span class="k">as</span> <span class="nn">mp</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="n">M1</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Measurement</span><span class="p">(</span><span class="n">out_sig</span><span class="o">=</span><span class="s1">&#39;noise&#39;</span><span class="p">,</span>
+                    <span class="n">out_map</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="n">out_desc</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Output noise&#39;</span><span class="p">],</span>
+                    <span class="n">in_map</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span>
+                    <span class="n">in_desc</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Pressure&#39;</span><span class="p">,</span><span class="s1">&#39;Acceleration&#39;</span><span class="p">],</span>
+                    <span class="n">in_cal</span><span class="o">=</span><span class="p">[</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">0.1</span><span class="p">],</span>
+                    <span class="n">in_unit</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Pa&#39;</span><span class="p">,</span><span class="s1">&#39;m/s**2&#39;</span><span class="p">],</span>
+                    <span class="n">in_dbfs</span><span class="o">=</span><span class="p">[</span><span class="mf">5.0</span><span class="p">,</span><span class="mf">5.0</span><span class="p">]</span>
+                    <span class="n">dur</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">M1</span><span class="o">.</span><span class="n">run_measurement</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>To plot the resulting data:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">M1</span><span class="o">.</span><span class="n">plot_with_cal</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Save Measurement object into a pickle file:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">M1</span><span class="o">.</span><span class="n">to_pickle</span><span class="p">(</span><span class="s1">&#39;file.mck&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Load a measurement file into the Measurement object M2:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">M2</span><span class="o">=</span><span class="n">mp</span><span class="o">.</span><span class="n">Measurement</span><span class="p">()</span>
+<span class="n">M2</span><span class="o">.</span><span class="n">from_pickle</span><span class="p">(</span><span class="s1">&#39;file.mck&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Or simply:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">M2</span><span class="o">=</span><span class="n">mp</span><span class="o">.</span><span class="n">load_measurement_from_pickle</span><span class="p">(</span><span class="s1">&#39;file.mck&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Other formats are possible : A combination of a cvs file and wave files, or a json+wave files. See from_csvwav() or from_jsonwav() methods.</p>
+<p>Compute transfer functions:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">f</span><span class="p">,</span><span class="n">H</span><span class="p">]</span><span class="o">=</span> <span class="n">M1</span><span class="o">.</span><span class="n">tfe</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="mi">20</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">H</span><span class="p">)))</span>
+</pre></div>
+</div>
+<p>All the data is stored into the data property. It is basically a dict of signals, the keys being set by the in_desc and out_desc arguments when measurement is called.</p>
+<p>To plot only the measured pressure:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">M1</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Pressure&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Calculate the power spectral density of the pressure (Welch’s method on 2**12 points, 50% overlaping):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">PressPSD</span> <span class="o">=</span> <span class="n">M1</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Pressure&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">psd</span><span class="p">(</span><span class="n">nperseg</span><span class="o">=</span><span class="mi">2</span><span class="o">**</span><span class="mi">12</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">PressPSD</span></code> is now a <code class="docutils literal notranslate"><span class="pre">Spectral</span></code> class object. It has its own methods. For instance, to plot the data:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">PressPSD</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>You might want to compute the transfer function between <code class="docutils literal notranslate"><span class="pre">M1.data['Acceleration']</span></code> and <code class="docutils literal notranslate"><span class="pre">M1.data['Pressure']</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">tfap</span> <span class="o">=</span> <span class="n">M1</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Acceleration&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tfe_welch</span><span class="p">(</span><span class="n">M1</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Pressure&#39;</span><span class="p">],</span><span class="n">nperseg</span><span class="o">=</span><span class="mi">2</span><span class="o">**</span><span class="mi">12</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>And use this <code class="docutils literal notranslate"><span class="pre">Spectral</span></code> object to compute the impulse response:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Gap</span> <span class="o">=</span> <span class="n">tfap</span><span class="o">.</span><span class="n">irfft</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>This could be done in one step:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Gap</span> <span class="o">=</span> <span class="n">M1</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Acceleration&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tfe_welch</span><span class="p">(</span><span class="n">M1</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Pressure&#39;</span><span class="p">],</span><span class="n">nperseg</span><span class="o">=</span><span class="mi">2</span><span class="o">**</span><span class="mi">12</span><span class="p">)</span><span class="o">.</span><span class="n">irfft</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>To remove frequencies below 20Hz and above 20kHz before computing the impulse:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Gap</span> <span class="o">=</span> <span class="n">M1</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Acceleration&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tfe_welch</span><span class="p">(</span><span class="n">M1</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Pressure&#39;</span><span class="p">],</span><span class="n">nperseg</span><span class="o">=</span><span class="mi">2</span><span class="o">**</span><span class="mi">12</span><span class="p">)</span><span class="o">.</span><span class="n">filterout</span><span class="p">([</span><span class="mi">20</span><span class="p">,</span><span class="mi">20000</span><span class="p">])</span><span class="o">.</span><span class="n">irfft</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Units are preserved during the operations:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">Gap</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>should give something like pascal * second**2 / m</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">measpy - Measurements with Python</a><ul>
+<li><a class="reference internal" href="#todo">TODO</a></li>
+<li><a class="reference internal" href="#usage-example">Usage example</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Welcome to measpy’s documentation!</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="copyright.html"
+                        title="next chapter">GNU LESSER GENERAL PUBLIC LICENSE</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/README.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+<br />
+    
+<a class="github-button" href="https://github.com/odoare/measpy"
+   data-icon="octicon-star" data-show-count="true"
+   aria-label="Star odoare/measpy on GitHub">Star</a>
+<br />
+<a class="github-button" href="https://github.com/odoare/measpy/subscription"
+   data-icon="octicon-eye" data-show-count="true"
+   aria-label="Watch odoare/measpy on GitHub">Watch</a>
+<br />
+<a class="github-button" href="https://github.com/odoare/measpy/fork"
+   data-icon="octicon-repo-forked" data-show-count="true"
+   aria-label="Fork odoare/measpy on GitHub">Fork</a>
+<br />
+<a class="github-button" href="https://github.com/odoare/measpy/issues"
+   data-icon="octicon-issue-opened"
+   data-show-count="true" aria-label="Issue odoare/measpy on GitHub">Issue</a>
+    
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>  
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="copyright.html" title="GNU LESSER GENERAL PUBLIC LICENSE"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to measpy’s documentation!"
+             >previous</a> |</li>
+    
+    <li><img src="_static/github-logo.png" alt=""
+             style="vertical-align: middle; margin-top: -1px"/></li>
+    <li><a href="https://github.com/odoare/measpy">measpy</a> &#187;</li>
+    
+    
+    <a href="index.html">measpy  documentation</a> &#187;
+    
+
+        <li class="nav-item nav-item-this"><a href="">measpy - Measurements with Python</a></li>
+    <li class="right">
+        <a href="search.html" title="Search">search</a>
+         |
+    </li>
+
+      </ul>
+    </div>  
+    <div class="footer">
+    &copy; <a href="copyright.html">Copyright</a> 2021, Olivier Doaré.
+    <br />
+
+    Last updated on None.
+    <a href="https://github.com/odoare/measpy/issues">Found a bug</a>?
+    <br />
+
+    <img src="_static/py.png" alt="" style="vertical-align: middle; margin-top: -1px" />
+    The <a href="https://www.python.org">Python</a> Software Foundation is a non-profit corporation.
+    <a href="https://www.python.org/psf/donations/">Please donate.</a>
+    <br />
+
+    Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 4.0.1
+        with <a href="https://github.com/oliver-zehentleitner/python-docs-theme-technopathy">python-docs-theme-technopathy</a>
+        by <a href="https://about.me/oliver-zehentleitner">Oliver Zehentleitner</a>.
+    <br />
+        <a href="https://www.technopathy.club/2019/11/03/use-python-sphinx-on-github-pages-with-html-and-an-indivdual-theme">
+    Create a GitHub Page like this one!</a>    <br />
+        Sponsored by <a href="https://www.lucit-development.co">LUCIT - Python Development</a>
+    </div>
+
+  </body>
+</html>
