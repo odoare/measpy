@@ -6,7 +6,6 @@
 
 # TODO :
 # - synchronisation
-# - Different device for input and output
 
 import measpy.signal as ms
 from measpy.signal import Signal, Spectral, Weighting
@@ -27,47 +26,55 @@ from pint import Unit
 
 class Measurement:
     """ The class Measurement allows to simply define and perform
-        a measurement
+        a measurement.
 
-        :param fs: Sampling frequency, defaults to 44100
+        Initialization parameters:
+
+        :param fs: Sampling frequency, defaults to 44100.
         :type fs: int
-        :param dur: Duration in seconds, defaults to 2.0
+        :param dur: Duration in seconds, defaults to 2.0.
         :type dur: float
-        :param in_map: Map of the inputs used on the device, defaults to [1,2]
+        :param in_map: Map of the inputs used on the device, defaults to [1,2].
         :type in_map: list(int)
-        :param in_cal: Calibrations of the incoming signals, in volts/units, defaults to a list of 1.0
+        :param in_cal: Calibrations of the incoming signals, in volts/units, defaults to a list of 1.0.
         :type in_cal: list(str)
-        :param in_unit: Measurement units, defaults to a list of 'V'
+        :param in_unit: Measurement units, defaults to a list of 'V'.
         :type in_unit: list(str)
-        
+        :param in_dbfs: Input voltage for a unitary value in the resulting signal, defaults to 1.0.
+        :type in_unit: list(str)
+        :param in_name: Short name of the measurement signals (used as keys for the data dictionnary), defaults to 'In'+str(n)
+        :type in_name: list(str)
+        :param in_desc: Description of the measurement signals, defaults to 'Thi is input '+str(n)
+        :type in_unit: list(str)
+        :param out_sig: Output signal type ('noise', 'logsweep', 'file.wav' or None) where file.wav is a wave file string.
+        :type out_sig: str
+        :param extrat: (not really useful yet) Additionnal extra time before and after (additionnal time), in sample numbers.
+        :type extrat: tuple(int,int)
+
+        :param out_map: Map of the outputs used on the device, defaults to [1]
+        :type out_map: list(int)
+        :param out_amp: Output amplitude, defaults to 1.0
+        :type out_amp: float
+        :param out_dbfs: Output voltage for a unitary value in the sent signal, defaults to 1.0.
+        :type out_sig: float
+        :param extrat: Additionnal extra time before and after (additionnal time), in sample numbers.
+        :type extrat: tuple(int,int)
+        :param out_sig_freqs: Minimum and maximum frequencies for the generated output signals (used if out_sig is 'noise' or 'logsweep')
+        :type out_sig_freqs: tuple(float,float)
+        :param fades: Fades in/out at the begining and end of the output signal, defaults to (0,0)
+        :type fades: tuple(int,int)
+        :param io_sync: (not implemented yet) Specifies if in/out synchronization is done, and which type, defaults to 0 (no synchronization).
+        :type io_sync: int
+
+        :param device_type: Type of defice 'audio', 'ni', or '', or None, defaults to ''. It can be eventually reacualized when running the measurement.
+        :type device_type: str or None
+        :param in_device: Input device, defaults to ''
+        :type in_device: str
+        :param out_device: Output device, defaults to ''
+        :type out_device: str
 
     """
     def __init__(self, **params):
-        """ Optionnal parameters (param=default)
-                fs=44100
-                dur=2
-                in_map=[1,2]
-                in_cal=[1.0,1.0]
-                in_dbfs=[1.0,1.0]
-                in_unit=['V','V']
-                in_desc=['In1','In2']
-                out_sig='noise'
-                extrat=[0.0,0.0]
-
-            If out_sig != None:
-                out_map=[1]
-                out_amp=1.0
-                out_dbfs=[1.0]
-                out_desc=['Out1']
-                out_sig_freqs=[20.0,20000.0]
-                fades=[0,0]
-                ioSync=0
-            
-            device_type=''
-            device=''
-
-            (device and device_type depend on the type of data acquisition device)
-        """
         self.fs = params.setdefault("fs",44100)
         self.dur = params.setdefault("dur",2.0)
         self.in_map = params.setdefault("in_map",[1,2])
@@ -107,6 +114,10 @@ class Measurement:
         self.create_output()
         
     def create_output(self):
+        """ Creates the output signals, if out_sig is 'noise',
+            'logsweep' or a string ending with 'wav'.
+            If 'out_sig' is None, nothing is created.
+        """
         if self.out_sig=='noise': # White noise output signal
             self.data[self.out_name[0]] = self.data[self.out_name[0]].similar(
                 raw=ms.noise(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
@@ -195,6 +206,8 @@ class Measurement:
         if self.out_sig!=None:
             st = str(self.out_map)
             print('| Output map: out_map='+st)
+            st = "', '".join(self.out_name)
+            print('| Output names: out_name='+"['"+st+"']")              
             print('| Output amp: out_amp='+str(self.out_amp))
             print("| Output signal type: out_sig='"+self.out_sig+"'")
             print('| Min and max frequency of generated output: out_sig_freqs='+str(self.out_sig_freqs))
@@ -241,9 +254,12 @@ class Measurement:
             out += ", io_sync="+str(self.io_sync)+")"
         return out
 
-    def to_dict(self,withdata=True):
+    def _to_dict(self,withdata=True):
         """ Converts a Measurement object to a dict
-            Optionnally removes the data arrays
+
+            :param withdata: Optionnally removes the data arrays, defaults to True
+            :type withdata: bool
+            
         """
         self.data_keys = list(self.data.keys())
         mesu = copy(self.__dict__)
@@ -251,58 +267,78 @@ class Measurement:
             del mesu['data']
         return mesu
 
-    def from_dict(self,mesu):
-        """ Converts a dict to a Measurement object,
+    def _from_dict(self,meas):
+        """ Update Measurement properties from a dict,
             generally loaded from a file.
+
+            :param meas: dictionnary whose contents should be compatible
+            with Measurement class
         """
-        self.fs=convl1(float,mesu['fs'])
-        self.dur=convl1(float,mesu['dur'])
-        self.in_map=convl(int,mesu['in_map'])
-        self.in_cal=convl(float,mesu['in_cal'])
-        self.in_dbfs=convl(float,mesu['in_dbfs'])
-        self.in_unit=convl(str,mesu['in_unit'])
-        self.in_name=convl(str,mesu['in_name'])
-        self.in_desc=convl(str,mesu['in_desc'])
-        self.extrat=convl(float,mesu['extrat'])
+        self.fs=convl1(float,meas['fs'])
+        self.dur=convl1(float,meas['dur'])
+        self.in_map=convl(int,meas['in_map'])
+        self.in_cal=convl(float,meas['in_cal'])
+        self.in_dbfs=convl(float,meas['in_dbfs'])
+        self.in_unit=convl(str,meas['in_unit'])
+        self.in_name=convl(str,meas['in_name'])
+        self.in_desc=convl(str,meas['in_desc'])
+        self.extrat=convl(float,meas['extrat'])
+        self.out_sig=convl1(str,meas['out_sig'])
         try:
-            self.data=mesu['data']
+            self.data=meas['data']
         except:
             pass
         try:
-            self.date=convl1(str,mesu['date'])
-            self.time=convl1(str,mesu['time'])
+            self.date=convl1(str,meas['date'])
+            self.time=convl1(str,meas['time'])
         except:
             pass
         if self.out_sig!=None:
-            self.out_map=convl(int,mesu['out_map'])
-            self.out_amp=convl1(float,mesu['out_amp'])
-            self.out_name=convl(str,mesu['out_name'])
-            self.out_desc=convl(str,mesu['out_desc'])
-            self.out_sig=convl1(str,mesu['out_sig'])
-            self.out_sig_freqs=convl(float,mesu['out_sig_freqs'])
-            self.out_sig_fades=convl(float,mesu['out_sig_fades'])
-            self.io_sync=convl1(int,mesu['io_sync'])
-            self.out_dbfs=convl(float,mesu['out_dbfs'])
-        self.in_device=convl1(str,mesu['in_device'])
-        self.out_device=convl1(str,mesu['out_device'])
-        self.device_type=convl1(str,mesu['device_type'])
-        self.data_keys=convl(str,mesu['data_keys'])
+            self.out_map=convl(int,meas['out_map'])
+            self.out_amp=convl1(float,meas['out_amp'])
+            self.out_name=convl(str,meas['out_name'])
+            self.out_desc=convl(str,meas['out_desc'])
+            self.out_sig_freqs=convl(float,meas['out_sig_freqs'])
+            self.out_sig_fades=convl(float,meas['out_sig_fades'])
+            self.io_sync=convl1(int,meas['io_sync'])
+            self.out_dbfs=convl(float,meas['out_dbfs'])
+        self.in_device=convl1(str,meas['in_device'])
+        self.out_device=convl1(str,meas['out_device'])
+        self.device_type=convl1(str,meas['device_type'])
+        self.data_keys=convl(str,meas['data_keys'])
 
     def to_pickle(self,filename):
         with open(filename, 'wb') as handle:
-            pickle.dump(self.to_dict(), handle, protocol=pickle.HIGHEST_PROTOCOL)
+            pickle.dump(self._to_dict(), handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     @classmethod
     def from_pickle(cls,filename):
+        """ Load a Measurement class object from a pickle file
+
+            :param filename: Filename
+            :type filename: str
+
+            :return: The loaded measurement object
+            :rtype: Measurement
+
+        """
         with open(filename, 'rb') as handle:
             mesu = pickle.load(handle)
         M = cls()
-        M.from_dict(mesu)
+        M._from_dict(mesu)
         for key in M.datakeys:
             M.data[key].unit=Unit(M.data[key].unit.format_babel())
         return M
 
-    def data_to_wav(self,filename):
+    def _data_to_wav(self,filename):
+        """ Save all data in the measurement as a unique wav file
+            It is not the recommended usage to use this method, but
+            use to_csvwav or to_jsonwav to save the data, and its
+            descriptions.
+
+            :param filename: WAV file name
+            :type filename: str
+        """
         n = 0
         for key in self.data.keys():
             if n==0:
@@ -313,16 +349,16 @@ class Measurement:
                 n += 1
         wav.write(filename,int(round(self.fs)),out)
 
-    def data_from_wav(self,filename):
+    def _data_from_wav(self,filename):
         _, dat = wav.read(filename)
         n = 0
         for key in self.data_keys:
             self.data[key].raw = dat[:,n]
             n += 1
 
-    def params_to_csv(self,filename):
+    def _params_to_csv(self,filename):
         """ Writes all the Measurement object parameters to a csv file """
-        dd = self.to_dict(withdata=False)
+        dd = self._to_dict(withdata=False)
         #data_keys = list(self.data.keys())
         with open(filename, 'w') as file:
             writer = csv.writer(file)
@@ -333,70 +369,74 @@ class Measurement:
                     writer.writerow([key,str(dd[key])])
             #writer.writerow(['data_keys']+data_keys)
                     
-    def csv_to_params(self,filename):
+    def _csv_to_params(self,filename):
         """ Load measurement parameters from a csv file """
-        self.from_dict(csv_to_dict(filename))
+        self._from_dict(csv_to_dict(filename))
 
-    def params_to_json(self,filename):
+    def _params_to_json(self,filename):
         """ Writes all the Measurement object parameters to a json file """
         with open(filename, mode='w', encoding='utf-8') as f:
-            json.dump(self.to_dict(withdata=False), f, indent=2)
+            json.dump(self._to_dict(withdata=False), f, indent=2)
 
-    def json_to_params(self,filename):
+    def _json_to_params(self,filename):
         """ Load measurement parameters from a json file """
         with open(filename, encoding='utf-8') as f:
-            self.from_dict(json.load(f))
+            self._from_dict(json.load(f))
 
     def to_csvwav(self,filebase):
         """ Saves a Measurement object to a set of files
-                    filebase : string from which two file names are created
-                    filebase+'.csv' : All measurement parameters
-                    filebase+'.wav' : all input and out channels + time (32 bit float WAV at fs)
+
+            * filebase : string from which two file names are created
+            * filebase+'.csv' : All measurement parameters
+            * filebase+'.wav' : all input and out channels + time (32 bit float WAV at fs)
         """
-        self.params_to_csv(filebase+'.csv')
+        self._params_to_csv(filebase+'.csv')
         try:
-            self.data_to_wav(filebase+'.wav')
+            self._data_to_wav(filebase+'.wav')
         except:
             print('data_to_wav failed (no data?)')
 
     @classmethod
     def from_csvwav(cls,filebase):
         """ Load a measurement object from a set of files
-                    filebase : string from which two file names are created
-                    filebase+'.csv' : All measurement parameters
-                    filebase+'.wav' : all input and out channels + time (32 bit float WAV at fs)
+
+            * filebase : string from which two file names are created
+            * filebase+'.csv' : All measurement parameters
+            * filebase+'.wav' : all input and out channels + time (32 bit float WAV at fs)
         """
         M=cls()
-        M.csv_to_params(filebase+'.csv')
+        M._csv_to_params(filebase+'.csv')
         try:
-            M.data_from_wav(filebase+'.wav')
+            M._data_from_wav(filebase+'.wav')
         except:
             print('data_from_wav failed (file not present?)')
         return M
 
     def to_jsonwav(self,filebase):
         """ Saves a Measurement object to a set of files
-                    filebase : string from which two file names are created
-                    filebase+'.json' : All measurement parameters
-                    filebase+'.wav' : all input and out channels + time (32 bit float WAV at fs)
+
+            * filebase : string from which two file names are created
+            * filebase+'.json' : All measurement parameters
+            * filebase+'.wav' : all input and out channels + time (32 bit float WAV at fs)
         """
-        self.params_to_json(filebase+'.json')
+        self._params_to_json(filebase+'.json')
         try:
-            self.data_to_wav(filebase+'.wav')
+            self._data_to_wav(filebase+'.wav')
         except:
             print('data_to_wav failed (no data?)')
 
     @classmethod
     def from_jsonwav(cls,filebase):
         """ Load a measurement object from a set of files
-                    filebase : string from which two file names are created
-                    filebase+'.json' : All measurement parameters
-                    filebase+'.wav' : all input and out channels + time (32 bit float WAV at fs)
+        
+            * filebase : string from which two file names are created
+            * filebase+'.json' : All measurement parameters
+            * filebase+'.wav' : all input and out channels + time (32 bit float WAV at fs)
         """
         M=cls()
-        M.json_to_params(filebase+'.json')
+        M._json_to_params(filebase+'.json')
         try:
-            M.data_from_wav(filebase+'.wav')
+            M._data_from_wav(filebase+'.wav')
         except:
             print('data_from_wav failed (file not present?)')
         return M
@@ -448,22 +488,31 @@ class Measurement:
 
     @property
     def x(self):
+        """ The output data values as a 2D-array converted in the correponding
+            units using the calibration and dbfs properties
+        """
         return np.array([self.data[n].values for n in self.out_name]).T
     
     @property
     def y(self):
+        """ The input data values as a 2D-array converted in the correponding
+            units using the calibration and dbfs properties
+        """
         return np.array([self.data[n].values for n in self.in_name]).T
 
     @property
     def x_raw(self):
+        """ Raw output values as a 2D-array (no conversion applied) """
         return np.array([self.data[n].raw for n in self.out_name]).T
     
     @property
     def y_raw(self):
+        """ Raw input values as a 2D-array (no conversion applied) """
         return np.array([self.data[n].raw for n in self.in_name]).T
 
     @property
     def t(self):
+        """ Time array """
         return ms.create_time(self.fs,dur=self.dur+self.extrat[0]+self.extrat[1])
 
 
