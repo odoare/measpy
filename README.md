@@ -1,5 +1,7 @@
 # measpy - Measurements with Python
 
+Contact : olivier.doare@ensta-paris.fr
+
 measpy is a set of classes and methods to help the data acquisition and analysis of signals. It is mainly acoustics and vibrations oriented.
 
 The base classes are:
