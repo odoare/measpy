@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 VERSION = '0.0.1'
 DESCRIPTION = 'Measurements with Python'
-LONG_DESCRIPTION = 'Calsses and methods to do data acquisition and processing'
+LONG_DESCRIPTION = 'Classes and methods to do data acquisition and processing'
 
 # Setting up
 setup(
