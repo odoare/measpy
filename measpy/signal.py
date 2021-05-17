@@ -28,13 +28,29 @@ PREF = 20e-6*Unit('Pa') # Acoustic pressure reference level
 ##################
 
 class Signal:
-    """ Defines a signal object
+    """ The class signal describes a sampled data, its sampling
+        frequency, its unit, the calibration and dbfs used for
+        data acquisition. Methods are provided to analyse and
+        transform the data.
+
+        :param raw: raw data of the signal, defaults to None
+        :type raw: 1D numpy array, optional
+        :param desc: Description of the signal, defaults to 'A signal'
+        :type desc: str, optional
+        :param fs: Sampling frequency, defaults to 1
+        :type fs: int, optional
+        :param unit: Unit of the signal given as a string that pint can understand, defaults to '1'
+        :type unit: str, optional
+        :param cal: calibration in V/unit, defaults to 1.0
+        :type cal: float, optional
+        :param dbfs: dbfs of the input data acquisition card, defaults to 1.0
+        :type dbfs: float, optional
 
         A signal is a temporal series of values.
-        The object has the following properties :
+        The object has the following properties:
 
         * desc : The description of the signal (string)
-        * unit : The physical unit
+        * unit : The physical unit (pint.Unit)
         * cal : The calibration (in V/unit)
         * dbfs : The input voltage for a raw value of 1
         * fs : The sampling frequency
