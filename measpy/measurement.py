@@ -22,7 +22,8 @@ import csv
 import pickle
 import json
 
-from pint import Unit
+import unyt as u
+from unyt import Unit
 
 class Measurement:
     """ The class Measurement allows to simply define and perform
@@ -327,7 +328,7 @@ class Measurement:
         M = cls()
         M._from_dict(mesu)
         for key in M.datakeys:
-            M.data[key].unit=Unit(M.data[key].unit.format_babel())
+            M.data[key].unit=Unit(str(M.data[key].unit))
         return M
 
     def _data_to_wav(self,filename):

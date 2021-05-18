@@ -1,7 +1,8 @@
 #%%
 
 #from measpy import measpyaudio as ma
-from pint.unit import Unit
+#from pint.unit import Unit
+from unyt import Unit
 import measpy.audio as ma
 import matplotlib.pyplot as plt
 import numpy as np
@@ -24,7 +25,7 @@ M1 = ma.Measurement(out_sig='logsweep',
                     in_dbfs=[1.0,1.0],
                     extrat=[0,0],
                     out_sig_fades=[1000,10000],
-                    dur=5,
+                    dur=2,
                     in_device='default',
                     out_device='default')
 M1.run_measurement()
@@ -89,7 +90,6 @@ sp1s=sp1.abs().nth_oct_smooth(24)
 plt.figure(2)
 sp1s.plot()
 
-
 # %% Test smooth and dBSPL of signals
 m=ma.Measurement.from_pickle('test.mpk')
 sig1=m.data['In1'].rms_smooth(l=4096)
@@ -104,4 +104,8 @@ Gap0 = m.data['In1'].tfe_farina(m.out_sig_freqs).irfft()
 Gap0.plot()
 Gap.plot()
 
+# %%
+import unyt as u
+
+a = 1*u.metre
 # %%

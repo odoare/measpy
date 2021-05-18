@@ -4,13 +4,17 @@
 #
 # OD - 2021
 
+from warnings import WarningMessage
 import numpy as np
 import matplotlib.pyplot as plt
+from numpy.core.numeric import ones_like
 from scipy.signal import welch, csd, coherence, resample
 from scipy.interpolate import InterpolatedUnivariateSpline
 import scipy.io.wavfile as wav
 import csv
-from pint import Unit
+
+import unyt
+from unyt import Unit
 
 from measpy._tools import add_step
 
@@ -89,7 +93,7 @@ class Signal:
         raw = kwargs.setdefault("raw",self.raw)
         fs = kwargs.setdefault("fs",self.fs)
         desc = kwargs.setdefault("desc",self.desc)
-        unit = kwargs.setdefault("unit",self.unit.format_babel())
+        unit = kwargs.setdefault("unit",str(self.unit.units))
         cal = kwargs.setdefault("cal",self.cal)
         dbfs = kwargs.setdefault("dbfs",self.dbfs)
         return Signal(raw=raw,fs=fs,desc=desc,unit=unit,cal=cal,dbfs=dbfs)
@@ -98,7 +102,7 @@ class Signal:
         """ Basic plotting of the signal """
         plt.plot(self.time,self.values)
         plt.xlabel('Time (s)')
-        plt.ylabel(self.desc+'  ['+self.unit.format_babel()+']')
+        plt.ylabel(self.desc+'  ['+str(self.unit.units)+']')
 
     def psd(self,**kwargs):
         """ Compute power spectral density of the signal object
@@ -327,6 +331,214 @@ class Signal:
     def dur(self):
         return len(self._rawvalues)/self.fs
 
+    def _add(self,other):
+        """Add two signals
+
+        :param other: Other signal to add
+        :type other: Signal
+        :return: Sum of signals
+        :rtype: Signal
+        """
+        a=other.unit.get_conversion_factor(self.unit)[0]
+
+        return self.similar(
+            raw=self.values+a*other.values,
+            cal=1.0,
+            dbfs=1.0,
+            desc=self.desc+'\n + '+other.desc           
+        )
+
+    def __add__(self,other):
+        """Add something to the signal
+
+        :param other: Something to add to
+        :type other: Signal, float, int, scalar quantity
+        """
+        if type(other)==Signal:
+            if self.unit.same_dimensions_as(other.unit):
+                raise Exception('Incompatible units in addition of sginals')
+            if self.fs!=other.fs:
+                raise Exception('Incompatible sampling frequencies in addition of signals')
+            return self._add(other)
+    
+        if (type(other)==float) or (type(other)==int):
+            print('Add with a number without unit, it is considered to be of same unit')
+            return self._add(
+                self.similar(
+                    raw=np.ones_like(self.raw)*other*self.dbfs/self.cal,
+                    desc=str(other)
+                )
+            )
+
+        if type(other)==unyt.array.unyt_quantity:
+            if not self.unit.same_dimensions_as(other.units):
+                raise Exception('Incompatible units in addition of sginals')
+            a=other.units.get_conversion_factor(self.unit)[0]
+            return self._add(
+                self.similar(
+                    raw=np.ones_like(self.raw)*a*self.dbfs/self.cal,
+                    desc=str(other)
+                )
+            )
+        else:
+            raise Exception('Incompatible type when adding something to a Signal')
+
+    def __radd__(self,other):
+        """Addition of two signals
+
+        :param other: other signal
+        :type other: Signal
+        """
+        return self.__add__(other)
+
+    def _sub(self,other):
+        """Substraction to signals
+
+        :param other: Other signal to substract
+        :type other: Signal
+        :return: Sum of signals
+        :rtype: Signal
+        """
+        a=self.unit.from_(other.unit).m
+
+        return self.similar(
+            raw=self.values-a*other.values,
+            cal=1.0,
+            dbfs=1.0,
+            desc=self.desc+'\n + '+other.desc           
+        )
+
+    def __neg__(self):
+        return self.similar(raw=-1*self.raw,desc='-'+self.desc)
+
+    def __sub__(self,other):
+        """Substraction of two signals
+
+        :param other: other signal
+        :type other: Signal, int, float or quantity
+        """
+        return self.__add__(other.__neg__())
+
+    def __rsub__(self,other):
+        """Substraction of two signals
+
+        :param other: other signal
+        :type other: Signal
+        """
+        return self.__neg__().__add__(other)
+
+    def _mul(self,other):
+        """Multiplication of two signals
+
+        :param other: other signal
+        :type other: Signal
+        """
+        return self.similar(
+            raw=self.values*other.values,
+            unit=self.unit*other.unit,
+            cal=1.0,
+            dbfs=1.0,
+            desc=self.desc+'\n * '+other.desc           
+        )
+
+    def __mul__(self,other):
+        """Multiplication of two signals
+
+        :param other: other signal
+        :type other: Signal
+        """
+        if type(other)==Signal:
+            if self.fs!=other.fs:
+                raise Exception('Incompatible sampling frequencies in addition of signals')
+            return self._mul(other)
+
+        if (type(other)==float) or (type(other)==int):
+            return self.similar(raw=other*self.raw,desc=str(other)+'*'+self.desc)
+
+        if type(other)==unyt.array.unyt_quantity:
+            return self._mul(
+                self.similar(
+                    raw=np.ones_like(self.raw)*other.v*self.dbfs/self.cal,
+                    unit=other.units,
+                    cal=1.0,
+                    dbfs=1.0,
+                    desc=str(other)
+                )
+            )
+        else:
+            raise Exception('Incompatible type when multipling something with a Signal')
+
+    def __rmul__(self,other):
+        """Multiplication of two signals
+
+        :param other: other signal
+        :type other: Signal
+        """
+        return self.__mul__(other)
+
+    def _div(self,other):
+        """Division of two signals
+
+        :param other: other signal
+        :type other: Signal
+        """
+        # if self.fs!=other.fs:
+        #     raise Exception('Incompatible sampling frequencies in addition of signals')
+      
+        return self.similar(
+            raw=self.values/other.values,
+            unit=self.unit/other.unit,
+            cal=1.0,
+            dbfs=1.0,
+            desc=self.desc+'\n + \n'+other.desc           
+        )
+
+    def __truediv__(self,other):
+        """Division of two signals
+
+        :param other: other signal
+        :type other: Signal
+        """
+        if type(other)==Signal:
+            if self.fs!=other.fs:
+                raise Exception('Incompatible sampling frequencies in addition of signals')
+            return self._mul(other)
+
+        if (type(other)==float) or (type(other)==int):
+            return self.similar(raw=self.raw/other,desc=self.desc+'/'+str(other))
+
+        if type(other)==unyt.array.unyt_quantity:
+            return self._div(
+                self.similar(
+                    raw=np.ones_like(self.raw)*other.v*self.dbfs/self.cal,
+                    unit=other.units,
+                    cal=1.0,
+                    dbfs=1.0,
+                    desc=str(other)
+                )
+            )
+        else:
+            raise Exception('Incompatible type when multipling something with a Signal')
+
+    def abs(self):
+        """ Absolute value
+            Returns a Signal class object
+        """
+        return self.similar(
+            raw=np.abs(self.raw),
+            desc=add_step(self.desc,"abs")
+        )
+
+    def __abs__(self):
+        """Absolute value of signal
+
+        :param other: other signal
+        :type other: Signal
+        """
+
+        return self.abs()
+
+
     # END of Signal
 
 
@@ -378,7 +590,7 @@ class Spectral:
         values = kwargs.setdefault("values",self.values)
         fs = kwargs.setdefault("fs",self.fs)
         desc = kwargs.setdefault("desc",self.desc)
-        unit = kwargs.setdefault("unit",self.unit.format_babel())
+        unit = kwargs.setdefault("unit",str(self.unit.units))
         full = kwargs.setdefault("full",self.full)
         out = Spectral(values=values,fs=fs,desc=desc,unit=unit,full=full)
         if 'w' in kwargs:
