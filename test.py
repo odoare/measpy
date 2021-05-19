@@ -92,7 +92,7 @@ sp1s.plot()
 
 # %% Test smooth and dBSPL of signals
 m=ma.Measurement.from_pickle('test.mpk')
-sig1=m.data['In1'].rms_smooth(l=4096)
+sig1=m.data['In1'].rms_smooth(nperseg=4096)
 print(sig1.desc)
 sig2=sig1.dB(0.1*ma.ms.PREF)
 print(sig2.desc)

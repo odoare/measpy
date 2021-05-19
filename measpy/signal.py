@@ -78,7 +78,16 @@ class Signal:
         self.cal = cal
         self.dbfs = dbfs
         self.fs = fs
-    
+
+    def __repr__(self):
+        out = "measpy.Signal("
+        out += "fs="+str(self.fs)
+        out += ", desc='"+str(self.desc)+"'"
+        out += ", cal="+str(self.cal)
+        out += ", unit='"+str(self.unit)+"'"
+        out += ", dbfs="+str(self.dbfs)+')'
+        return out
+
     def similar(self, **kwargs):
         """ Returns a copy of the Signal object
             with properties changed as specified
@@ -355,7 +364,7 @@ class Signal:
         :type other: Signal, float, int, scalar quantity
         """
         if type(other)==Signal:
-            if self.unit.same_dimensions_as(other.unit):
+            if not self.unit.same_dimensions_as(other.unit):
                 raise Exception('Incompatible units in addition of sginals')
             if self.fs!=other.fs:
                 raise Exception('Incompatible sampling frequencies in addition of signals')
@@ -386,16 +395,16 @@ class Signal:
     def __radd__(self,other):
         """Addition of two signals
 
-        :param other: other signal
-        :type other: Signal
+        :param other: something else to add
+        :type other: Signal, float, int, scalar quantity
         """
         return self.__add__(other)
 
     def _sub(self,other):
-        """Substraction to signals
+        """Substraction of signals
 
-        :param other: Other signal to substract
-        :type other: Signal
+        :param other: Other signal or number or quantity to substract
+        :type other: Signal, float, int, scalar quantity
         :return: Sum of signals
         :rtype: Signal
         """
@@ -490,7 +499,7 @@ class Signal:
             unit=self.unit/other.unit,
             cal=1.0,
             dbfs=1.0,
-            desc=self.desc+'\n + \n'+other.desc           
+            desc=self.desc+'\n / '+other.desc           
         )
 
     def __truediv__(self,other):
