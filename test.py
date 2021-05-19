@@ -25,7 +25,7 @@ M1 = ma.Measurement(out_sig='logsweep',
                     in_dbfs=[1.0,1.0],
                     extrat=[0,0],
                     out_sig_fades=[1000,10000],
-                    dur=2,
+                    dur=5,
                     in_device='default',
                     out_device='default')
 M1.run_measurement()
