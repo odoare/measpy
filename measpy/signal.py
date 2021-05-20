@@ -743,10 +743,10 @@ class Spectral:
             plt.title(self.desc)
 
     @classmethod
-    def tfe(cls,x,y):
+    def tfe(cls,x,y,**kwargs):
         if (type(x)!=Signal) & (type(y)!=Signal):
             raise Exception('x and y inputs have to be Signal')      
-        return y.tfe(x)
+        return y.tfe_welch(x,**kwargs)
     @property
     def values(self):
         return self._values
