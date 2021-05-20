@@ -366,8 +366,16 @@ class Signal:
         :return: Sum of signals
         :rtype: Signal
         """
-        a=other.unit.get_conversion_factor(self.unit)[0]
 
+        if not self.unit.same_dimensions_as(other.unit):
+            raise Exception('Incompatible units in addition of sginals')
+        if self.fs!=other.fs:
+            raise Exception('Incompatible sampling frequencies in addition of signals')
+        if self.length!=other.length:
+            raise Exception('Incompatible signal lengths')
+
+        a=other.unit.get_conversion_factor(self.unit)[0]
+        
         return self.similar(
             raw=self.values+a*other.values,
             cal=1.0,
@@ -382,12 +390,6 @@ class Signal:
         :type other: Signal, float, int, scalar quantity
         """
         if type(other)==Signal:
-            if not self.unit.same_dimensions_as(other.unit):
-                raise Exception('Incompatible units in addition of sginals')
-            if self.fs!=other.fs:
-                raise Exception('Incompatible sampling frequencies in addition of signals')
-            if self.length!=other.length:
-                raise Exception('Incompatible signal lengths')
             return self._add(other)
     
         if (type(other)==float) or (type(other)==int):
@@ -462,6 +464,10 @@ class Signal:
         :param other: other signal
         :type other: Signal
         """
+        if self.fs!=other.fs:
+            raise Exception('Incompatible sampling frequencies in multiplication of signals')
+        if self.length!=other.length:
+            raise Exception('Incompatible signal lengths in multiplication of signals')
         return self.similar(
             raw=self.values*other.values,
             unit=self.unit*other.unit,
@@ -477,10 +483,6 @@ class Signal:
         :type other: Signal
         """
         if type(other)==Signal:
-            if self.fs!=other.fs:
-                raise Exception('Incompatible sampling frequencies in addition of signals')
-            if self.length!=other.length:
-                raise Exception('Incompatible signal lengths')
             return self._mul(other)
 
         if (type(other)==float) or (type(other)==int):
