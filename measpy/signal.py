@@ -37,8 +37,12 @@ class Signal:
         data acquisition. Methods are provided to analyse and
         transform the data.
 
-        :param raw: raw data of the signal, defaults to None
+        :param raw: raw data of the signal, defaults to array(None)
         :type raw: 1D numpy array, optional
+        :param volts: raw data of the signal
+        :type volts: 1D numpy array, optional
+        :param values: raw data of the signal
+        :type values: 1D numpy array, optional
         :param desc: Description of the signal, defaults to 'A signal'
         :type desc: str, optional
         :param fs: Sampling frequency, defaults to 1
@@ -70,14 +74,22 @@ class Signal:
         * time (time array)
     """
 
-    def __init__(self,raw=None,desc='A signal',fs=1,unit='1',cal=1.0,dbfs=1.0):
+    def __init__(self,**kwargs):
         """ Initializes a Signal object with the specified entries """
-        self._rawvalues = np.array(raw)
-        self.desc = desc
-        self.unit = Unit(unit)
-        self.cal = cal
-        self.dbfs = dbfs
-        self.fs = fs
+        self.desc = kwargs.setdefault('desc','A signal')
+        unit = kwargs.setdefault('unit','1')
+        self.unit=Unit(unit)
+        self.cal = kwargs.setdefault('cal',1.0)
+        self.dbfs = kwargs.setdefault('dbfs',1.0)
+        self.fs = kwargs.setdefault('fs',1)
+        if 'values' in kwargs:
+            self.values = np.array(kwargs['values'])
+        elif 'volts' in kwargs:
+            self.volts = np.array(kwargs['volts'])
+        elif 'raw' in kwargs:
+            self.raw = np.array(kwargs['raw'])
+        else:
+            self.raw=np.array(None)
 
     def __repr__(self):
         out = "measpy.Signal("
@@ -99,13 +111,19 @@ class Signal:
             * cal: calibration
             * dbfs: volts for raw=1
         """
-        raw = kwargs.setdefault("raw",self.raw)
         fs = kwargs.setdefault("fs",self.fs)
         desc = kwargs.setdefault("desc",self.desc)
         unit = kwargs.setdefault("unit",str(self.unit.units))
         cal = kwargs.setdefault("cal",self.cal)
         dbfs = kwargs.setdefault("dbfs",self.dbfs)
-        return Signal(raw=raw,fs=fs,desc=desc,unit=unit,cal=cal,dbfs=dbfs)
+        if 'values' in kwargs:
+            return Signal(values=kwargs['values'],fs=fs,desc=desc,unit=unit,cal=cal,dbfs=dbfs)
+        elif 'volts' in kwargs:
+            return Signal(volts=kwargs['volts'],fs=fs,desc=desc,unit=unit,cal=cal,dbfs=dbfs)
+        elif 'raw' in kwargs:
+            return Signal(raw=kwargs['raw'],fs=fs,desc=desc,unit=unit,cal=cal,dbfs=dbfs)
+        else:
+            return Signal(raw=self.raw,fs=fs,desc=desc,unit=unit,cal=cal,dbfs=dbfs)
 
     def plot(self):
         """ Basic plotting of the signal """
@@ -291,7 +309,7 @@ class Signal:
             cal=cal,
             dbfs=dbfs,
             desc='Logsweep '+str(freqs[0])+'-'+str(freqs[1])+'Hz'
-        ) 
+        )
 
     @classmethod
     def from_csvwav(cls,filename):
