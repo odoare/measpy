@@ -386,6 +386,8 @@ class Signal:
                 raise Exception('Incompatible units in addition of sginals')
             if self.fs!=other.fs:
                 raise Exception('Incompatible sampling frequencies in addition of signals')
+            if self.length!=other.length:
+                raise Exception('Incompatible signal lengths')
             return self._add(other)
     
         if (type(other)==float) or (type(other)==int):
@@ -477,6 +479,8 @@ class Signal:
         if type(other)==Signal:
             if self.fs!=other.fs:
                 raise Exception('Incompatible sampling frequencies in addition of signals')
+            if self.length!=other.length:
+                raise Exception('Incompatible signal lengths')
             return self._mul(other)
 
         if (type(other)==float) or (type(other)==int):
