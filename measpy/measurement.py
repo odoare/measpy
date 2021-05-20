@@ -103,7 +103,7 @@ class Measurement:
             self.data[self.out_name[n]]=Signal(desc=self.out_desc[n],
                                                 fs=self.fs,
                                                 unit='V',
-                                                cal=1.0,
+                                                cal=1/self.out_dbfs[n],
                                                 dbfs=self.out_dbfs[n])
         for n in range(len(self.in_name)):
             self.data[self.in_name[n]]=Signal(desc=self.in_desc[n],
@@ -121,7 +121,7 @@ class Measurement:
         """
         if self.out_sig=='noise': # White noise output signal
             self.data[self.out_name[0]] = self.data[self.out_name[0]].similar(
-                raw=ms.noise(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
+                volts=ms.noise(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
             ).fade(self.out_sig_fades).add_silence(self.extrat)
 
             if self.out_map==0:
@@ -129,7 +129,7 @@ class Measurement:
 
         elif self.out_sig=='logsweep': # Logarithmic sweep output signal
             self.data[self.out_name[0]] = self.data[self.out_name[0]].similar(
-                raw=ms.log_sweep(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
+                volts=ms.log_sweep(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
             ).fade(self.out_sig_fades).add_silence(self.extrat)
 
             if self.out_map==0:
@@ -500,6 +500,20 @@ class Measurement:
             units using the calibration and dbfs properties
         """
         return np.array([self.data[n].values for n in self.in_name]).T
+
+    @property
+    def x_volts(self):
+        """ The output data values as a 2D-array converted in the correponding
+            units using the calibration and dbfs properties
+        """
+        return np.array([self.data[n].volts for n in self.out_name]).T
+    
+    @property
+    def y_volts(self):
+        """ The input data values as a 2D-array converted in the correponding
+            units using the calibration and dbfs properties
+        """
+        return np.array([self.data[n].volts for n in self.in_name]).T
 
     @property
     def x_raw(self):
