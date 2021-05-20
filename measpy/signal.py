@@ -509,6 +509,17 @@ class Signal:
         """
         return self.__mul__(other)
 
+    def __inv__(self):
+        """Signal inverse
+        """
+        # Calibration and dbfs are reset to 1.0 during the process
+        return self.similar(
+            values=self.values**(-1),
+            unit=1/self.unit,
+            cal=1.0,
+            dbfs=1.0
+        )
+
     def _div(self,other):
         """Division of two signals
 
@@ -534,8 +545,8 @@ class Signal:
         """
         if type(other)==Signal:
             if self.fs!=other.fs:
-                raise Exception('Incompatible sampling frequencies in addition of signals')
-            return self._mul(other)
+                raise Exception('Incompatible sampling frequencies in division of signals')
+            return self._div(other)
 
         if (type(other)==float) or (type(other)==int):
             return self.similar(raw=self.raw/other,desc=self.desc+'/'+str(other))
