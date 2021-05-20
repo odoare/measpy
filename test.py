@@ -24,7 +24,7 @@ M1 = ma.Measurement(out_sig='logsweep',
                     in_unit=['Pa','meter/second**2'],
                     in_dbfs=[1.0,1.0],
                     extrat=[0,0],
-                    out_sig_fades=[1000,10000],
+                    out_sig_fades=[10,10],
                     dur=5,
                     in_device='default',
                     out_device='default')
@@ -108,4 +108,23 @@ Gap.plot()
 import unyt as u
 
 a = 1*u.metre
+# %% Calibration carte Behringer
+
+M1 = ma.Measurement(out_sig='logsweep',
+                    out_map=[1],
+                    out_desc=['Out1'],
+                    out_dbfs=[0.656],
+                    in_map=[1],
+                    in_desc=['Input voltage'],
+                    in_cal=[1.0],
+                    in_unit=['V'],
+                    in_dbfs=[1.685,1.685],
+                    extrat=[0,0],
+                    out_sig_fades=[10,10],
+                    dur=5,
+                    in_device='default',
+                    out_device='default')
+M1.run_measurement()
+
+M1.data['In1'].plot()
 # %%

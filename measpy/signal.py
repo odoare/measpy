@@ -588,10 +588,10 @@ class Spectral:
         - fs: sampling frequency (int)
         - desc: Description (str)
         - unit: Unit (string understandable by pint)
-        - dur: duration in s (float)
+        - dur: duration in s of the real signal in (float)
         - values: values
         - full: If True, the full spectrum is given (between 0 and fs).
-        If false, half spectrum is given (between 0 and fs/2)
+        If False, half spectrum is given (between 0 and fs/2)
 
         values and dur cannot be both specified.
         If dur is given, values are initialised at 0 
@@ -605,7 +605,10 @@ class Spectral:
         unit = kwargs.setdefault("unit",'1')
         full = kwargs.setdefault("full",False)
         if 'dur' in kwargs:
-            self._values=np.zeros(int(round(fs*kwargs['dur'])),dtype=complex)
+            if full:
+                self._values=np.zeros(int(round(fs*kwargs['dur'])),dtype=complex)
+            else:
+                self._values=np.zeros(int(round(fs*kwargs['dur']/2)+1),dtype=complex)
         else:
             self._values=values
         self.desc = desc
@@ -741,8 +744,9 @@ class Spectral:
 
     @classmethod
     def tfe(cls,x,y):
+        if (type(x)!=Signal) & (type(y)!=Signal):
+            raise Exception('x and y inputs have to be Signal')      
         return y.tfe(x)
-
     @property
     def values(self):
         return self._values
