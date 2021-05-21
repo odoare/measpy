@@ -1,8 +1,9 @@
 #%%
 
 #from measpy import measpyaudio as ma
-from pint.unit import Unit
-import measpy.audio as ma
+#from pint.unit import Unit
+from unyt import Unit
+import measpy.audio as mp
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib
@@ -23,7 +24,7 @@ M1 = ma.Measurement(out_sig='logsweep',
                     in_unit=['Pa','meter/second**2'],
                     in_dbfs=[1.0,1.0],
                     extrat=[0,0],
-                    out_sig_fades=[1000,10000],
+                    out_sig_fades=[10,10],
                     dur=5,
                     in_device='default',
                     out_device='default')
@@ -89,14 +90,14 @@ sp1s=sp1.abs().nth_oct_smooth(24)
 plt.figure(2)
 sp1s.plot()
 
-
 # %% Test smooth and dBSPL of signals
 m=ma.Measurement.from_pickle('test.mpk')
-sig1=m.data['In1'].rms_smooth(l=4096)
+sig1=m.data['In1'].rms_smooth(nperseg=4096)
 print(sig1.desc)
 sig2=sig1.dB(0.1*ma.ms.PREF)
 print(sig2.desc)
 sig2.plot()
+
 # %% Test impulse responses
 m=ma.Measurement.from_pickle('test.mpk')
 Gap = m.data['In1'].tfe_farina(m.out_sig_freqs).filterout([20,20000]).irfft()
@@ -104,4 +105,27 @@ Gap0 = m.data['In1'].tfe_farina(m.out_sig_freqs).irfft()
 Gap0.plot()
 Gap.plot()
 
+# %%
+import unyt as u
+
+a = 1*u.metre
+# %% Calibration carte Behringer
+
+M1 = ma.Measurement(out_sig='logsweep',
+                    out_map=[1],
+                    out_desc=['Out1'],
+                    out_dbfs=[0.656],
+                    in_map=[1],
+                    in_desc=['Input voltage'],
+                    in_cal=[1.0],
+                    in_unit=['V'],
+                    in_dbfs=[1.685,1.685],
+                    extrat=[0,0],
+                    out_sig_fades=[10,10],
+                    dur=5,
+                    in_device='default',
+                    out_device='default')
+M1.run_measurement()
+
+M1.data['In1'].plot()
 # %%
