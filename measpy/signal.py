@@ -268,7 +268,8 @@ class Signal:
         return Spectral(values=np.fft.fft(self.values),
                                 fs=self.fs,
                                 unit=self.unit,
-                                full=True)
+                                full=True,
+                                desc=add_step(self.desc,'FFT'))
     
     def rfft(self):
         """ Real FFT of the signal
@@ -277,7 +278,8 @@ class Signal:
         return Spectral(values=np.fft.rfft(self.values),
                                 fs=self.fs,
                                 unit=self.unit,
-                                full=False)
+                                full=False,
+                                desc=add_step(self.desc,'RFFT'))
     
     def to_csvwav(self,filename):
         with open(filename+'.csv', 'w') as file:
@@ -774,6 +776,15 @@ class Spectral:
             else:
                 plt.ylabel('20 Log |H|')
             plt.title(self.desc)
+        if axestype=='lin':
+            plt.semilogx(self.freqs,self.values)
+            plt.xlabel('Freq (Hz)')
+            if ylabel1!=None:
+                plt.ylabel(ylabel1)
+            else:
+                plt.ylabel('H')
+            plt.title(self.desc)
+
 
     @classmethod
     def tfe(cls,x,y,**kwargs):

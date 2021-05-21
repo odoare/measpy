@@ -7,14 +7,12 @@ import numpy as np
 import matplotlib
 %matplotlib auto
 
-#%%
+#%% Create testing signals
 
 fs=44100.0
 f1=1000
 f2=2000
 f3=2000
-
-#%% Create testing signals
 
 # s1 in Pascals
 s1=mp.Signal(
@@ -62,7 +60,6 @@ print(str(max(sadd2.unit_to(sadd.unit).values)))
 print('Conversion of s2+s1 to the standard unit of this dimension') 
 print(max(sadd2.unit_to(sadd.unit).values))
 
-
 plt.figure(1)
 s1inv=~s1
 print(s1inv)
@@ -80,7 +77,7 @@ sdiv.plot()
 
 
 # %% Spectral data
-sp1=(s1+s2).rfft()
-sp1.plot(axestype='logdb')
+sp1=(1000*s1+s2).rfft()
+sp1.abs().plot(axestype='lin',ylabel1=str(sp1.unit))
 
 # %%
