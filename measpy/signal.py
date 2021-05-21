@@ -121,6 +121,8 @@ class Signal:
             :type volts: numpy.array, optional
             :param raw: Signal values given as raw samples
             :type raw: numpy.array, optional
+            :return: A signal
+            :rtype: measpy.signal.Signal
 
             Only one of the following parameters should
             be specifified : raw, volts, values
@@ -165,8 +167,15 @@ class Signal:
             unit=self.unit**2
         )
 
-    def rms_smooth(self,nperseg=100):
-        """ Compute the RMS of the Signal over windows of width nperseg samples """
+    def rms_smooth(self,nperseg=512):
+        """ Compute the RMS of the Signal over windows
+            of width nperseg samples
+            
+            :param nperseg: Window size, defaults to 512
+            :type nperseg: int, optionnal
+            :return: A resampled signal
+            :rtype: measpy.signal.Signal       
+        """
         return self.similar(
             raw=np.sqrt(smooth(self.values**2,nperseg)),
             desc=add_step(self.desc,'RMS smoothed on '+str(nperseg)+' data points')
@@ -174,7 +183,13 @@ class Signal:
 
     def dB(self,ref):
         """ Computes 20*log10(self.values/ref)
-            ref is for instance a pressure or volage reference    
+            ref is for instance a pressure or volage reference
+            
+            :param ref: Reference quantity that has to be of same dimension 
+            :type ref: unyt.array.unyt_quantity
+            :return: A signal of dimension dB
+            :rtype: measpy.signal.Signal
+
         """
         if type(ref)!=unyt.array.unyt_quantity:
             raise Exception('ref is not a unyt quantity')
@@ -201,6 +216,7 @@ class Signal:
 
     def resample(self,fs):
         """ Changes sampling rate of the signal
+
             :param fs: Desired sampling rate
             :type fs: float
             :return: A resampled signal
@@ -230,6 +246,9 @@ class Signal:
     
     def coh(self, x, **kwargs):
         """ Compute the coherence between signal x and the actual signal
+
+            :param x: Other signal to compute the coherence with
+            :type x: measpy.signal.Signal
         """
         if self.fs!=x.fs:
             raise Exception('Sampling frequencies have to be the same')
@@ -246,10 +265,13 @@ class Signal:
     
     def cut(self,**kwargs):
         """ Cut signal between positions.
-            Optionnal arguments:
 
-            * pos: specify positions as indices
-            * dur: specify positions as duration
+            :param pos: Start and stop positions of the new signal, given as indices, defaults to (0,-1)
+            :type pos: tuple of int, optionnal
+            :param dur: Start and stop positions of the new signal, given as indices
+            :type dur: tuple of float, optionnal
+
+            pos and dur cannot be both specified
         """
         if ('dur' in kwargs) and ('pos' in kwargs):
             raise Exception('Error: dur and pos cannot be both specified')
@@ -265,12 +287,26 @@ class Signal:
         )
 
     def fade(self,fades):
+        """Apply fades at the begining and the end of the signal
+
+        :param fades: Tuple of ints specifying the fade in and fade out lengths
+        :type fades: (int,int)
+        :return: Faded signal
+        :rtype: measpy.signal.Signal
+        """
         return self.similar(
             raw=_apply_fades(self.raw,fades),
             desc=add_step(self.desc,"fades")
         )
 
-    def add_silence(self,extrat=[0,0]):
+    def add_silence(self,extrat=(0,0)):
+        """Add zeros at the begining and the end of the signal
+
+        :param extrat: number of samples before and after the original signal, defaults to [0,0]
+        :type extrat: tuple, optional
+        :return: New signal
+        :rtype: measpy.signal.Signal
+        """
         return self.similar(raw=np.hstack(
                 (np.zeros(int(np.round(extrat[0]*self.fs))),
                 self.raw,
@@ -316,6 +352,16 @@ class Signal:
                                 desc=add_step(self.desc,'RFFT'))
     
     def to_csvwav(self,filename):
+        """Saves the signal into a pair of files:
+
+        * A CSV file with the signal parameters
+        * A WAV file with the raw data
+
+        If the str parameter filename='file', the created files are file.csv and file.wav
+
+        :param filename: string for the base file name
+        :type filename: str
+        """
         with open(filename+'.csv', 'w') as file:
             writer = csv.writer(file)
             writer.writerow(['desc',self.desc])
@@ -349,6 +395,13 @@ class Signal:
 
     @classmethod
     def from_csvwav(cls,filename):
+        """Load a signal from a pair of csv and wav files
+
+        :param filename: base file name
+        :type filename: str
+        :return: The loaded signal
+        :rtype: measpy.signal.Signal
+        """
         out = cls()
         with open(filename+'.csv', 'r') as file:
             reader = csv.reader(file)
@@ -653,15 +706,17 @@ class Spectral:
         using sampling frequencies and length of the values array
         by calling the property freqs.
 
-        Creation arguments:
-        - fs: sampling frequency (int)
-        - desc: Description (str)
-        - unit: Unit (string understandable by pint)
-        - dur: duration in s of the real signal in (float)
-        - values: values
-        - full: If True, the full spectrum is given (between 0 and fs).
-        If False, half spectrum is given (between 0 and fs/2)
-
+        :param fs: Sampling frequency, defaults to 1
+        :type fs: int, optional
+        :param desc: Description, defaults to 'Spectral data'
+        :type desc: str, optional
+        :param unit: Spectral data unit
+        :type unit: str, unyt.Unit, optional
+        :param values: Values of the pectral data
+        :type values: numpy.array, optional
+        :param full: If true, the full spectrum is given, from 0 to fs, if false, only up to fs/2
+        :type full: bool, optionnal
+        
         values and dur cannot be both specified.
         If dur is given, values are initialised at 0 
     """
@@ -686,6 +741,27 @@ class Spectral:
         self.full = full
 
     def similar(self,**kwargs):
+        """ Returns a copy of the Spectral object
+            with properties changed as specified
+            by the optionnal arguments.
+
+            It is possible to construct a new Spectral object
+            by interpolating a Weighting object (parameter w)
+
+            :param fs: Sampling frequency
+            :type fs: int, optional
+            :param desc: Description
+            :type desc: str, optional
+            :param unit: unit
+            :type unit: str, unyt.Unit, optional
+            :param values: values of the spectral data
+            :type values: numpy array, optionnal
+            :param w: A Weighting object from which the spectrum is constructed by interpolation
+            :type w: measpy.signal.Weighting
+            :return: A Spectral object
+            :rtype: measpy.signal.Spectral
+
+        """
         values = kwargs.setdefault("values",self.values)
         fs = kwargs.setdefault("fs",self.fs)
         desc = kwargs.setdefault("desc",self.desc)
