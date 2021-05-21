@@ -20,14 +20,18 @@ def run_audio_measurement(M,progress=True):
     if M.in_device=='':
         print("Warning: no device specified, changing to None")
         M.in_device=None
-    if M.out_device=='':
-        print("Warning: no device specified, changing to None")
-        M.out_device=None
+    if M.out_sig!=None:
+        if M.out_device=='':
+            print("Warning: no device specified, changing to None")
+            M.out_device=None
     now = datetime.now()
     M.date = now.strftime("%Y/%m/%d")
     M.time = now.strftime("%H:%M:%S")
 
-    sd.default.device=(M.in_device,M.out_device)
+    if M.out_sig!=None:
+        sd.default.device=(M.in_device,M.out_device)
+    else:
+        sd.default.device=M.in_device
     
     # Now done at initialization
     # M.create_output()

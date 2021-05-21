@@ -76,6 +76,15 @@ class Measurement:
 
     """
     def __init__(self, **params):
+        # params checking
+        if 'outsig' in params:
+            noise=params['out_sig']!='noise'
+            logsweep=params['out_sig']!='logsweep'
+            wa=not params['out_sig'].upper().endswith('.WAV')
+            non=params['out_sig']!=None
+            if noise&logsweep&wa&non:
+                raise Exception("out_sig must but be 'noise', 'sweep', '*.wav' or None")
+
         self.fs = params.setdefault("fs",44100)
         self.dur = params.setdefault("dur",2.0)
         self.in_map = params.setdefault("in_map",[1,2])
@@ -84,7 +93,7 @@ class Measurement:
         self.in_unit = params.setdefault("in_unit",list('V' for b in self.in_map))
         self.in_name = params.setdefault("in_name",list('In'+str(b) for b in self.in_map))
         self.in_desc = params.setdefault("in_desc",list('This is input '+str(b) for b in self.in_map))
-        self.out_sig = params.setdefault("out_sig",'noise')
+        self.out_sig = params.setdefault("out_sig",'noise')                
         self.extrat = params.setdefault("extrat",[0.0,0.0])
         if self.out_sig!=None:
             self.out_map = params.setdefault("out_map",[1])
@@ -95,16 +104,18 @@ class Measurement:
             self.out_sig_freqs =  params.setdefault("out_sig_freqs",[20.0,20000.0])
             self.io_sync = params.setdefault("io_sync",0)
             self.out_sig_fades = params.setdefault("out_sig_fades",[0,0])
+            self.out_device = params.setdefault("out_device",'')
         self.device_type = params.setdefault("device_type",'')
         self.in_device = params.setdefault("in_device",'')
-        self.out_device = params.setdefault("out_device",'')
         self.data = {}
-        for n in range(len(self.out_name)):
-            self.data[self.out_name[n]]=Signal(desc=self.out_desc[n],
-                                                fs=self.fs,
-                                                unit='V',
-                                                cal=1/self.out_dbfs[n],
-                                                dbfs=self.out_dbfs[n])
+        if self.out_sig!=None:
+            for n in range(len(self.out_name)):
+                self.data[self.out_name[n]]=Signal(desc=self.out_desc[n],
+                                                    fs=self.fs,
+                                                    unit='V',
+                                                    cal=1/self.out_dbfs[n],
+                                                    dbfs=self.out_dbfs[n])
+            self.create_output()
         for n in range(len(self.in_name)):
             self.data[self.in_name[n]]=Signal(desc=self.in_desc[n],
                                                 fs=self.fs,
@@ -112,7 +123,6 @@ class Measurement:
                                                 cal=self.in_cal[n],
                                                 dbfs=self.in_dbfs[n])
         self.datakeys = list(self.data.keys())
-        self.create_output()
         
     def create_output(self):
         """ Creates the output signals, if out_sig is 'noise',

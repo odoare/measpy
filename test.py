@@ -128,4 +128,18 @@ M1 = ma.Measurement(out_sig='logsweep',
 M1.run_measurement()
 
 M1.data['In1'].plot()
+# %% Test a pure input measurement
+
+M1 = mp.Measurement(out_sig=None,
+                    in_map=[1],
+                    in_desc=['Input voltage'],
+                    in_cal=[1.0],
+                    in_unit=['V'],
+                    in_dbfs=[1.685,1.685],
+                    extrat=[0,0],
+                    out_sig_fades=[10,10],
+                    dur=5,
+                    in_device='default')
+M1.run_measurement()
+
 # %%
