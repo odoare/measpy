@@ -103,13 +103,31 @@ class Signal:
     def similar(self, **kwargs):
         """ Returns a copy of the Signal object
             with properties changed as specified
-            by the optionnal arguments:
+            by the optionnal arguments.
 
-            * raw: array of raw values
-            * fs: sampling frequency
-            * desc: description of the signal
-            * cal: calibration
-            * dbfs: volts for raw=1
+            :param fs: Sampling frequency
+            :type fs: int, optional
+            :param desc: Description
+            :type desc: str, optional
+            :param unit: Signal unit
+            :type unit: str, unyt.Unit, optional
+            :param cal: Calibration in volts/unit
+            :type cal: float, optional
+            :param dbfs: Input voltage for raw value = 1
+            :type dbfs: float, optional
+            :param values: Signal values given in unit
+            :type values: numpy.array, optional
+            :param volts: Signal values given in volts
+            :type volts: numpy.array, optional
+            :param raw: Signal values given as raw samples
+            :type raw: numpy.array, optional
+
+            Only one of the following parameters should
+            be specifified : raw, volts, values
+            If values is specified, the two others are not
+            taken into account. If volts and raw are given,
+            only volts is taken into account.
+
         """
         fs = kwargs.setdefault("fs",self.fs)
         desc = kwargs.setdefault("desc",self.desc)
