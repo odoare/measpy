@@ -3,7 +3,7 @@
 #from measpy import measpyaudio as ma
 #from pint.unit import Unit
 from unyt import Unit
-import measpy.audio as ma
+import measpy.audio as mp
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib
@@ -97,6 +97,7 @@ print(sig1.desc)
 sig2=sig1.dB(0.1*ma.ms.PREF)
 print(sig2.desc)
 sig2.plot()
+
 # %% Test impulse responses
 m=ma.Measurement.from_pickle('test.mpk')
 Gap = m.data['In1'].tfe_farina(m.out_sig_freqs).filterout([20,20000]).irfft()

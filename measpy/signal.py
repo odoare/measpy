@@ -358,6 +358,36 @@ class Signal:
     def dur(self):
         return len(self._rawvalues)/self.fs
 
+    def unit_to(self,unit):
+        """Change Signal unit
+
+        :param unit: Unit to convert to (has to be compatible)
+        :type unit: unyt.unit or str
+        :raises Exception: 'Incompatible units'
+        :return: Signal converted to the new unit
+        :rtype: measpy.Signal
+        """
+        if type(unit)==str:
+            unit=Unit(unit)
+        if not self.unit.same_dimensions_as(unit):
+            raise Exception('Incompatible units')
+        a=self.unit.get_conversion_factor(unit)[0]
+        return self.similar(
+            raw=a*self.values,
+            cal=1.0,
+            dbfs=1.0,
+            unit=unit,
+            desc=add_step(self.desc,'Unit to '+str(unit))
+        )
+
+    def unit_to_std(self):
+        """Change Signal unit to the standard base equivalent
+
+        :return: Signal converted to the new unit
+        :rtype: measpy.Signal
+        """
+        return self.unit_to(self.unit.get_base_equivalent())
+
     def _add(self,other):
         """Add two signals
 
@@ -374,10 +404,8 @@ class Signal:
         if self.length!=other.length:
             raise Exception('Incompatible signal lengths')
 
-        a=other.unit.get_conversion_factor(self.unit)[0]
-        
         return self.similar(
-            raw=self.values+a*other.values,
+            raw=self.values+other.unit_to(self.unit).values,
             cal=1.0,
             dbfs=1.0,
             desc=self.desc+'\n + '+other.desc           
@@ -422,23 +450,6 @@ class Signal:
         """
         return self.__add__(other)
 
-    def _sub(self,other):
-        """Substraction of signals
-
-        :param other: Other signal or number or quantity to substract
-        :type other: Signal, float, int, scalar quantity
-        :return: Sum of signals
-        :rtype: Signal
-        """
-        a=self.unit.from_(other.unit).m
-
-        return self.similar(
-            raw=self.values-a*other.values,
-            cal=1.0,
-            dbfs=1.0,
-            desc=self.desc+'\n + '+other.desc           
-        )
-
     def __neg__(self):
         return self.similar(raw=-1*self.raw,desc='-'+self.desc)
 
@@ -468,6 +479,7 @@ class Signal:
             raise Exception('Incompatible sampling frequencies in multiplication of signals')
         if self.length!=other.length:
             raise Exception('Incompatible signal lengths in multiplication of signals')
+        
         return self.similar(
             raw=self.values*other.values,
             unit=self.unit*other.unit,
@@ -509,7 +521,7 @@ class Signal:
         """
         return self.__mul__(other)
 
-    def __inv__(self):
+    def __invert__(self):
         """Signal inverse
         """
         # Calibration and dbfs are reset to 1.0 during the process
@@ -517,7 +529,8 @@ class Signal:
             values=self.values**(-1),
             unit=1/self.unit,
             cal=1.0,
-            dbfs=1.0
+            dbfs=1.0,
+            desc='1/'+self.desc
         )
 
     def _div(self,other):
@@ -534,7 +547,7 @@ class Signal:
             unit=self.unit/other.unit,
             cal=1.0,
             dbfs=1.0,
-            desc=self.desc+'\n / '+other.desc           
+            desc=self.desc+' / '+other.desc
         )
 
     def __truediv__(self,other):
@@ -563,6 +576,9 @@ class Signal:
             )
         else:
             raise Exception('Incompatible type when multipling something with a Signal')
+
+    def __rtruediv__(self,other):
+        return self.__invert__().__mul__(other)
 
     def abs(self):
         """ Absolute value
