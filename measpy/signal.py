@@ -192,6 +192,13 @@ class Signal:
             )
         )
 
+    def dB_SPL(self,ref):
+        """ Computes 20*log10(self.values/PREF).
+            PREF is the reference pressure in air (20e-6 Pa)
+        """
+        return self.dB(PREF)
+
+
     def resample(self,fs):
         return self.similar(
             raw=resample(self.raw,round(len(self.raw)*fs/self.fs)),
