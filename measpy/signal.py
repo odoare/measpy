@@ -174,10 +174,13 @@ class Signal:
 
     def dB(self,ref):
         """ Computes 20*log10(self.values/ref)
-            If the data is a smoothed RMS acoustic pressure, and ref is PREF,
-            computes the Sound Pressure Level in dB,
-            as the 20Log(P/Pref)
+            ref is for instance a pressure or volage reference    
         """
+        if type(ref)!=unyt.array.unyt_quantity:
+            raise Exception('ref is not a unyt quantity')
+        if not self.unit.same_dimensions_as(ref.units):
+            raise Exception('ref has an incompatible unit')
+        ref.convert_to_units(self.unit)
         return self.similar(
             raw=20*np.log10(self.values*self.unit/ref),
             dbfs=1.0,
@@ -185,7 +188,7 @@ class Signal:
             unit=Unit('decibel'),
             desc=add_step(
                 self.desc,
-                'dB ref '+'{:.2e}'.format(ref.magnitude)+ref.units.format_babel()
+                'dB ref '+'{:.2e}'.format(ref.v)+str(ref.units)
             )
         )
 
