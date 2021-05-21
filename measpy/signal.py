@@ -192,7 +192,7 @@ class Signal:
             )
         )
 
-    def dB_SPL(self,ref):
+    def dB_SPL(self):
         """ Computes 20*log10(self.values/PREF).
             PREF is the reference pressure in air (20e-6 Pa)
         """
@@ -200,6 +200,12 @@ class Signal:
 
 
     def resample(self,fs):
+        """ Changes sampling rate of the signal
+            :param fs: Desired sampling rate
+            :type fs: float
+            :return: A resampled signal
+            :rtype: measpy.signal.Signal
+        """            
         return self.similar(
             raw=resample(self.raw,round(len(self.raw)*fs/self.fs)),
             fs=fs,
