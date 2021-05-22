@@ -1,12 +1,12 @@
 # measpy - Measurements with Python
 
-measpy is a set of classes and methods to help the data acquisition and analysis of signals. It is mainly acoustics and vibrations oriented.
+measpy is a set of classes and methods to help the data acquisition and analysis of signals. It is mainly acoustics and vibrations oriented. This package is very recent, it is still incomplete and many bugs may appear.
 
 The base classes are:
 - ```Signal```: It is basically a class that contain a 1D numpy array, an a few other properties to describe the data as: sampling frequency, calibration and unit.
 - ```Spectral```: A spectral data class that contains the complex amplitudes as a 1D numpy array for frequencies up to the Nyquist frequency, and some properties as sampling frequency, unit, description
 - ```Measurement``` : A class that describe a data acquisition process, its outputs (Signal objects), its inputs (Signal objects)...
-- ```Weighting``` : Weighting spectral functions
+- ```Weighting``` : Weighting spectral functions (Not yet fully test/functionnal)
 
 For now, these daq devices are implemented :
 - Audio cards, via the ```sounddevice``` package,
@@ -23,10 +23,9 @@ This will import the classes ```mp.Measurement```, ```mp.Signal```, ```mp.Spectr
 Things to improve, implement, fix:
 - Many processing methods have to be implemented
 - Improve plotting methods
-- In/Out synchronization
+- In/Out synchronization (implemented for audio acquisition, to be tested)
 - More documentation
 - More testing scripts
-- Multiple devices ?
 - GUI ?
 
 ## Usage example
@@ -46,19 +45,23 @@ import matplotlib.pyplot as plt
 
 M1 = mp.Measurement(out_sig='noise',
                     out_map=[1],
+                    out_name=['Out1'],
                     out_desc=['Output noise'],
+                    out_sig_freqs=[20.0,20000.0]
                     in_map=[1,2],
-                    in_desc=['Pressure','Acceleration'],
+                    in_name=['Press','Acc']
+                    in_desc=['Pressure at point A','Acceleration at point B'],
                     in_cal=[1.0,0.1],
                     in_unit=['Pa','m/s**2'],
-                    in_dbfs=[5.0,5.0]
+                    in_dbfs=[5.0,5.0],
+                    out_dbfs=[5.0,]
                     dur=5)
 M1.run_measurement()
 ```
 
 To plot the resulting data:
 ```python
-M1.plot_with_cal()
+M1.plot()
 plt.show()
 ```
 
@@ -83,9 +86,7 @@ Compute transfer functions:
 [f,H]= M1.tfe()
 plt.plot(f,20*np.log10(np.abs(H)))
 ```
-All the data is stored into the data property. It is basically a dict of signals, the keys being set by the in_desc and out_desc arguments when measurement is called.
-
-To plot only the measured pressure:
+All the data is stored into the data property. It is basically a dict of signals, the keys being set by the in_desc and out_desc arguments when measurement is called. To plot only the measured pressure:
 ```python
 M1.data['Pressure'].plot()
 ```

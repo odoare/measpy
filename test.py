@@ -40,7 +40,7 @@ M1.to_pickle('test.pck')
 
 # %%
 
-M1 = ma.Measurement(out_sig='logsweep',
+M1 = mp.Measurement(out_sig='logsweep',
                     out_map=[1],
                     out_desc=['Out1'],
                     out_dbfs=[1.0],
