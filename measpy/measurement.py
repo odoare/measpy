@@ -456,14 +456,14 @@ class Measurement:
 
         for ii in range(self.y.shape[1]):
             if ytype=='units':
-                plt.plot(self.t,self.y[:,ii]/self.in_cal[ii]*self.in_dbfs[ii])
-            if ytype=='volts':
-                plt.plot(self.t,self.y[:,ii]*self.in_dbfs[ii])
-            if ytype=='raw':
                 plt.plot(self.t,self.y[:,ii])
+            if ytype=='volts':
+                plt.plot(self.t,self.y_volts[:,ii])
+            if ytype=='raw':
+                plt.plot(self.t,self.y_raw[:,ii])
         if limit!=None:
             plt.plot(self.t,limit*np.ones_like(self.t),':',color='grey')
-            plt.plot(self.t,-limit*np.ones_like(self.t),':',color='grey')
+            plt.plot(self.t,-1*limit*np.ones_like(self.t),':',color='grey')
         plt.xlabel('Time(s)')
         legende = []
         for ii in range(self.y.shape[1]):
