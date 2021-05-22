@@ -36,7 +36,10 @@ def run_audio_measurement(M,progress=True):
         sd.default.device=M.in_device
 
     # Insert a synchronization peak at the begining of the output signals
-    if M.out_sig!=None and M.io_sync>0:
+    if M.out_sig==None:
+        dursync=0
+        effsync=False
+    elif M.io_sync>0:
         if M.io_sync in M.in_map:
             nout = M.x.shape[1]
             peaks = repmat(ms.picv(M.fs),nout,1).T

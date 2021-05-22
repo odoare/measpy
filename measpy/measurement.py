@@ -78,10 +78,10 @@ class Measurement:
     """
     def __init__(self, **params):
         # params checking
-        if 'outsig' in params:
+        if 'out_sig' in params:
             noise=params['out_sig']!='noise'
             logsweep=params['out_sig']!='logsweep'
-            wa=not params['out_sig'].upper().endswith('.WAV')
+            wa=not str(params['out_sig']).upper().endswith('.WAV')
             non=params['out_sig']!=None
             if noise&logsweep&wa&non:
                 raise Exception("out_sig must but be 'noise', 'sweep', '*.wav' or None")
