@@ -21,8 +21,9 @@ from measpy._tools import add_step
 # TODO :
 # - Calibrations
 # - Spectral arithmetics
-# - dBu, dBV
-# - Functions for all basic weightings (dBA, dBC)
+# - Test dBu, dBV
+# - Test Functions for all basic weightings (dBA, dBC)
+# - Improve plotting functions
 
 PREF = 20e-6*Unit('Pa') # Acoustic pressure reference level
 DBUREF = 1*Unit('V')
