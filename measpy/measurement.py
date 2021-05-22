@@ -240,7 +240,6 @@ class Measurement:
         out += ", dur="+str(self.dur)
         out += ", device_type='"+str(self.device_type)+"'"
         out += ", in_device='"+str(self.in_device)+"'"
-        out += ", out_device='"+str(self.out_device)+"'"
         out += ', in_name='+str(self.in_name)
         out += ', in_desc='+str(self.in_desc)
         out += ', in_map='+str(self.in_map)
@@ -254,6 +253,7 @@ class Measurement:
         except:
             pass
         if self.out_sig!=None:
+            out += ", out_device='"+str(self.out_device)+"'"
             out += ', out_name='+str(self.out_name)
             out += ', out_desc='+str(self.out_desc)
             out += ', out_map='+str(self.out_map)
@@ -452,19 +452,33 @@ class Measurement:
             print('data_from_wav failed (file not present?)')
         return M
 
-    def plot_with_cal(self):
+    def plot(self,axestype='units',limit=None):
+
         for ii in range(self.y.shape[1]):
-            plt.plot(self.t,self.y[:,ii]/self.in_cal[ii]*self.in_dbfs[ii])
-        plt.plot(self.t,np.ones_like(self.t),':',color='grey')
-        plt.plot(self.t,-np.ones_like(self.t),':',color='grey')
+            if axestype=='units':
+                plt.plot(self.t,self.y[:,ii]/self.in_cal[ii]*self.in_dbfs[ii])
+            if axestype=='volts':
+                plt.plot(self.t,self.y[:,ii]*self.in_dbfs[ii])
+            if axestype=='raw':
+                plt.plot(self.t,self.y[:,ii])
+        if limit!=None:
+            plt.plot(self.t,limit*np.ones_like(self.t),':',color='grey')
+            plt.plot(self.t,-limit*np.ones_like(self.t),':',color='grey')
         plt.xlabel('Time(s)')
         legende = []
         for ii in range(self.y.shape[1]):
-            legende+=[self.in_name[ii]+'('+self.in_unit[ii]+')']
+            if axestype=='units':
+                legende+=[self.in_name[ii]+'('+self.in_unit[ii]+')']
+            if axestype=='volts':
+                legende+=[self.in_name[ii]+'(volts)']
+            if axestype=='raw':
+                legende+=[self.in_name[ii]+'(-)']            
         legende+=['limits']
         plt.legend(legende)
         plt.title('Measurement date: '+str(self.date)+"   "+str(self.time))
-        plt.grid('on',color='grey',linestyle=':')
+        #plt.grid('on',color='grey',linestyle=':')
+        plt.grid('on')
+
 
     def tfe(self,nperseg=2**16,noverlap=None,plotH=False):
         """ Helper function that calculates the transfer function between

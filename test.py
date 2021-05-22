@@ -9,7 +9,7 @@ import numpy as np
 import matplotlib
 #plt.style.use('dark_background')
 
-# plt.style.use('classic')
+plt.style.use('seaborn')
 # matplotlib.use('TkAgg')
 %matplotlib auto
 
