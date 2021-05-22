@@ -11,10 +11,10 @@ import matplotlib
 
 plt.style.use('seaborn')
 # matplotlib.use('TkAgg')
-%matplotlib auto
+#%matplotlib auto
 
 #%% Define and run a measurement
-M1 = mp.Measurement(out_sig='noise',
+M1 = mp.Measurement(out_sig='logsweep',
                     out_map=[1],
                     out_desc=['Out1'],
                     out_dbfs=[1.0],
@@ -25,9 +25,11 @@ M1 = mp.Measurement(out_sig='noise',
                     in_dbfs=[5.0,5.0],
                     extrat=[0,0],
                     out_sig_fades=[10,10],
-                    dur=5,
+                    dur=10,
                     in_device='default',
-                    out_device='default')
+                    out_device='default',
+                    io_sync=1,
+                    out_amp=0.5)
 M1.run_measurement()
 M1.plot()
 
