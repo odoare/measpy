@@ -1,5 +1,7 @@
 # measpy - Measurements with Python
 
+Contact: olivier.doare@ensta-paris.fr
+
 measpy is a set of classes and methods to help the data acquisition and analysis of signals. It is mainly acoustics and vibrations oriented. This package is very recent, it is still incomplete and many bugs may appear.
 
 The base classes are:
@@ -88,12 +90,12 @@ plt.plot(f,20*np.log10(np.abs(H)))
 ```
 All the data is stored into the data property. It is basically a dict of signals, the keys being set by the in_desc and out_desc arguments when measurement is called. To plot only the measured pressure:
 ```python
-M1.data['Pressure'].plot()
+M1.data['Press'].plot()
 ```
 
 Calculate the power spectral density of the pressure (Welch's method on 2**12 points, 50% overlaping):
 ```python
-PressPSD = M1.data['Pressure'].psd(nperseg=2**12)
+PressPSD = M1.data['Press'].psd(nperseg=2**12)
 ```
 
 ```PressPSD``` is now a ```Spectral``` class object. It has its own methods. For instance, to plot the data:
@@ -101,9 +103,9 @@ PressPSD = M1.data['Pressure'].psd(nperseg=2**12)
 PressPSD.plot()
 ```
 
-You might want to compute the transfer function between ```M1.data['Acceleration']``` and ```M1.data['Pressure']```:
+You might want to compute the transfer function between ```M1.data['Acc']``` and ```M1.data['Press']```:
 ```python
-tfap = M1.data['Acceleration'].tfe_welch(M1.data['Pressure'],nperseg=2**12)
+tfap = M1.data['Acc'].tfe_welch(M1.data['Press'],nperseg=2**12)
 ```
 
 And use this ```Spectral``` object to compute the impulse response:
@@ -113,12 +115,12 @@ Gap = tfap.irfft()
 
 This could be done in one step:
 ```python
-Gap = M1.data['Acceleration'].tfe_welch(M1.data['Pressure'],nperseg=2**12).irfft()
+Gap = M1.data['Acc'].tfe_welch(M1.data['Press'],nperseg=2**12).irfft()
 ```
 
 To remove frequencies below 20Hz and above 20kHz before computing the impulse:
 ```python
-Gap = M1.data['Acceleration'].tfe_welch(M1.data['Pressure'],nperseg=2**12).filterout([20,20000]).irfft()
+Gap = M1.data['Acc'].tfe_welch(M1.data['Press'],nperseg=2**12).filterout([20,20000]).irfft()
 ```
 
 Units are preserved during the operations:
