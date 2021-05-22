@@ -19,9 +19,10 @@ from unyt import Unit
 from measpy._tools import add_step
 
 # TODO :
-# - Analysis functions of signals : levels dBSPL, resample
 # - Calibrations
-# - Apply dBA, dBC or any calibration curve to a signal
+# - Signal arithmetics
+# - dBu, dBV
+# - Functions for all basic weightings (dBA, dBC)
 
 PREF = 20e-6*Unit('Pa') # Acoustic pressure reference level
 
@@ -861,6 +862,31 @@ class Spectral:
             desc=add_step(self.desc,w.desc)
         )
 
+    def unit_to(self,unit):
+        if type(unit)==str:
+            unit=Unit(unit)
+        if not self.unit.same_dimensions_as(unit):
+            raise Exception('Incompatible units')
+        a=self.unit.get_conversion_factor(unit)[0]
+        return self.similar(
+            values=a*self.values,
+            desc=add_step(self.desc,'Unit to '+str(unit))
+        )  
+    
+    def apply_dBA(self):
+        w = Weighting.from_csv('measpy/data/dBA.csv')
+        return self.apply_weighting(w)
+
+    def apply_dBC(self):
+        w = Weighting.from_csv('measpy/data/dBC.csv')
+        return self.apply_weighting(w)
+
+    def dB_SPL(self):
+        return self.unit_to(Unit(PREF)).similar(
+            values=20*np.log10(self._values/PREF.v),
+            desc=add_step(self.desc,'dB SPL')
+        )
+
     def plot(self,axestype='logdb_arg',ylabel1=None,ylabel2=None):
         if axestype=='logdb_arg':
             plt.subplot(2,1,1)
@@ -966,7 +992,6 @@ class Weighting:
         return 20*np.log10(np.abs(self.a))
 
     # END of Weighting
-
 
 # Below are functions that may be useful (some cleaning should be done)
 
