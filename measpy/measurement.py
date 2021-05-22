@@ -6,6 +6,7 @@
 
 # TODO :
 # - synchronisation
+# - Improve plotting
 
 import measpy.signal as ms
 from measpy.signal import Signal, Spectral, Weighting

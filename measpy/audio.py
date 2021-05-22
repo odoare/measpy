@@ -6,6 +6,7 @@ from measpy.measurement import (Signal,
                     ms)
 
 import numpy as np
+from numpy.matlib import repmat
 
 import tkinter.ttk as ttk
 import tkinter as tk
@@ -28,11 +29,32 @@ def run_audio_measurement(M,progress=True):
     M.date = now.strftime("%Y/%m/%d")
     M.time = now.strftime("%H:%M:%S")
 
+    # Set the audio devices to use
     if M.out_sig!=None:
         sd.default.device=(M.in_device,M.out_device)
     else:
         sd.default.device=M.in_device
-    
+
+    # Insert a synchronization peak at the begining of the output signals
+    if M.out_sig!=None and M.io_sync>0:
+        if M.io_sync in M.in_map:
+            nout = M.x.shape[1]
+            peaks = repmat(ms.picv(M.fs),nout,1).T
+            zers = repmat(np.zeros(int(M.fs)),nout,1).T
+            outx = np.block([[peaks],[M.x],[zers]])
+            effsync = True
+            dursync=4
+            indsearch=M.in_map.index(M.io_sync)
+        else:
+            print('io_sync channel not present in in_map, no sync is done')
+            outx=M.x
+            dursync=0
+            effsync=False
+    else:
+        outx=M.x
+        dursync=0
+        effsync=False
+        
     # Now done at initialization
     # M.create_output()
 
@@ -51,15 +73,15 @@ def run_audio_measurement(M,progress=True):
                     mapping=M.in_map,
                     blocking=False)
     else:
-        y = sd.playrec(M.x,
+        y = sd.playrec(outx,
                     samplerate=M.fs,
                     input_mapping=M.in_map,
                     output_mapping=M.out_map,
-                    blocking=False)     
+                    blocking=False)
 
     if progress:
         elapsed = time() - start
-        durtot = M.dur+M.extrat[0]+M.extrat[1]
+        durtot = M.dur+M.extrat[0]+M.extrat[1]+dursync
         while (elapsed)<durtot:
             sleep(0.1)
             elapsed = time() - start
@@ -71,7 +93,12 @@ def run_audio_measurement(M,progress=True):
 
     if progress:
         root.destroy()
-    
+
+    if effsync:
+        posmax = int( np.argmax(y[int(0.25*M.fs*2):int(0.75*M.fs*2),indsearch]) + 0.75*M.fs*2 )
+        print(posmax)
+        y = y[posmax:posmax+M.fs*M.dur,:]
+
     for ii in range(len(M.in_map)):
         M.data[M.in_name[ii]].raw=np.array(y[:,ii],dtype=float)
 
