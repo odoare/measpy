@@ -74,12 +74,7 @@ M1.to_pickle('file.mck')
 
 Load a measurement file into the Measurement object M2:
 ```python
-M2=mp.Measurement()
-M2.from_pickle('file.mck')
-```
-Or simply:
-```python
-M2=mp.load_measurement_from_pickle('file.mck')
+M2=mp.Measurement.from_pickle('file.mck')
 ```
 Other formats are possible : A combination of a cvs file and wave files, or a json+wave files. See from_csvwav() or from_jsonwav() methods.
 
