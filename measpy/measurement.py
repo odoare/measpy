@@ -452,14 +452,14 @@ class Measurement:
             print('data_from_wav failed (file not present?)')
         return M
 
-    def plot(self,axestype='units',limit=None):
+    def plot(self,ytype='units',limit=None):
 
         for ii in range(self.y.shape[1]):
-            if axestype=='units':
+            if ytype=='units':
                 plt.plot(self.t,self.y[:,ii]/self.in_cal[ii]*self.in_dbfs[ii])
-            if axestype=='volts':
+            if ytype=='volts':
                 plt.plot(self.t,self.y[:,ii]*self.in_dbfs[ii])
-            if axestype=='raw':
+            if ytype=='raw':
                 plt.plot(self.t,self.y[:,ii])
         if limit!=None:
             plt.plot(self.t,limit*np.ones_like(self.t),':',color='grey')
@@ -467,11 +467,11 @@ class Measurement:
         plt.xlabel('Time(s)')
         legende = []
         for ii in range(self.y.shape[1]):
-            if axestype=='units':
+            if ytype=='units':
                 legende+=[self.in_name[ii]+'('+self.in_unit[ii]+')']
-            if axestype=='volts':
+            if ytype=='volts':
                 legende+=[self.in_name[ii]+'(volts)']
-            if axestype=='raw':
+            if ytype=='raw':
                 legende+=[self.in_name[ii]+'(-)']            
         legende+=['limits']
         plt.legend(legende)
