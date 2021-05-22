@@ -76,6 +76,15 @@ class Measurement:
 
     """
     def __init__(self, **params):
+        # params checking
+        if 'outsig' in params:
+            noise=params['out_sig']!='noise'
+            logsweep=params['out_sig']!='logsweep'
+            wa=not params['out_sig'].upper().endswith('.WAV')
+            non=params['out_sig']!=None
+            if noise&logsweep&wa&non:
+                raise Exception("out_sig must but be 'noise', 'sweep', '*.wav' or None")
+
         self.fs = params.setdefault("fs",44100)
         self.dur = params.setdefault("dur",2.0)
         self.in_map = params.setdefault("in_map",[1,2])
@@ -84,7 +93,7 @@ class Measurement:
         self.in_unit = params.setdefault("in_unit",list('V' for b in self.in_map))
         self.in_name = params.setdefault("in_name",list('In'+str(b) for b in self.in_map))
         self.in_desc = params.setdefault("in_desc",list('This is input '+str(b) for b in self.in_map))
-        self.out_sig = params.setdefault("out_sig",'noise')
+        self.out_sig = params.setdefault("out_sig",'noise')                
         self.extrat = params.setdefault("extrat",[0.0,0.0])
         if self.out_sig!=None:
             self.out_map = params.setdefault("out_map",[1])
@@ -95,16 +104,18 @@ class Measurement:
             self.out_sig_freqs =  params.setdefault("out_sig_freqs",[20.0,20000.0])
             self.io_sync = params.setdefault("io_sync",0)
             self.out_sig_fades = params.setdefault("out_sig_fades",[0,0])
+            self.out_device = params.setdefault("out_device",'')
         self.device_type = params.setdefault("device_type",'')
         self.in_device = params.setdefault("in_device",'')
-        self.out_device = params.setdefault("out_device",'')
         self.data = {}
-        for n in range(len(self.out_name)):
-            self.data[self.out_name[n]]=Signal(desc=self.out_desc[n],
-                                                fs=self.fs,
-                                                unit='V',
-                                                cal=1/self.out_dbfs[n],
-                                                dbfs=self.out_dbfs[n])
+        if self.out_sig!=None:
+            for n in range(len(self.out_name)):
+                self.data[self.out_name[n]]=Signal(desc=self.out_desc[n],
+                                                    fs=self.fs,
+                                                    unit='V',
+                                                    cal=1/self.out_dbfs[n],
+                                                    dbfs=self.out_dbfs[n])
+            self.create_output()
         for n in range(len(self.in_name)):
             self.data[self.in_name[n]]=Signal(desc=self.in_desc[n],
                                                 fs=self.fs,
@@ -112,7 +123,6 @@ class Measurement:
                                                 cal=self.in_cal[n],
                                                 dbfs=self.in_dbfs[n])
         self.datakeys = list(self.data.keys())
-        self.create_output()
         
     def create_output(self):
         """ Creates the output signals, if out_sig is 'noise',
@@ -230,7 +240,6 @@ class Measurement:
         out += ", dur="+str(self.dur)
         out += ", device_type='"+str(self.device_type)+"'"
         out += ", in_device='"+str(self.in_device)+"'"
-        out += ", out_device='"+str(self.out_device)+"'"
         out += ', in_name='+str(self.in_name)
         out += ', in_desc='+str(self.in_desc)
         out += ', in_map='+str(self.in_map)
@@ -244,6 +253,7 @@ class Measurement:
         except:
             pass
         if self.out_sig!=None:
+            out += ", out_device='"+str(self.out_device)+"'"
             out += ', out_name='+str(self.out_name)
             out += ', out_desc='+str(self.out_desc)
             out += ', out_map='+str(self.out_map)
@@ -442,19 +452,33 @@ class Measurement:
             print('data_from_wav failed (file not present?)')
         return M
 
-    def plot_with_cal(self):
+    def plot(self,ytype='units',limit=None):
+
         for ii in range(self.y.shape[1]):
-            plt.plot(self.t,self.y[:,ii]/self.in_cal[ii]*self.in_dbfs[ii])
-        plt.plot(self.t,np.ones_like(self.t),':',color='grey')
-        plt.plot(self.t,-np.ones_like(self.t),':',color='grey')
+            if ytype=='units':
+                plt.plot(self.t,self.y[:,ii])
+            if ytype=='volts':
+                plt.plot(self.t,self.y_volts[:,ii])
+            if ytype=='raw':
+                plt.plot(self.t,self.y_raw[:,ii])
+        if limit!=None:
+            plt.plot(self.t,limit*np.ones_like(self.t),':',color='grey')
+            plt.plot(self.t,-1*limit*np.ones_like(self.t),':',color='grey')
         plt.xlabel('Time(s)')
         legende = []
         for ii in range(self.y.shape[1]):
-            legende+=[self.in_name[ii]+'('+self.in_unit[ii]+')']
+            if ytype=='units':
+                legende+=[self.in_name[ii]+'('+self.in_unit[ii]+')']
+            if ytype=='volts':
+                legende+=[self.in_name[ii]+'(volts)']
+            if ytype=='raw':
+                legende+=[self.in_name[ii]+'(-)']            
         legende+=['limits']
         plt.legend(legende)
         plt.title('Measurement date: '+str(self.date)+"   "+str(self.time))
-        plt.grid('on',color='grey',linestyle=':')
+        #plt.grid('on',color='grey',linestyle=':')
+        plt.grid('on')
+
 
     def tfe(self,nperseg=2**16,noverlap=None,plotH=False):
         """ Helper function that calculates the transfer function between
