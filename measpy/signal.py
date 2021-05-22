@@ -20,11 +20,13 @@ from measpy._tools import add_step
 
 # TODO :
 # - Calibrations
-# - Signal arithmetics
+# - Spectral arithmetics
 # - dBu, dBV
 # - Functions for all basic weightings (dBA, dBC)
 
 PREF = 20e-6*Unit('Pa') # Acoustic pressure reference level
+DBUREF = 1*Unit('V')
+DBVREF = np.sqrt(2)*Unit('V')
 
 ##################
 ##              ##
@@ -885,6 +887,18 @@ class Spectral:
         return self.unit_to(Unit(PREF)).similar(
             values=20*np.log10(self._values/PREF.v),
             desc=add_step(self.desc,'dB SPL')
+        )
+
+    def dBV(self):
+        return self.unit_to(Unit(PREF)).similar(
+            values=20*np.log10(self._values/DBVREF.v),
+            desc=add_step(self.desc,'dBV')
+        )
+    
+    def dBu(self):
+        return self.unit_to(Unit(PREF)).similar(
+            values=20*np.log10(self._values/DBUREF.v),
+            desc=add_step(self.desc,'dBu')
         )
 
     def plot(self,axestype='logdb_arg',ylabel1=None,ylabel2=None):
