@@ -859,14 +859,14 @@ class Spectral:
                 (self.freqs>freqsrange[0]) & (self.freqs<freqsrange[1]))
             )
 
-    def abs(self):
-        """ Absolute value
-            Returns a Spectral class object
-        """
-        return self.similar(
-            values=np.abs(self.values),
-            desc=add_step(self.desc,"abs")
-        )
+    # def abs(self):
+    #     """ Absolute value
+    #         Returns a Spectral class object
+    #     """
+    #     return self.similar(
+    #         values=np.abs(self.values),
+    #         desc=add_step(self.desc,"abs")
+    #     )
 
     def apply_weighting(self,w):
         spl = InterpolatedUnivariateSpline(w.f,w.a,ext=1)
@@ -1050,7 +1050,7 @@ class Spectral:
         """Multiplication of two spectra
 
         :param other: other Spectral object
-        :type other: Signal
+        :type other: Spectral
         """
         if type(other)==Spectral:
             return self._mul(other)
@@ -1073,9 +1073,78 @@ class Spectral:
         """Multiplication of two spectra
 
         :param other: other Spectral object
-        :type other: Signal
+        :type other: Spectral
         """
         return self.__mul__(other)
+
+    def __invert__(self):
+        """Spectral inverse
+        """
+        # Calibration and dbfs are reset to 1.0 during the process
+        return self.similar(
+            values=self.values**(-1),
+            unit=1/self.unit,
+            desc='1/'+self.desc
+        )
+
+    def _div(self,other):
+        """Division of two spectra
+
+        :param other: other spectral object
+        :type other: Spectral
+        """
+        # if self.fs!=other.fs:
+        #     raise Exception('Incompatible sampling frequencies in addition of signals')
+      
+        return self.similar(
+            values=self.values/other.values,
+            unit=self.unit/other.unit,
+            desc=self.desc+' / '+other.desc
+        )
+
+    def __truediv__(self,other):
+        """Division of two spectral objects
+
+        :param other: other spectral object
+        :type other: Spectral
+        """
+        if type(other)==Signal:
+            if self.fs!=other.fs:
+                raise Exception('Incompatible sampling frequencies')
+            if self.full!=other.full:
+                raise Exception('Incompatible spectral types (full)')                
+            return self._div(other)
+
+        if (type(other)==float) or (type(other)==int):
+            return self.similar(values=self.values/other,desc=self.desc+'/'+str(other))
+
+        if type(other)==unyt.array.unyt_quantity:
+            return self._div(
+                self.similar(
+                    values=np.ones_like(self.values)*other.v,
+                    unit=other.units,
+                    desc=str(other)
+                )
+            )
+        else:
+            raise Exception('Incompatible type when multipling something with a Signal')
+
+    def __rtruediv__(self,other):
+        return self.__invert__().__mul__(other)
+
+    def abs(self):
+        """ Absolute value
+            Returns a Spectral class object
+        """
+        return self.similar(
+            values=np.abs(self.values),
+            desc=add_step(self.desc,"abs")
+        )
+
+    def __abs__(self):
+        """Absolute value """
+        return self.abs()
+
 
     @classmethod
     def tfe(cls,x,y,**kwargs):
