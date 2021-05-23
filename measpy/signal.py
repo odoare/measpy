@@ -153,7 +153,8 @@ class Signal:
         """ Basic plotting of the signal """
         plt.plot(self.time,self.values)
         plt.xlabel('Time (s)')
-        plt.ylabel(self.desc+'  ['+str(self.unit.units)+']')
+        plt.ylabel('['+str(self.unit.units)+']')
+        plt.title(self.desc)
 
     def psd(self,**kwargs):
         """ Compute power spectral density of the signal object
