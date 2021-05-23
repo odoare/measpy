@@ -1001,7 +1001,7 @@ class Spectral:
             raise Exception('Incompatible type when adding something to a Signal')
 
     def __radd__(self,other):
-        """Addition of two signals
+        """Addition of two Spectral objects
 
         :param other: something else to add
         :type other: Signal, float, int, scalar quantity
@@ -1009,7 +1009,7 @@ class Spectral:
         return self.__add__(other)
 
     def __neg__(self):
-        return self.similar(value=-1*self.values,desc='-'+self.desc)
+        return self.similar(values=-1*self.values,desc='-'+self.desc)
 
     def __sub__(self,other):
         """Substraction of two spectra
@@ -1026,6 +1026,56 @@ class Spectral:
         :type other: Spectral,, int, float or quantity
         """
         return self.__neg__().__add__(other)
+
+    def _mul(self,other):
+        """Multiplication of two spectra
+
+        :param other: other Spectral object
+        :type other: Signal
+        """
+        if self.fs!=other.fs:
+            raise Exception('Incompatible sampling frequencies in multiplication of signals')
+        if self.length!=other.length:
+            raise Exception('Incompatible signal lengths in multiplication of signals')
+        if self.full!=other.full:
+            raise Exception('Spectral objects are not of the same type (full property)')
+        
+        return self.similar(
+            values=self.values*other.values,
+            unit=self.unit*other.unit,
+            desc=self.desc+'\n * '+other.desc           
+        )
+
+    def __mul__(self,other):
+        """Multiplication of two spectra
+
+        :param other: other Spectral object
+        :type other: Signal
+        """
+        if type(other)==Spectral:
+            return self._mul(other)
+
+        if (type(other)==float) or (type(other)==int):
+            return self.similar(values=other*self.values,desc=str(other)+'*'+self.desc)
+
+        if type(other)==unyt.array.unyt_quantity:
+            return self._mul(
+                self.similar(
+                    raw=np.ones_like(self.values)*other.v,
+                    unit=other.units,
+                    desc=str(other)
+                )
+            )
+        else:
+            raise Exception('Incompatible type when multipling something with a Signal')
+
+    def __rmul__(self,other):
+        """Multiplication of two spectra
+
+        :param other: other Spectral object
+        :type other: Signal
+        """
+        return self.__mul__(other)
 
     @classmethod
     def tfe(cls,x,y,**kwargs):
