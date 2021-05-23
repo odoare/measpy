@@ -1008,6 +1008,25 @@ class Spectral:
         """
         return self.__add__(other)
 
+    def __neg__(self):
+        return self.similar(value=-1*self.values,desc='-'+self.desc)
+
+    def __sub__(self,other):
+        """Substraction of two spectra
+
+        :param other: other Spectral object
+        :type other: Spectral, int, float or quantity
+        """
+        return self.__add__(other.__neg__())
+
+    def __rsub__(self,other):
+        """Substraction of two spectra
+
+        :param other: other Spectral object
+        :type other: Spectral,, int, float or quantity
+        """
+        return self.__neg__().__add__(other)
+
     @classmethod
     def tfe(cls,x,y,**kwargs):
         if (type(x)!=Signal) & (type(y)!=Signal):
