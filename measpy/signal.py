@@ -181,9 +181,18 @@ class Signal:
             :rtype: measpy.signal.Signal       
         """
         return self.similar(
-            raw=np.sqrt(smooth(self.values**2,nperseg)),
+            raw=np.sqrt(smooth(self.raw**2,nperseg)),
             desc=add_step(self.desc,'RMS smoothed on '+str(nperseg)+' data points')
         )
+
+    def rms(self):
+        """ Compute the RMS of the complete Signal
+
+            :return: A quantity
+            :rtype: unyt.Quantity      
+        """
+        return np.sqrt(np.mean(self.values**2))*self.unit
+
 
     def dB(self,ref):
         """ Computes 20*log10(self.values/ref)
