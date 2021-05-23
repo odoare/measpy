@@ -153,7 +153,8 @@ class Signal:
         """ Basic plotting of the signal """
         plt.plot(self.time,self.values)
         plt.xlabel('Time (s)')
-        plt.ylabel(self.desc+'  ['+str(self.unit.units)+']')
+        plt.ylabel('['+str(self.unit.units)+']')
+        plt.title(self.desc)
 
     def psd(self,**kwargs):
         """ Compute power spectral density of the signal object
@@ -181,9 +182,18 @@ class Signal:
             :rtype: measpy.signal.Signal       
         """
         return self.similar(
-            raw=np.sqrt(smooth(self.values**2,nperseg)),
+            raw=np.sqrt(smooth(self.raw**2,nperseg)),
             desc=add_step(self.desc,'RMS smoothed on '+str(nperseg)+' data points')
         )
+
+    def rms(self):
+        """ Compute the RMS of the complete Signal
+
+            :return: A quantity
+            :rtype: unyt.Quantity      
+        """
+        return np.sqrt(np.mean(self.values**2))*self.unit
+
 
     def dB(self,ref):
         """ Computes 20*log10(self.values/ref)
@@ -849,14 +859,14 @@ class Spectral:
                 (self.freqs>freqsrange[0]) & (self.freqs<freqsrange[1]))
             )
 
-    def abs(self):
-        """ Absolute value
-            Returns a Spectral class object
-        """
-        return self.similar(
-            values=np.abs(self.values),
-            desc=add_step(self.desc,"abs")
-        )
+    # def abs(self):
+    #     """ Absolute value
+    #         Returns a Spectral class object
+    #     """
+    #     return self.similar(
+    #         values=np.abs(self.values),
+    #         desc=add_step(self.desc,"abs")
+    #     )
 
     def apply_weighting(self,w):
         spl = InterpolatedUnivariateSpline(w.f,w.a,ext=1)
@@ -936,6 +946,205 @@ class Spectral:
                 plt.ylabel('H')
             plt.title(self.desc)
 
+    def _add(self,other):
+        """Add two spectra
+
+        :param other: Other Spectral to add
+        :type other: Spectral
+        :return: Sum of spectra
+        :rtype: Spectral
+        """
+
+        if not self.unit.same_dimensions_as(other.unit):
+            raise Exception('Incompatible units in addition of Spectral obk=jects')
+        if self.fs!=other.fs:
+            raise Exception('Incompatible sampling frequencies in addition of Spectral objects')
+        if self.length!=other.length:
+            raise Exception('Incompatible lengths')
+        if self.full!=other.full:
+            raise Exception('Spectral objects are not of the same type (full property)')
+
+        return self.similar(
+            values=self.values+other.unit_to(self.unit).values,
+            desc=self.desc+'\n + '+other.desc
+        )
+
+    def __add__(self,other):
+        """Add something to the spectrum
+
+        :param other: Something to add to
+        :type other: Spectral, float, int, scalar quantity
+        """
+        if type(other)==Spectral:
+            return self._add(other)
+    
+        if (type(other)==float) or (type(other)==int):
+            print('Add with a number without unit, it is considered to be of same unit')
+            return self._add(
+                self.similar(
+                    values=np.ones_like(self.values)*other,
+                    desc=str(other)
+                )
+            )
+
+        if type(other)==unyt.array.unyt_quantity:
+            if not self.unit.same_dimensions_as(other.units):
+                raise Exception('Incompatible units in addition of sginals')
+            a=other.units.get_conversion_factor(self.unit)[0]
+            return self._add(
+                self.similar(
+                    values=np.ones_like(self.values)*a,
+                    desc=str(other)
+                )
+            )
+        else:
+            raise Exception('Incompatible type when adding something to a Signal')
+
+    def __radd__(self,other):
+        """Addition of two Spectral objects
+
+        :param other: something else to add
+        :type other: Signal, float, int, scalar quantity
+        """
+        return self.__add__(other)
+
+    def __neg__(self):
+        return self.similar(values=-1*self.values,desc='-'+self.desc)
+
+    def __sub__(self,other):
+        """Substraction of two spectra
+
+        :param other: other Spectral object
+        :type other: Spectral, int, float or quantity
+        """
+        return self.__add__(other.__neg__())
+
+    def __rsub__(self,other):
+        """Substraction of two spectra
+
+        :param other: other Spectral object
+        :type other: Spectral,, int, float or quantity
+        """
+        return self.__neg__().__add__(other)
+
+    def _mul(self,other):
+        """Multiplication of two spectra
+
+        :param other: other Spectral object
+        :type other: Signal
+        """
+        if self.fs!=other.fs:
+            raise Exception('Incompatible sampling frequencies in multiplication of signals')
+        if self.length!=other.length:
+            raise Exception('Incompatible signal lengths in multiplication of signals')
+        if self.full!=other.full:
+            raise Exception('Spectral objects are not of the same type (full property)')
+        
+        return self.similar(
+            values=self.values*other.values,
+            unit=self.unit*other.unit,
+            desc=self.desc+'\n * '+other.desc           
+        )
+
+    def __mul__(self,other):
+        """Multiplication of two spectra
+
+        :param other: other Spectral object
+        :type other: Spectral
+        """
+        if type(other)==Spectral:
+            return self._mul(other)
+
+        if (type(other)==float) or (type(other)==int):
+            return self.similar(values=other*self.values,desc=str(other)+'*'+self.desc)
+
+        if type(other)==unyt.array.unyt_quantity:
+            return self._mul(
+                self.similar(
+                    raw=np.ones_like(self.values)*other.v,
+                    unit=other.units,
+                    desc=str(other)
+                )
+            )
+        else:
+            raise Exception('Incompatible type when multipling something with a Signal')
+
+    def __rmul__(self,other):
+        """Multiplication of two spectra
+
+        :param other: other Spectral object
+        :type other: Spectral
+        """
+        return self.__mul__(other)
+
+    def __invert__(self):
+        """Spectral inverse
+        """
+        # Calibration and dbfs are reset to 1.0 during the process
+        return self.similar(
+            values=self.values**(-1),
+            unit=1/self.unit,
+            desc='1/'+self.desc
+        )
+
+    def _div(self,other):
+        """Division of two spectra
+
+        :param other: other spectral object
+        :type other: Spectral
+        """
+        # if self.fs!=other.fs:
+        #     raise Exception('Incompatible sampling frequencies in addition of signals')
+      
+        return self.similar(
+            values=self.values/other.values,
+            unit=self.unit/other.unit,
+            desc=self.desc+' / '+other.desc
+        )
+
+    def __truediv__(self,other):
+        """Division of two spectral objects
+
+        :param other: other spectral object
+        :type other: Spectral
+        """
+        if type(other)==Signal:
+            if self.fs!=other.fs:
+                raise Exception('Incompatible sampling frequencies')
+            if self.full!=other.full:
+                raise Exception('Incompatible spectral types (full)')                
+            return self._div(other)
+
+        if (type(other)==float) or (type(other)==int):
+            return self.similar(values=self.values/other,desc=self.desc+'/'+str(other))
+
+        if type(other)==unyt.array.unyt_quantity:
+            return self._div(
+                self.similar(
+                    values=np.ones_like(self.values)*other.v,
+                    unit=other.units,
+                    desc=str(other)
+                )
+            )
+        else:
+            raise Exception('Incompatible type when multipling something with a Signal')
+
+    def __rtruediv__(self,other):
+        return self.__invert__().__mul__(other)
+
+    def abs(self):
+        """ Absolute value
+            Returns a Spectral class object
+        """
+        return self.similar(
+            values=np.abs(self.values),
+            desc=add_step(self.desc,"abs")
+        )
+
+    def __abs__(self):
+        """Absolute value """
+        return self.abs()
+
 
     @classmethod
     def tfe(cls,x,y,**kwargs):
@@ -954,6 +1163,9 @@ class Spectral:
             return np.linspace(0, self.fs, num=len(self._values))
         else:
             return np.linspace(0, self.fs/2, num=len(self._values))
+    @property
+    def length(self):
+        return len(self._values)
 
     # END of Spectral
 

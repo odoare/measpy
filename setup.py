@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = '0.0.2'
+VERSION = '0.0.2.1'
 DESCRIPTION = 'Measurements with Python'
 LONG_DESCRIPTION = 'Classes and methods to do data acquisition and processing'
 

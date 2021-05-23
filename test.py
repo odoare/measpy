@@ -11,7 +11,7 @@ import matplotlib
 
 plt.style.use('seaborn')
 # matplotlib.use('TkAgg')
-#%matplotlib auto
+%matplotlib auto
 
 #%% Define and run a measurement
 M1 = mp.Measurement(out_sig='logsweep',
