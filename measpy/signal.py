@@ -946,6 +946,67 @@ class Spectral:
                 plt.ylabel('H')
             plt.title(self.desc)
 
+    def _add(self,other):
+        """Add two spectra
+
+        :param other: Other Spectral to add
+        :type other: Spectral
+        :return: Sum of spectra
+        :rtype: Spectral
+        """
+
+        if not self.unit.same_dimensions_as(other.unit):
+            raise Exception('Incompatible units in addition of Spectral obk=jects')
+        if self.fs!=other.fs:
+            raise Exception('Incompatible sampling frequencies in addition of Spectral objects')
+        if self.length!=other.length:
+            raise Exception('Incompatible lengths')
+        if self.full!=other.full:
+            raise Exception('Spectral objects are not of the same type (full property)')
+
+        return self.similar(
+            values=self.values+other.unit_to(self.unit).values,
+            desc=self.desc+'\n + '+other.desc
+        )
+
+    def __add__(self,other):
+        """Add something to the spectrum
+
+        :param other: Something to add to
+        :type other: Spectral, float, int, scalar quantity
+        """
+        if type(other)==Spectral:
+            return self._add(other)
+    
+        if (type(other)==float) or (type(other)==int):
+            print('Add with a number without unit, it is considered to be of same unit')
+            return self._add(
+                self.similar(
+                    values=np.ones_like(self.values)*other,
+                    desc=str(other)
+                )
+            )
+
+        if type(other)==unyt.array.unyt_quantity:
+            if not self.unit.same_dimensions_as(other.units):
+                raise Exception('Incompatible units in addition of sginals')
+            a=other.units.get_conversion_factor(self.unit)[0]
+            return self._add(
+                self.similar(
+                    values=np.ones_like(self.values)*a,
+                    desc=str(other)
+                )
+            )
+        else:
+            raise Exception('Incompatible type when adding something to a Signal')
+
+    def __radd__(self,other):
+        """Addition of two signals
+
+        :param other: something else to add
+        :type other: Signal, float, int, scalar quantity
+        """
+        return self.__add__(other)
 
     @classmethod
     def tfe(cls,x,y,**kwargs):
@@ -964,6 +1025,9 @@ class Spectral:
             return np.linspace(0, self.fs, num=len(self._values))
         else:
             return np.linspace(0, self.fs/2, num=len(self._values))
+    @property
+    def length(self):
+        return len(self._values)
 
     # END of Spectral
 
