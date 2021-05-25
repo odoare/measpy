@@ -779,9 +779,9 @@ class Spectral:
         out = Spectral(values=values,fs=fs,desc=desc,unit=unit,full=full)
         if 'w' in kwargs:
             w = kwargs['w']
-            sp = csaps(w.f, w.a, smooth=0.9)
-            #spl = InterpolatedUnivariateSpline(w.f,w.a,ext=1)
-            out.values = sp(self.freqs)
+            spa = csaps(w.freqs, w.amp, smooth=0.9)
+            spp = csaps(w.freqs, w.phase, smooth=0.9)
+            out.values=spa(self.freqs)*np.exp(1j*spp(self.freqs))
         return out
 
     def nth_oct_smooth_to_weight(self,n,min=5,max=20000):
@@ -800,30 +800,40 @@ class Spectral:
                 except:
                     val[ii]=val[ii-1]
         return Weighting(
-            f=fc,
-            a=val,
+            freqs=fc,
+            amp=val,
             desc=add_step(self.desc,'1/'+str(n)+'th oct. smooth')
         )
 
     def nth_oct_smooth_to_weight_complex(self,n,min=5,max=20000):
         """ Nth octave smoothing """
         fc,f1,f2 = nth_octave_bands(n,min=min,max=max)
-        val = np.zeros_like(fc,dtype=complex)
+        ampl = np.zeros_like(fc,dtype=float)
+        phas = np.zeros_like(fc,dtype=float)
+        angles=np.unwrap(np.angle(self.values))
         for ii in range(len(fc)):
-            module = np.abs(self.values[ (self.freqs>f1[ii]) & (self.freqs<f2[ii]) ])
-            phase = np.unwrap(
-                np.angle(self.values[(self.freqs>f1[ii]) & (self.freqs<f2[ii])])
+            ampl[ii] = np.mean(
+                np.abs(self.values[ (self.freqs>f1[ii]) & (self.freqs<f2[ii]) ])
             )
-            val[ii] = np.mean(module) * np.exp(1j*np.mean(phase))
+            phas[ii] = np.mean(
+                angles[(self.freqs>f1[ii]) & (self.freqs<f2[ii])]
+            )
         return Weighting(
-            f=fc,
-            a=val,
+            freqs=fc,
+            amp=ampl,
+            phase=phas,
             desc=add_step(self.desc,'1/'+str(n)+'th oct. smooth (complex)')
         )
 
     def nth_oct_smooth(self,n,min=5,max=20000):
         return self.similar(
             w=self.nth_oct_smooth_to_weight(n,min=min,max=max),
+            desc=add_step(self.desc,'1/'+str(n)+'th oct. smooth')
+        )
+
+    def nth_oct_smooth_complex(self,n,min=5,max=20000):
+        return self.similar(
+            w=self.nth_oct_smooth_to_weight_complex(n,min=min,max=max),
             desc=add_step(self.desc,'1/'+str(n)+'th oct. smooth')
         )
 
@@ -1168,14 +1178,25 @@ class Spectral:
 
 class Weighting:
     """ Class for weighting functions
+
+        Amplitudes are stored as absolute values and phase (in radians)
     """
-    def __init__(self,f,a,desc):
-        self.f=f
-        self.a=a
+    def __init__(self,freqs,amp,phase=None,desc='Weigthing function'):
+        self.freqs=freqs
+        if type(phase)==type(None):
+            self.phase=np.zeros_like(amp)
+        else:
+            self.phase=phase
+        # if type(amp)==float or type(amp)==int:
+        #     self.amp=float(amp)
+        # elif type(amp)==complex:
+        #     self.amp=np.abs(amp)
+        #     self.phase=np.angle(amp)
+        self.amp=amp
         self.desc=desc
 
     @classmethod
-    def from_csv(cls,filename,asdB=True):
+    def from_csv(cls,filename,asdB=True,asradians=True):
         out = cls([],[],'Weigting')
         with open(filename, 'r') as file:
             reader = csv.reader(file)
@@ -1184,30 +1205,54 @@ class Weighting:
                 if n==0:
                     out.desc=row[0]
                 else:
-                    out.f+=[float(row[0])]
-                    out.a+=[float(row[1])]
+                    out.freqs+=[float(row[0])]
+                    if asdB:
+                        out.amp+=10**(float(row[1])/20.0)
+                    else:
+                        out.amp+=[float(row[1])]
+                    if asradians:
+                        try:
+                            out.phase+=float(row[2])
+                        except:
+                            out.phase+=0.0
+                    else:
+                        try:
+                            out.phase+=np.pi*float(row[2])/180.0
+                        except:
+                            out.phase+=0.0
                 n+=1
-        out.f=np.array(out.f)
-        if asdB:
-            out.a=10**(np.array(out.a)/20.0)
-        else:
-            out.a=np.array(out.a)
+        out.freqs=np.array(out.freqs)
+        out.amp=np.array(out.amp)
+        out.phase=np.array(out.phase)
         return out
 
-    def to_csv(self,filename,asdB):
+    def to_csv(self,filename,asdB=True,asradians=True):
         with open(filename, 'w') as file:
             writer = csv.writer(file)
             writer.writerow([self.desc])
             if asdB:
-                for n in range(len(self.f)):
-                    writer.writerow([self.f[n],20*np.log10(self.a[n])])
+                outamp=20*np.log10(np.abs(self.amp))
             else:
-                for n in range(len(self.f)):
-                    writer.writerow([self.f[n],self.a[n]])
+                outamp=self.amp
+
+            if asradians:
+                outphase=self.phase
+            else:
+                outphase=180*self.phase/np.pi
+
+            for n in range(len(self.freqs)):
+                writer.writerow(
+                    [self.freqs[n],
+                    outamp[n],
+                    outphase[n]]
+                )
 
     @property
     def adb(self):
-        return 20*np.log10(np.abs(self.a))
+        return 20*np.log10(np.abs(self.amp))
+    @property
+    def acomplex(self):
+        return self.amp*np.exp(1j*self.phase)
 
     # END of Weighting
 
@@ -1255,8 +1300,8 @@ WDBA = [
     [16000,-6.6],
     [20000,-9.3]]
 WDBA = Weighting(
-    f=np.array(WDBA)[:,0],
-    a=10**(np.array(WDBA)[:,1]/20),
+    freqs=np.array(WDBA)[:,0],
+    amp=10**(np.array(WDBA)[:,1]/20),
     desc='dBA weightings')
 
 WDBC = [
@@ -1297,8 +1342,8 @@ WDBC = [
     [16000,-8.5 ],
     [20000,-11.2 ]]
 WDBC = Weighting(
-    f=np.array(WDBC)[:,0],
-    a=10**(np.array(WDBC)[:,1]/20),
+    freqs=np.array(WDBC)[:,0],
+    amp=10**(np.array(WDBC)[:,1]/20),
     desc='dBC weightings')
 
 # Below are functions that may be useful (some cleaning should be done)
