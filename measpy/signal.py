@@ -9,7 +9,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from numpy.core.numeric import ones_like
 from scipy.signal import welch, csd, coherence, resample
-from scipy.interpolate import InterpolatedUnivariateSpline
+#from scipy.interpolate import InterpolatedUnivariateSpline
+from csaps import csaps
 import scipy.io.wavfile as wav
 import csv
 
@@ -778,13 +779,14 @@ class Spectral:
         out = Spectral(values=values,fs=fs,desc=desc,unit=unit,full=full)
         if 'w' in kwargs:
             w = kwargs['w']
-            spl = InterpolatedUnivariateSpline(w.f,w.a,ext=1)
-            out.values = spl(self.freqs)
+            sp = csaps(w.f, w.a, smooth=0.9)
+            #spl = InterpolatedUnivariateSpline(w.f,w.a,ext=1)
+            out.values = sp(self.freqs)
         return out
 
-    def nth_oct_smooth_to_weight(self,n):
+    def nth_oct_smooth_to_weight(self,n,min=5,max=20000):
         """ Nth octave smoothing """
-        fc,f1,f2 = nth_octave_bands(n)
+        fc,f1,f2 = nth_octave_bands(n,min=min,max=max)
         val = np.zeros_like(fc)
         for ii in range(len(fc)):
             val[ii] = np.mean(
@@ -793,16 +795,19 @@ class Spectral:
         # Check for NaN values (generally at low frequencies)
         for ii in range(len(fc)-1,-1,-1):
             if val[ii]!=val[ii]:
-                val[ii]=val[ii+1]
+                try:
+                    val[ii]=val[ii+1]
+                except:
+                    val[ii]=val[ii-1]
         return Weighting(
             f=fc,
             a=val,
             desc=add_step(self.desc,'1/'+str(n)+'th oct. smooth')
         )
 
-    def nth_oct_smooth_to_weight_complex(self,n):
+    def nth_oct_smooth_to_weight_complex(self,n,min=5,max=20000):
         """ Nth octave smoothing """
-        fc,f1,f2 = nth_octave_bands(n)
+        fc,f1,f2 = nth_octave_bands(n,min=min,max=max)
         val = np.zeros_like(fc,dtype=complex)
         for ii in range(len(fc)):
             module = np.abs(self.values[ (self.freqs>f1[ii]) & (self.freqs<f2[ii]) ])
@@ -816,9 +821,9 @@ class Spectral:
             desc=add_step(self.desc,'1/'+str(n)+'th oct. smooth (complex)')
         )
 
-    def nth_oct_smooth(self,n):
+    def nth_oct_smooth(self,n,min=5,max=20000):
         return self.similar(
-            w=self.nth_oct_smooth_to_weight(n),
+            w=self.nth_oct_smooth_to_weight(n,min=min,max=max),
             desc=add_step(self.desc,'1/'+str(n)+'th oct. smooth')
         )
 
@@ -854,9 +859,10 @@ class Spectral:
             )
 
     def apply_weighting(self,w):
-        spl = InterpolatedUnivariateSpline(w.f,w.a,ext=1)
+        #spl = InterpolatedUnivariateSpline(w.f,w.a,ext=1)
+        sp = csaps(w.f, w.a, smooth=0.9)
         return self.similar(
-            values=self._values*spl(self.freqs),
+            values=self._values*sp(self.freqs),
             desc=add_step(self.desc,w.desc)
         )
 
@@ -1399,10 +1405,10 @@ def smooth(in_array,l=20):
     ker = np.ones(l)/l
     return np.convolve(in_array,ker,mode='same')
 
-def nth_octave_bands(n):
+def nth_octave_bands(n,min=5,max=20000):
     """ 1/nth octave band frequency range calculation """
-    nmin = int(np.ceil(n*np.log2(1*10**-3)))
-    nmax = int(np.ceil(n*np.log2(20e3*10**-3)))
+    nmin = int(np.ceil(n*np.log2(min*10**-3)))
+    nmax = int(np.ceil(n*np.log2(max*10**-3)))
     indices = range(nmin,nmax+1)
     f_centre = 1000 * (2**(np.array(indices)/n))
     f2 = 2**(1/n/2)
