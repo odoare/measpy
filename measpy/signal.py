@@ -20,9 +20,7 @@ from measpy._tools import add_step
 
 # TODO :
 # - Calibrations
-# - Spectral arithmetics
 # - Test dBu, dBV
-# - Test Functions for all basic weightings (dBA, dBC)
 # - Improve plotting functions
 
 ##################
@@ -285,10 +283,10 @@ class Signal:
         """
         if ('dur' in kwargs) and ('pos' in kwargs):
             raise Exception('Error: dur and pos cannot be both specified')
-        if ('dur' in kwargs):
+        elif ('dur' in kwargs):
             pos = (int(round(kwargs['dur'][0]*self.fs)),int(round(kwargs['dur'][1]*self.fs)))
-        if ('pos' in kwargs):
-            pos = (kwargs['pos'][0],kwargs['dur'][1])
+        elif ('pos' in kwargs):
+            pos = (kwargs['pos'][0],kwargs['pos'][1])
         else:
             pos = (0,-1)
         return self.similar(
@@ -854,15 +852,6 @@ class Spectral:
             values=self._values*(
                 (self.freqs>freqsrange[0]) & (self.freqs<freqsrange[1]))
             )
-
-    # def abs(self):
-    #     """ Absolute value
-    #         Returns a Spectral class object
-    #     """
-    #     return self.similar(
-    #         values=np.abs(self.values),
-    #         desc=add_step(self.desc,"abs")
-    #     )
 
     def apply_weighting(self,w):
         spl = InterpolatedUnivariateSpline(w.f,w.a,ext=1)
