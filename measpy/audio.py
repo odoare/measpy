@@ -26,7 +26,7 @@ def run_audio_measurement(M,progress=True):
             print("Warning: no device specified, changing to None")
             M.out_device=None
     now = datetime.now()
-    M.date = now.strftime("%Y/%m/%d")
+    M.date = now.strftime("%Y-%m-%d")
     M.time = now.strftime("%H:%M:%S")
 
     # Set the audio devices to use
