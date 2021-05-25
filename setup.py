@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = '0.0.2.1'
+VERSION = '0.0.2.3'
 DESCRIPTION = 'Measurements with Python'
 LONG_DESCRIPTION = 'Classes and methods to do data acquisition and processing'
 
@@ -13,7 +13,7 @@ setup(
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
     packages=find_packages(),
-    install_requires=['numpy','matplotlib','unyt'],
+    install_requires=['numpy','matplotlib','unyt','csaps'],
     keywords=['Python', 'Measurements', 'Data acquisition'],
     classifiers=[
         "Development Status :: 3 - Alpha",
