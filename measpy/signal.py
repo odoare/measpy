@@ -144,9 +144,9 @@ class Signal:
         else:
             return Signal(raw=self.raw,fs=fs,desc=desc,unit=unit,cal=cal,dbfs=dbfs)
 
-    def plot(self):
+    def plot(self,linetype='-'):
         """ Basic plotting of the signal """
-        plt.plot(self.time,self.values)
+        plt.plot(self.time,self.values,linetype)
         plt.xlabel('Time (s)')
         plt.ylabel('['+str(self.unit.units)+']')
         plt.title(self.desc)
@@ -330,7 +330,7 @@ class Signal:
         leng = int(2**np.ceil(np.log2(self.length)))
         Y = np.fft.rfft(self.values,leng)/self.fs
         f = np.linspace(0, self.fs/2, num=round(leng/2)+1) # frequency axis
-        L = self.length/self.fs/np.log(freqs[1]/freqs[0])
+        L = (self.length-1)/self.fs/np.log(freqs[1]/freqs[0])
         S = 2*np.sqrt(f/L)*np.exp(-1j*2*np.pi*f*L*(1-np.log(f/freqs[0])) + 1j*np.pi/4)
         S[0] = 0j
         return Spectral(values=Y*S,
