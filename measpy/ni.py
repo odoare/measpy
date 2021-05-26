@@ -110,7 +110,7 @@ def run_ni_measurement(M):
 
     intask.close()
 
-    if M.out_sig==None:
+    if M.out_sig!=None:
         outtask.close()
 
     y=np.array(y).T
