@@ -192,7 +192,8 @@ class Signal:
 
     def dB(self,ref):
         """ Computes 20*log10(self.values/ref)
-            ref is for instance a pressure or volage reference
+            ref is for instance a pressure or volage reference that
+            has to be of same units as the signal.
             
             :param ref: Reference quantity that has to be of same dimension 
             :type ref: unyt.array.unyt_quantity
@@ -239,6 +240,10 @@ class Signal:
 
     def tfe_welch(self, x, **kwargs):
         """ Compute transfer function between signal x and the actual signal
+
+            :param x: Other signal from which the transfert function is computed
+            :type x: measpy.signal.Signal
+            :param **kwargs: Same parameters as scipy.welch or scipy.csd
         """
         if self.fs!=x.fs:
             raise Exception('Sampling frequencies have to be the same')
@@ -341,8 +346,8 @@ class Signal:
         )
     
     def fft(self):
-        """ FFT of the signal
-            Returns a Spectral object
+        """ FFT of the signal.
+            Returns a Spectral object. Unit is preserved during the process.
         """
         return Spectral(values=np.fft.fft(self.values),
                                 fs=self.fs,
@@ -351,8 +356,8 @@ class Signal:
                                 desc=add_step(self.desc,'FFT'))
     
     def rfft(self):
-        """ Real FFT of the signal
-            Returns a Spectral object
+        """ Real FFT of the signal.
+            Returns a Spectral object. Unit is preserved during the process.
         """
         return Spectral(values=np.fft.rfft(self.values),
                                 fs=self.fs,
@@ -784,9 +789,22 @@ class Spectral:
             out.values=spa(self.freqs)*np.exp(1j*spp(self.freqs))
         return out
 
-    def nth_oct_smooth_to_weight(self,n,min=5,max=20000):
-        """ Nth octave smoothing """
-        fc,f1,f2 = nth_octave_bands(n,min=min,max=max)
+    def nth_oct_smooth_to_weight(self,n=3,fmin=5,fmax=20000):
+        """ Nth octave smoothing
+
+            Converts a Spectral object into a Weighting object
+            (a series of frequencies logarithmically spaced,
+            with a corresponding complex value, expressed as
+            amplitude and phase)
+
+            :param n: Ratio of smoothing (1/nth smoothing), defaults to 3
+            :type n: int, optionnal
+            :param fmin: Min value of the output frequencies, defaults to 5
+            :type fmin: float, int, optionnal
+            :param fmax: Max value of the output frequencies, defaults to 20000
+            :type fmax: float, int, optionnal
+        """
+        fc,f1,f2 = nth_octave_bands(n,fmin=fmin,fmax=fmax)
         val = np.zeros_like(fc)
         for ii in range(len(fc)):
             val[ii] = np.mean(
@@ -805,9 +823,19 @@ class Spectral:
             desc=add_step(self.desc,'1/'+str(n)+'th oct. smooth')
         )
 
-    def nth_oct_smooth_to_weight_complex(self,n,min=5,max=20000):
-        """ Nth octave smoothing """
-        fc,f1,f2 = nth_octave_bands(n,min=min,max=max)
+    def nth_oct_smooth_to_weight_complex(self,n,fmin=5,fmax=20000):
+        """ Nth octave smoothing, complex version
+        
+            :param n: Ratio of smoothing (1/nth smoothing), defaults to 3
+            :type n: int, optionnal
+            :param fmin: Min value of the output frequencies, defaults to 5
+            :type fmin: float, int, optionnal
+            :param fmax: Max value of the output frequencies, defaults to 20000
+            :type fmax: float, int, optionnal
+            :return: A weighting object
+            :rtype: measpy.signal.Weighting
+        """
+        fc,f1,f2 = nth_octave_bands(n,fmin=fmin,fmax=fmax)
         ampl = np.zeros_like(fc,dtype=float)
         phas = np.zeros_like(fc,dtype=float)
         angles=np.unwrap(np.angle(self.values))
@@ -825,15 +853,37 @@ class Spectral:
             desc=add_step(self.desc,'1/'+str(n)+'th oct. smooth (complex)')
         )
 
-    def nth_oct_smooth(self,n,min=5,max=20000):
+    def nth_oct_smooth(self,n,fmin=5,fmax=20000):
+        """ Nth octave smoothing
+
+            :param n: Ratio of smoothing (1/nth smoothing), defaults to 3
+            :type n: int, optionnal
+            :param fmin: Min value of the output frequencies, defaults to 5
+            :type fmin: float, int, optionnal
+            :param fmax: Max value of the output frequencies, defaults to 20000
+            :type fmax: float, int, optionnal
+            :return: A smoothed spectral object
+            :rtype: measpy.signal.Spectral
+        """
         return self.similar(
-            w=self.nth_oct_smooth_to_weight(n,min=min,max=max),
+            w=self.nth_oct_smooth_to_weight(n,fmin=fmin,fmax=fmax),
             desc=add_step(self.desc,'1/'+str(n)+'th oct. smooth')
         )
 
-    def nth_oct_smooth_complex(self,n,min=5,max=20000):
+    def nth_oct_smooth_complex(self,n,fmin=5,fmax=20000):
+        """ Nth octave smoothing, complex version
+
+            :param n: Ratio of smoothing (1/nth smoothing), defaults to 3
+            :type n: int, optionnal
+            :param fmin: Min value of the output frequencies, defaults to 5
+            :type fmin: float, int, optionnal
+            :param fmax: Max value of the output frequencies, defaults to 20000
+            :type fmax: float, int, optionnal
+            :return: A smoothed spectral object
+            :rtype: measpy.signal.Spectral
+        """
         return self.similar(
-            w=self.nth_oct_smooth_to_weight_complex(n,min=min,max=max),
+            w=self.nth_oct_smooth_to_weight_complex(n,fmin=fmin,fmax=fmax),
             desc=add_step(self.desc,'1/'+str(n)+'th oct. smooth')
         )
 
@@ -1450,10 +1500,10 @@ def smooth(in_array,l=20):
     ker = np.ones(l)/l
     return np.convolve(in_array,ker,mode='same')
 
-def nth_octave_bands(n,min=5,max=20000):
+def nth_octave_bands(n,fmin=5,fmax=20000):
     """ 1/nth octave band frequency range calculation """
-    nmin = int(np.ceil(n*np.log2(min*10**-3)))
-    nmax = int(np.ceil(n*np.log2(max*10**-3)))
+    nmin = int(np.ceil(n*np.log2(fmin*10**-3)))
+    nmax = int(np.ceil(n*np.log2(fmax*10**-3)))
     indices = range(nmin,nmax+1)
     f_centre = 1000 * (2**(np.array(indices)/n))
     f2 = 2**(1/n/2)
