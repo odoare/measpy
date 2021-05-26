@@ -28,7 +28,7 @@ def run_ni_measurement(M):
         print("Warning: no output device specified, changing to "+system.devices[0].name)
         M.out_device=system.devices[0].name
     now = datetime.now()
-    M.date = now.strftime("%Y/%m/%d")
+    M.date = now.strftime("%Y-%m-%d")
     M.time = now.strftime("%H:%M:%S")
 
     # Insert a synchronization peak at the begining of the output signals
@@ -57,7 +57,9 @@ def run_ni_measurement(M):
     nsamps = int(round((dursync+M.dur)*M.fs))
 
     intask = nidaqmx.Task(new_task_name="in") # read task
-    outtask = nidaqmx.Task(new_task_name="out") # write task
+
+    if M.out_sig!=None:
+        outtask = nidaqmx.Task(new_task_name="out") # write task
 
     # Set up the read tasks
     for n in M.in_map:
@@ -74,37 +76,42 @@ def run_ni_measurement(M):
         active_edge=niconst.Edge.FALLING,
         sample_mode=niconst.AcquisitionType.FINITE, samps_per_chan=nsamps)
 
-    # Set up the write tasks, use the sample clock of the Analog input if possible
-    for n in M.out_map:   
-        outtask.ao_channels.add_ao_voltage_chan(
-            physical_channel=M.out_device + "/" + n_to_aon(n), 
-            min_val=-10, max_val=10,
-            units=niconst.VoltageUnits.VOLTS)
 
-    try:
-        outtask.timing.cfg_samp_clk_timing(
-            rate=M.fs,
-            source="/" + M.in_device + "/ai/SampleClock", #"OnboardClock",
-            active_edge=niconst.Edge.FALLING,
-            sample_mode=niconst.AcquisitionType.FINITE, samps_per_chan=nsamps)
-    except:
-        print("Error when choosing \""+"/" + M.in_device + "/ai/SampleClock\" as clock source, let's try \"OnboardClock\" ")
-        outtask.timing.cfg_samp_clk_timing(
-            rate=M.fs,
-            source="OnboardClock",
-            active_edge=niconst.Edge.FALLING,
-            sample_mode=niconst.AcquisitionType.FINITE, samps_per_chan=nsamps)
+    if M.out_sig!=None:
+        # Set up the write tasks, use the sample clock of the Analog input if possible
+        for n in M.out_map:   
+            outtask.ao_channels.add_ao_voltage_chan(
+                physical_channel=M.out_device + "/" + n_to_aon(n), 
+                min_val=-10, max_val=10,
+                units=niconst.VoltageUnits.VOLTS)
 
-    if len(M.out_map)==1:
-        outtask.write(outx[:,0], auto_start=False)
-    else:
-        outtask.write(outx.T, auto_start=False)
+        try:
+            outtask.timing.cfg_samp_clk_timing(
+                rate=M.fs,
+                source="/" + M.in_device + "/ai/SampleClock", #"OnboardClock",
+                active_edge=niconst.Edge.FALLING,
+                sample_mode=niconst.AcquisitionType.FINITE, samps_per_chan=nsamps)
+        except:
+            print("Error when choosing \""+"/" + M.in_device + "/ai/SampleClock\" as clock source, let's try \"OnboardClock\" ")
+            outtask.timing.cfg_samp_clk_timing(
+                rate=M.fs,
+                source="OnboardClock",
+                active_edge=niconst.Edge.FALLING,
+                sample_mode=niconst.AcquisitionType.FINITE, samps_per_chan=nsamps)
 
-    outtask.start() # Start the write task first, waiting for the analog input sample clock
+        if len(M.out_map)==1:
+            outtask.write(outx[:,0], auto_start=False)
+        else:
+            outtask.write(outx.T, auto_start=False)
+
+        outtask.start() # Start the write task first, waiting for the analog input sample clock
+
     y = intask.read(nsamps) # Start the read task
 
     intask.close()
-    outtask.close()
+
+    if M.out_sig==None:
+        outtask.close()
 
     y=np.array(y).T
 
