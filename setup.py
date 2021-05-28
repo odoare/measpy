@@ -1,6 +1,9 @@
 from setuptools import setup, find_packages
 
-VERSION = '0.0.2.3'
+from datetime import datetime
+
+now = datetime.now()
+VERSION = 'git'+now.strftime("%Y%m%d")
 DESCRIPTION = 'Measurements with Python'
 LONG_DESCRIPTION = 'Classes and methods to do data acquisition and processing'
 
@@ -14,7 +17,7 @@ setup(
     long_description=LONG_DESCRIPTION,
     packages=find_packages(),
     install_requires=['numpy','matplotlib','unyt','csaps'],
-    keywords=['Python', 'Measurements', 'Data acquisition'],
+    keywords=['Python', 'Measurements', 'Data acquisition', 'Signal processing'],
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Programming Language :: Python :: 3"
