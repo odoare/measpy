@@ -1214,7 +1214,6 @@ class Spectral:
         """Absolute value """
         return self.abs()
 
-
     @classmethod
     def tfe(cls,x,y,**kwargs):
         if (type(x)!=Signal) & (type(y)!=Signal):
@@ -1275,19 +1274,19 @@ class Weighting:
                 else:
                     out.freqs+=[float(row[0])]
                     if asdB:
-                        out.amp+=10**(float(row[1])/20.0)
+                        out.amp+=[10**(float(row[1])/20.0)]
                     else:
                         out.amp+=[float(row[1])]
                     if asradians:
                         try:
-                            out.phase+=float(row[2])
+                            out.phase+=[float(row[2])]
                         except:
-                            out.phase+=0.0
+                            out.phase+=[0.0]
                     else:
                         try:
-                            out.phase+=np.pi*float(row[2])/180.0
+                            out.phase+=[np.pi*float(row[2])/180.0]
                         except:
-                            out.phase+=0.0
+                            out.phase+=[0.0]
                 n+=1
         out.freqs=np.array(out.freqs)
         out.amp=np.array(out.amp)
