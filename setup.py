@@ -4,6 +4,7 @@ from datetime import datetime
 
 now = datetime.now()
 VERSION = 'git'+now.strftime("%Y%m%d")
+VERSION = '0.0.3'
 DESCRIPTION = 'Measurements with Python'
 LONG_DESCRIPTION = 'Classes and methods to do data acquisition and processing'
 
