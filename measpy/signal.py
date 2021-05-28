@@ -433,6 +433,24 @@ class Signal:
         _, out._rawvalues = wav.read(filename+'.wav')
         return out
 
+    @classmethod
+    def from_wav(cls,filename,**kwargs):
+        """ Load a signal from a wav file
+
+        :param filename: base file name
+        :type filename: str
+        :return: The loaded signal
+        :rtype: measpy.signal.Signal
+        """
+        
+        desc = kwargs.setdefault("desc",filename)
+        unit = kwargs.setdefault("unit","1")
+        cal = kwargs.setdefault("cal",1.0)
+        dbfs = kwargs.setdefault("dbfs",1.0)
+        out=cls(desc=desc,unit=unit,cal=cal,dbfs=dbfs)
+        out.fs, out._rawvalues = wav.read(filename)
+        return out
+
     @property
     def raw(self):
         return self._rawvalues

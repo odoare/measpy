@@ -114,7 +114,7 @@ class Measurement:
                 self.data[self.out_name[n]]=Signal(desc=self.out_desc[n],
                                                     fs=self.fs,
                                                     unit='V',
-                                                    cal=1/self.out_dbfs[n],
+                                                    cal=1.0,
                                                     dbfs=self.out_dbfs[n])
             self.create_output()
         for n in range(len(self.in_name)):
@@ -609,3 +609,4 @@ class Measurement:
         if plotH:
             out.plot()
         return out
+        
