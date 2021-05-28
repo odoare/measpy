@@ -789,7 +789,7 @@ class Spectral:
             :param values: values of the spectral data
             :type values: numpy array, optionnal
             :param w: A Weighting object from which the spectrum is constructed by interpolation
-            :type w: measpy.signal.Weighting
+            :type w: measpy.signal.Weighting, optionnal
             :return: A Spectral object
             :rtype: measpy.signal.Spectral
 
@@ -937,12 +937,7 @@ class Spectral:
             )
 
     def apply_weighting(self,w):
-        #spl = InterpolatedUnivariateSpline(w.f,w.a,ext=1)
-        sp = csaps(w.f, w.a, smooth=0.9)
-        return self.similar(
-            values=self._values*sp(self.freqs),
-            desc=add_step(self.desc,w.desc)
-        )
+        return self*self.similar(w=w,unit=Unit('1'),desc=w.desc)
 
     def unit_to(self,unit):
         if type(unit)==str:
@@ -1265,6 +1260,7 @@ class Weighting:
     @classmethod
     def from_csv(cls,filename,asdB=True,asradians=True):
         out = cls([],[],'Weigting')
+        out.phase=[]
         with open(filename, 'r') as file:
             reader = csv.reader(file)
             n=0
