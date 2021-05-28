@@ -789,7 +789,7 @@ class Spectral:
             :param values: values of the spectral data
             :type values: numpy array, optionnal
             :param w: A Weighting object from which the spectrum is constructed by interpolation
-            :type w: measpy.signal.Weighting
+            :type w: measpy.signal.Weighting, optionnal
             :return: A Spectral object
             :rtype: measpy.signal.Spectral
 
@@ -937,12 +937,7 @@ class Spectral:
             )
 
     def apply_weighting(self,w):
-        #spl = InterpolatedUnivariateSpline(w.f,w.a,ext=1)
-        sp = csaps(w.f, w.a, smooth=0.9)
-        return self.similar(
-            values=self._values*sp(self.freqs),
-            desc=add_step(self.desc,w.desc)
-        )
+        return self*self.similar(w=w,unit=Unit('1'),desc=w.desc)
 
     def unit_to(self,unit):
         if type(unit)==str:
@@ -1214,7 +1209,6 @@ class Spectral:
         """Absolute value """
         return self.abs()
 
-
     @classmethod
     def tfe(cls,x,y,**kwargs):
         if (type(x)!=Signal) & (type(y)!=Signal):
@@ -1266,6 +1260,7 @@ class Weighting:
     @classmethod
     def from_csv(cls,filename,asdB=True,asradians=True):
         out = cls([],[],'Weigting')
+        out.phase=[]
         with open(filename, 'r') as file:
             reader = csv.reader(file)
             n=0
@@ -1275,19 +1270,19 @@ class Weighting:
                 else:
                     out.freqs+=[float(row[0])]
                     if asdB:
-                        out.amp+=10**(float(row[1])/20.0)
+                        out.amp+=[10**(float(row[1])/20.0)]
                     else:
                         out.amp+=[float(row[1])]
                     if asradians:
                         try:
-                            out.phase+=float(row[2])
+                            out.phase+=[float(row[2])]
                         except:
-                            out.phase+=0.0
+                            out.phase+=[0.0]
                     else:
                         try:
-                            out.phase+=np.pi*float(row[2])/180.0
+                            out.phase+=[np.pi*float(row[2])/180.0]
                         except:
-                            out.phase+=0.0
+                            out.phase+=[0.0]
                 n+=1
         out.freqs=np.array(out.freqs)
         out.amp=np.array(out.amp)
