@@ -829,12 +829,13 @@ class Spectral:
                 self.values[ (self.freqs>f1[ii]) & (self.freqs<f2[ii]) ]
             )
         # Check for NaN values (generally at low frequencies)
-        for ii in range(len(fc)-1,-1,-1):
+        # and remove the values
+        itor = []
+        for ii in range(len(fc)):
             if val[ii]!=val[ii]:
-                try:
-                    val[ii]=val[ii+1]
-                except:
-                    val[ii]=val[ii-1]
+                itor+=[ii]
+        fc=np.delete(fc,itor)
+        val=np.delete(val,itor)
         return Weighting(
             freqs=fc,
             amp=val,
@@ -864,6 +865,17 @@ class Spectral:
             phas[ii] = np.mean(
                 angles[(self.freqs>f1[ii]) & (self.freqs<f2[ii])]
             )
+
+        # Check for NaN values (generally at low frequencies)
+        # and remove the values
+        itor = []
+        for ii in range(len(fc)):
+            if ampl[ii]!=ampl[ii]:
+                itor+=[ii]
+        fc=np.delete(fc,itor)
+        ampl=np.delete(ampl,itor)
+        phas=np.delete(phas,itor)
+
         return Weighting(
             freqs=fc,
             amp=ampl,
