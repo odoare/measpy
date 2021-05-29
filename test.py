@@ -3,7 +3,7 @@
 #from measpy import measpyaudio as ma
 #from pint.unit import Unit
 from unyt import Unit
-import measpy.audio as mp
+import measpy.ni as mp
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib
@@ -26,8 +26,8 @@ M1 = mp.Measurement(out_sig='logsweep',
                     extrat=[0,0],
                     out_sig_fades=[10,10],
                     dur=10,
-                    in_device='default',
-                    out_device='default',
+                    in_device='Microsoft Sound Mapper - Input',
+                    out_device='Microsoft Sound Mapper - Output',
                     io_sync=1,
                     out_amp=0.5)
 M1.run_measurement()
@@ -143,5 +143,54 @@ M1 = mp.Measurement(out_sig=None,
                     dur=5,
                     in_device='default')
 M1.run_measurement()
+
+# %%
+
+# %% Test carte ni
+
+M1 = mp.Measurement(out_sig='logsweep',
+                    fs=96000,
+                    out_sig_freqs=[1.0,22000],
+                    out_map=[1],
+                    out_desc=['Out1'],
+                    out_dbfs=[1.0],
+                    in_map=[1,2],
+                    in_desc=['Input voltage 1','Input voltage 2'],
+                    in_cal=[1.0,1.0],
+                    in_unit=['V','V'],
+                    in_dbfs=[1.0,1.0],
+                    extrat=[0,0],
+                    out_sig_fades=[0,0],
+                    dur=5,
+                    io_sync=1,
+                    in_device='Dev3',
+                    out_device='Dev3')
+M1.run_measurement()
+
+#%% Analyses carte ni
+plt.figure(1)
+M1.data['In1'].plot(linetype='o')
+M1.data['Out1'].plot(linetype='*')
+
+plt.figure(2)
+M1.data['In1'].tfe_farina(M1.out_sig_freqs).plot()
+M1.data['In1'].tfe_welch(M1.data['Out1']).plot()
+
+plt.figure(3)
+M1.data['In1'].tfe_farina(M1.out_sig_freqs).irfft().plot()
+
+plt.figure(3)
+M1.data['In1'].tfe_welch(M1.data['Out1']).irfft().plot()
+
+plt.figure(4)
+M1.data['Out1'].tfe_welch(M1.data['Out1']).plot()
+M1.data['Out1'].tfe_farina(M1.out_sig_freqs).plot()
+
+plt.figure(5)
+M1.data['Out1'].tfe_welch(M1.data['Out1']).irfft().plot()
+M1.data['Out1'].tfe_farina(M1.out_sig_freqs).irfft().plot()
+
+plt.figure(6)
+(M1.data['Out1']*(1*Unit('V'))+M1.data['Out1']*M1.data['Out1']).tfe_farina(M1.out_sig_freqs).irfft().plot()
 
 # %%
