@@ -24,9 +24,11 @@ def run_ni_measurement(M):
     if M.in_device=='':
         print("Warning: no output device specified, changing to "+system.devices[0].name)
         M.in_device=system.devices[0].name
-    if M.out_device=='':
-        print("Warning: no output device specified, changing to "+system.devices[0].name)
-        M.out_device=system.devices[0].name
+    if M.out_sig!=None:
+        if M.out_device=='':
+            print("Warning: no output device specified, changing to "+system.devices[0].name)
+            M.out_device=system.devices[0].name
+            
     now = datetime.now()
 
     M.date = now.strftime("%Y%m%d")
