@@ -1,20 +1,19 @@
 import nidaqmx
-from measpy.measurement import (Signal,
-                    Measurement,
-                    ms)
+import nidaqmx.constants as niconst
+
+import measpy.signal as ms
 
 import numpy as np
 from numpy.matlib import repmat
 
 from datetime import datetime
-import nidaqmx.constants as niconst
 
 def n_to_ain(n):
     return 'ai'+str(n-1)
 def n_to_aon(n):
     return 'ao'+str(n-1)
 
-def run_ni_measurement(M):
+def ni_run_measurement(M):
     system = nidaqmx.system.System.local()
     nsamps = int(round(M.dur*M.fs))
 
@@ -30,7 +29,6 @@ def run_ni_measurement(M):
             M.out_device=system.devices[0].name
             
     now = datetime.now()
-
     M.date = now.strftime("%Y%m%d")
     M.time = now.strftime("%H%M%S")
 
@@ -131,4 +129,7 @@ def run_ni_measurement(M):
             M.data[s].raw = y[:,n]
             n+=1
 
-Measurement.run_measurement=run_ni_measurement
+def ni_get_devices():
+    system = nidaqmx.system.System.local()
+    print(system.devices)
+    return system.devices

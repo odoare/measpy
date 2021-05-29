@@ -3,7 +3,9 @@
 #from measpy import measpyaudio as ma
 #from pint.unit import Unit
 from unyt import Unit
-import measpy.ni as mp
+import measpy as mp
+from measpy.audio import audio_run_measurement, audio_get_devices
+
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib
@@ -25,12 +27,12 @@ M1 = mp.Measurement(out_sig='logsweep',
                     in_dbfs=[5.0,5.0],
                     extrat=[0,0],
                     out_sig_fades=[10,10],
-                    dur=10,
-                    in_device='Microsoft Sound Mapper - Input',
-                    out_device='Microsoft Sound Mapper - Output',
+                    dur=5,
+                    in_device='Default',
+                    out_device='Default',
                     io_sync=1,
                     out_amp=0.5)
-M1.run_measurement()
+audio_run_measurement(M1)
 M1.plot()
 
 #%% Save in three different formats

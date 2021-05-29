@@ -1,9 +1,6 @@
 import sounddevice as sd
-from measpy.measurement import (Signal,
-                    Spectral,
-                    Measurement,
-                    Weighting,
-                    ms)
+
+import measpy.signal as ms
 
 import numpy as np
 from numpy.matlib import repmat
@@ -14,7 +11,7 @@ import tkinter as tk
 from datetime import datetime
 from time import time, sleep
 
-def run_audio_measurement(M,progress=True):
+def audio_run_measurement(M,progress=True):
     if M.device_type!='audio':
         print("Warning: deviceType != 'audio'. Changing to 'audio'.")
         M.device_type='audio'
@@ -25,6 +22,7 @@ def run_audio_measurement(M,progress=True):
         if M.out_device=='':
             print("Warning: no device specified, changing to None")
             M.out_device=None
+
     now = datetime.now()
     M.date = now.strftime("%Y%m%d")
     M.time = now.strftime("%H%M%S")
@@ -105,4 +103,6 @@ def run_audio_measurement(M,progress=True):
     for ii in range(len(M.in_map)):
         M.data[M.in_name[ii]].raw=np.array(y[:,ii],dtype=float)
 
-Measurement.run_measurement=run_audio_measurement
+def audio_get_devices():
+   return sd.query_devices()
+ 

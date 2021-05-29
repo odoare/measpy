@@ -9,7 +9,7 @@
 # - Improve plotting
 
 import measpy.signal as ms
-from measpy.signal import Signal, Spectral, Weighting
+from measpy.signal import Signal
 
 from measpy._tools import csv_to_dict, convl, convl1
 
@@ -23,7 +23,6 @@ import csv
 import pickle
 import json
 
-import unyt as u
 from unyt import Unit
 
 class Measurement:

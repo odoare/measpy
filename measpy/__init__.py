@@ -1,4 +1,4 @@
 # __init__.py
 
-import measpy.signal
-import measpy.measurement
+from measpy.signal import Signal, Spectral, Weighting
+from measpy.measurement import Measurement
