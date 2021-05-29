@@ -9,7 +9,7 @@
 # - Improve plotting
 
 import measpy.signal as ms
-from measpy.signal import Signal, Spectral, Weighting
+from measpy.signal import Signal
 
 from measpy._tools import csv_to_dict, convl, convl1
 
