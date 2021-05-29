@@ -28,8 +28,9 @@ def run_ni_measurement(M):
         print("Warning: no output device specified, changing to "+system.devices[0].name)
         M.out_device=system.devices[0].name
     now = datetime.now()
-    M.date = now.strftime("%Y-%m-%d")
-    M.time = now.strftime("%H:%M:%S")
+
+    M.date = now.strftime("%Y%m%d")
+    M.time = now.strftime("%H%M%S")
 
     # Insert a synchronization peak at the begining of the output signals
     if M.out_sig==None:
@@ -106,7 +107,7 @@ def run_ni_measurement(M):
 
         outtask.start() # Start the write task first, waiting for the analog input sample clock
 
-    y = intask.read(nsamps) # Start the read task
+    y = intask.read(nsamps,timeout=M.dur) # Start the read task
 
     intask.close()
 
