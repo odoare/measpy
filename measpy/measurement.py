@@ -23,7 +23,6 @@ import csv
 import pickle
 import json
 
-import unyt as u
 from unyt import Unit
 
 class Measurement:
