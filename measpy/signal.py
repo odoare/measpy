@@ -948,8 +948,11 @@ class Spectral:
                 (self.freqs>freqsrange[0]) & (self.freqs<freqsrange[1]))
             )
 
-    def apply_weighting(self,w):
-        return self*self.similar(w=w,unit=Unit('1'),desc=w.desc)
+    def apply_weighting(self,w,inverse=False):
+        if inverse:
+            return self*(1/self.similar(w=w,unit=Unit('1'),desc=w.desc))
+        else:
+            return self*self.similar(w=w,unit=Unit('1'),desc=w.desc)
 
     def unit_to(self,unit):
         if type(unit)==str:
