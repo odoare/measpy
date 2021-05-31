@@ -16,16 +16,27 @@ For now, these daq devices are implemented :
 
 To import the package and perform data acquisition with sound cards:
 ```python
-import measpy.audio as mp
+import measpy as mp
 ```
-This will import the classes ```mp.Measurement```, ```mp.Signal```, ```mp.Spectral``` and ```mp.Weighting```, plus some other function in ```mp.ms. ...```
+This will import the classes ```mp.Measurement```, ```mp.Signal```, ```mp.Spectral``` and ```mp.Weighting```.
+
+To do data acquisition one has to select the module that corresponds to the target device. If it is a soundcard:
+```python
+from measpy.audio import audio_run_measurement
+```
+If it is a NI daq card:
+```python
+from measpy.ni import audio_run_measurement
+```
+
+In theses modules, there's also the ```audio_get_devices``` and ```ni_get_devices``` functions to get a liste of devices present in the system.
 
 ## TODO
 
 Things to improve, implement, fix:
 - Many processing methods have to be implemented
 - Improve plotting methods
-- In/Out synchronization (implemented for audio acquisition, to be tested)
+- Other In/Out synchronization methods (implemented for now using a peak sync before measurement)
 - More documentation
 - More testing scripts
 - GUI ?
@@ -40,7 +51,9 @@ Consider the following experiment:
 - the calibration of signal conditionners are : 1V/pascal, 0.1V/(m/s^2)
 - the soundcard input is 5V for a unit sample (input or output)
 - the duration of the measurement is 5s
+- the soundcard name is 'My card', as given by measpy.audio.audio_get_devices()
 
+To setup and run the measurement, do:
 ```python
 import measpy as mp
 from measpy.audio import audio_run_measurement
@@ -58,7 +71,9 @@ M1 = mp.Measurement(out_sig='noise',
                     in_unit=['Pa','m/s**2'],
                     in_dbfs=[5.0,5.0],
                     out_dbfs=[5.0,]
-                    dur=5)
+                    dur=5,
+                    in_device='My card',
+                    out_device='My card')
 audio_run_measurement(M1)
 ```
 
@@ -83,7 +98,7 @@ Compute transfer functions:
 ```python
 sp = M1.tfe()
 ```
-This compute the transfer function between the output signal and all the input signals as a dict of ```Spectral``` objects. The method that is actually used depends on the output type. If a 'noise' or '*wav' type signal is sent, Welch's method is used. If a 'logsweep' type is use, Farina's method is used. This basic helper functionworks only if there is olnly one output.
+This compute the transfer function between the output signal and all the input signals as a dict of ```Spectral``` objects. The method that is actually used depends on the output type. If a 'noise' or '*wav' type signal is sent, Welch's method is used. If a 'logsweep' type is use, Farina's method is used. This basic helper function works only if there is a unique output.
 
 In general is is preferable to work on individual signals. All the acquired and sent signals are stored into the data property. It is basically a dict of signals, the keys being set by the in_name and out_name arguments when measurement is called. To plot only the measured pressure:
 ```python
@@ -130,7 +145,7 @@ Individual signals can also be saved as a pair of files: a .csv containing the m
 ```python
 M1.data['Press'].to_csvwav('Pressure')
 ```
-This will create Press.csv and Press.wav, that can be reloaded later with:
+This will create Pressure.csv and Pressure.wav, that can be reloaded later with:
 ```python
 press_sig = mp.Signal.from_csvwav('Pressure')
 ```
