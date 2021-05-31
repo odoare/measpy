@@ -376,7 +376,7 @@ class Signal:
         :param filename: string for the base file name
         :type filename: str
         """
-        with open(filename+'.csv', 'w') as file:
+        with open(filename+'.csv', 'w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(['desc',self.desc])
             writer.writerow(['fs',self.fs])
@@ -948,8 +948,11 @@ class Spectral:
                 (self.freqs>freqsrange[0]) & (self.freqs<freqsrange[1]))
             )
 
-    def apply_weighting(self,w):
-        return self*self.similar(w=w,unit=Unit('1'),desc=w.desc)
+    def apply_weighting(self,w,inverse=False):
+        if inverse:
+            return self*(1/self.similar(w=w,unit=Unit('1'),desc=w.desc))
+        else:
+            return self*self.similar(w=w,unit=Unit('1'),desc=w.desc)
 
     def unit_to(self,unit):
         if type(unit)==str:
@@ -1302,7 +1305,7 @@ class Weighting:
         return out
 
     def to_csv(self,filename,asdB=True,asradians=True):
-        with open(filename, 'w') as file:
+        with open(filename, 'w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow([self.desc])
             if asdB:

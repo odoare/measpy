@@ -371,7 +371,7 @@ class Measurement:
         """ Writes all the Measurement object parameters to a csv file """
         dd = self._to_dict(withdata=False)
         #data_keys = list(self.data.keys())
-        with open(filename, 'w') as file:
+        with open(filename, 'w', newline='') as file:
             writer = csv.writer(file)
             for key in dd:
                 if type(dd[key])==list:
