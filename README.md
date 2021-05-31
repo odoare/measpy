@@ -42,7 +42,8 @@ Consider the following experiment:
 - the duration of the measurement is 5s
 
 ```python
-import measpy.audio as mp
+import measpy as mp
+from measpy.audio import audio_run_measurement
 import matplotlib.pyplot as plt
 
 M1 = mp.Measurement(out_sig='noise',
@@ -58,7 +59,7 @@ M1 = mp.Measurement(out_sig='noise',
                     in_dbfs=[5.0,5.0],
                     out_dbfs=[5.0,]
                     dur=5)
-M1.run_measurement()
+audio_run_measurement(M1)
 ```
 
 To plot the resulting data:
@@ -80,10 +81,11 @@ Other formats are possible : A combination of a cvs file and wave files, or a js
 
 Compute transfer functions:
 ```python
-[f,H]= M1.tfe()
-plt.plot(f,20*np.log10(np.abs(H)))
+sp = M1.tfe()
 ```
-All the data is stored into the data property. It is basically a dict of signals, the keys being set by the in_desc and out_desc arguments when measurement is called. To plot only the measured pressure:
+This compute the transfer function between the output signal and all the input signals as a dict of ```Spectral``` objects. The method that is actually used depends on the output type. If a 'noise' or '*wav' type signal is sent, Welch's method is used. If a 'logsweep' type is use, Farina's method is used. This basic helper functionworks only if there is olnly one output.
+
+In general is is preferable to work on individual signals. All the acquired and sent signals are stored into the data property. It is basically a dict of signals, the keys being set by the in_name and out_name arguments when measurement is called. To plot only the measured pressure:
 ```python
 M1.data['Press'].plot()
 ```
@@ -123,3 +125,12 @@ Units are preserved during the operations:
 print(Gap.unit)
 ```
 should give something like pascal * second**2 / m
+
+Individual signals can also be saved as a pair of files: a .csv containing the metadata informations of the signal (sampling frequency, calibration informations, name...), and a .wav file, containing the actual data (dimensionless):
+```python
+M1.data['Press'].to_csvwav('Pressure')
+```
+This will create Press.csv and Press.wav, that can be reloaded later with:
+```python
+press_sig = mp.Signal.from_csvwav('Pressure')
+```
