@@ -16,9 +16,14 @@ For now, these daq devices are implemented :
 
 To import the package and perform data acquisition with sound cards:
 ```python
-import measpy.audio as mp
+import measpy as mp
 ```
-This will import the classes ```mp.Measurement```, ```mp.Signal```, ```mp.Spectral``` and ```mp.Weighting```, plus some other function in ```mp.ms. ...```
+This will import the classes ```mp.Measurement```, ```mp.Signal```, ```mp.Spectral``` and ```mp.Weighting```.
+
+To do data acquisition one has to select the module that corresponds to the target device. If it is a soundcard:
+```python
+from measpy.audio import audio_run_measurement
+```
 
 ## TODO
 
