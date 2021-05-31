@@ -376,7 +376,7 @@ class Signal:
         :param filename: string for the base file name
         :type filename: str
         """
-        with open(filename+'.csv', 'w') as file:
+        with open(filename+'.csv', 'w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(['desc',self.desc])
             writer.writerow(['fs',self.fs])
@@ -1305,7 +1305,7 @@ class Weighting:
         return out
 
     def to_csv(self,filename,asdB=True,asradians=True):
-        with open(filename, 'w') as file:
+        with open(filename, 'w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow([self.desc])
             if asdB:
