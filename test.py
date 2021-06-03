@@ -58,17 +58,17 @@ M1.run_measurement()
 M1.plot_with_cal()
 
 # %% Test weightings
-wa=ma.Weighting.from_csv('measpy/data/dBA.csv')
-wc=ma.Weighting.from_csv('measpy/data/dBC.csv')
-sp=ma.Spectral(values=np.arange(44100),fs=44100)
+wa=mp.Weighting.from_csv('measpy/data/dBA.csv')
+wc=mp.Weighting.from_csv('measpy/data/dBC.csv')
+sp=mp.Spectral(values=np.arange(44100),fs=44100)
 spa=sp.similar(w=wa,desc='dBA')
 spc=sp.similar(w=wc,desc='dBC')
 
 plt.figure(1)
 spa.plot(axestype='logdb')
 spc.plot(axestype='logdb')
-plt.plot(wa.f,wa.adb,'*')
-plt.plot(wc.f,wc.adb,'*')
+plt.plot(wa.freqs,wa.adb,'*')
+plt.plot(wc.freqs,wc.adb,'*')
 plt.title('dBA and dBC weighting functions')
 plt.xlim([10,20000])
 
@@ -95,15 +95,15 @@ plt.figure(2)
 sp1s.plot()
 
 # %% Test smooth and dBSPL of signals
-m=ma.Measurement.from_pickle('test.mpk')
+m=mp.Measurement.from_pickle('test.mpk')
 sig1=m.data['In1'].rms_smooth(nperseg=4096)
 print(sig1.desc)
-sig2=sig1.dB(0.1*ma.ms.PREF)
+sig2=sig1.dB(mp.PREF)
 print(sig2.desc)
 sig2.plot()
 
 # %% Test impulse responses
-m=ma.Measurement.from_pickle('test.mpk')
+m=mp.Measurement.from_pickle('test.mpk')
 Gap = m.data['In1'].tfe_farina(m.out_sig_freqs).filterout([20,20000]).irfft()
 Gap0 = m.data['In1'].tfe_farina(m.out_sig_freqs).irfft()
 Gap0.plot()

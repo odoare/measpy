@@ -144,12 +144,16 @@ class Signal:
         else:
             return Signal(raw=self.raw,fs=fs,desc=desc,unit=unit,cal=cal,dbfs=dbfs)
 
-    def plot(self,linetype='-'):
+    def plot(self,ax=None,linetype='-'):
         """ Basic plotting of the signal """
-        plt.plot(self.time,self.values,linetype)
-        plt.xlabel('Time (s)')
-        plt.ylabel('['+str(self.unit.units)+']')
-        plt.title(self.desc)
+        if ax==None:
+            f,ax = plt.subplots(1)
+        ax.plot(self.time,self.values,linetype,label=self.desc)
+        ax.set_xlabel('Time (s)')
+        ax.set_ylabel('['+str(self.unit.units)+']')
+        ax.set_position([0.1,0.3,0.85,0.65])
+        ax.legend(loc=(0.05,-0.45),ncol=2)
+        return f,ax
 
     def psd(self,**kwargs):
         """ Compute power spectral density of the signal object
