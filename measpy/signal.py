@@ -148,11 +148,12 @@ class Signal:
         """ Basic plotting of the signal
 
             Optionnal arguments:
+
             - ax : an axes object to plot on
-            - **kwargs : all the optionnal arguments of
-            matplotlib.pyplot.line2D
+            - **kwargs : all the optionnal arguments of matplotlib.pyplot.line2D
 
             Returns:
+
             - ax : an axes object       
         """
         if ax==None:
