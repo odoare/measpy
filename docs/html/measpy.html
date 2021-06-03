@@ -70,8 +70,13 @@
 <section id="module-measpy.audio">
 <span id="measpy-audio-module"></span><h2>measpy.audio module<a class="headerlink" href="#module-measpy.audio" title="Permalink to this headline">¶</a></h2>
 <dl class="py function">
-<dt class="sig sig-object py" id="measpy.audio.run_audio_measurement">
-<span class="sig-prename descclassname"><span class="pre">measpy.audio.</span></span><span class="sig-name descname"><span class="pre">run_audio_measurement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.audio.run_audio_measurement" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="measpy.audio.audio_get_devices">
+<span class="sig-prename descclassname"><span class="pre">measpy.audio.</span></span><span class="sig-name descname"><span class="pre">audio_get_devices</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#measpy.audio.audio_get_devices" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="measpy.audio.audio_run_measurement">
+<span class="sig-prename descclassname"><span class="pre">measpy.audio.</span></span><span class="sig-name descname"><span class="pre">audio_run_measurement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.audio.audio_run_measurement" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </section>
@@ -160,11 +165,6 @@ If ‘out_sig’ is None, nothing is created.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.measurement.Measurement.plot">
 <span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ytype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'units'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.measurement.Measurement.plot" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="measpy.measurement.Measurement.run_measurement">
-<span class="sig-name descname"><span class="pre">run_measurement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.measurement.Measurement.run_measurement" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -483,8 +483,17 @@ Returns a Spectral object. Unit is preserved during the process.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Signal.plot">
-<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">linetype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'-'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.plot" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.plot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Basic plotting of the signal</p>
+<p>Optionnal arguments:</p>
+<ul class="simple">
+<li><p>ax : an axes object to plot on</p></li>
+<li><p><a href="#id1"><span class="problematic" id="id2">**</span></a>kwargs : all the optionnal arguments of matplotlib.pyplot.line2D</p></li>
+</ul>
+<p>Returns:</p>
+<ul class="simple">
+<li><p>ax : an axes object</p></li>
+</ul>
 </dd></dl>
 
 <dl class="py method">
@@ -723,7 +732,7 @@ Returns a Spectral class object</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Spectral.apply_weighting">
-<span class="sig-name descname"><span class="pre">apply_weighting</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">w</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Spectral.apply_weighting" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">apply_weighting</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">w</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inverse</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Spectral.apply_weighting" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
