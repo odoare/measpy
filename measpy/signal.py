@@ -144,12 +144,25 @@ class Signal:
         else:
             return Signal(raw=self.raw,fs=fs,desc=desc,unit=unit,cal=cal,dbfs=dbfs)
 
-    def plot(self,linetype='-'):
-        """ Basic plotting of the signal """
-        plt.plot(self.time,self.values,linetype)
-        plt.xlabel('Time (s)')
-        plt.ylabel('['+str(self.unit.units)+']')
-        plt.title(self.desc)
+    def plot(self,ax=None,**kwargs):
+        """ Basic plotting of the signal
+
+            Optionnal arguments:
+
+            - ax : an axes object to plot on
+            - **kwargs : all the optionnal arguments of matplotlib.pyplot.line2D
+
+            Returns:
+
+            - ax : an axes object       
+        """
+        if ax==None:
+            _,ax = plt.subplots(1)
+        ax.plot(self.time,self.values,**kwargs,label=self.desc+' ['+str(self.unit.units)+']')
+        ax.set_xlabel('Time (s)')
+        ax.set_position([0.1,0.25,0.85,0.7])
+        ax.legend(loc=(0.05,-0.32),ncol=2)
+        return ax
 
     def psd(self,**kwargs):
         """ Compute power spectral density of the signal object
@@ -545,7 +558,7 @@ class Signal:
             print('Add with a number without unit, it is considered to be of same unit')
             return self._add(
                 self.similar(
-                    raw=np.ones_like(self.raw)*other*self.dbfs/self.cal,
+                    raw=np.ones_like(self.raw)*other/self.dbfs*self.cal,
                     desc=str(other)
                 )
             )
