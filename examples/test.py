@@ -76,8 +76,14 @@ plt.xlim([10,20000])
 # %% Test measurement to weighting
 m=mp.Measurement.from_pickle('test.mpk')
 sig1=m.data['In1']
-plt.figure(1)
-sig1.plot()
+sig2=m.data['In2']
+
+a = sig1.plot(lw=0.5)
+sig1.rms_smooth(nperseg=1024).plot(ax=a,lw=2,c='k')
+(-sig1.rms_smooth(nperseg=1024)).plot(ax=a,lw=2,c='k')
+(sig1*sig1).plot(ax=a)
+
+a2 = sig1.rms_smooth().dB_SPL().plot()
 
 sp1=sig1.tfe_farina(m.out_sig_freqs)
 plt.figure(2)
