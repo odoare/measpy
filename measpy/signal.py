@@ -393,7 +393,7 @@ class Signal:
             writer = csv.writer(file)
             writer.writerow(['desc',self.desc])
             writer.writerow(['fs',self.fs])
-            writer.writerow(['unit',self.unit.format_babel()])
+            writer.writerow(['unit',str(self.unit.units)])
             writer.writerow(['cal',self.cal])
             writer.writerow(['dbfs',self.dbfs])
         wav.write(filename+'.wav',int(round(self.fs)),self.raw)
