@@ -190,7 +190,7 @@ class Measurement:
                 
             for ii in range(len(self.out_map)):
                 self.data[self.out_name[ii]]=self.data[self.out_name[ii]].similar(
-                    np.array(x[:,ii],dtype=float)/vmax
+                    volts=np.array(x[:,ii],dtype=float)/vmax
                 ).fade(self.out_sig_fades).add_silence(self.extrat)
 
     def show(self):
