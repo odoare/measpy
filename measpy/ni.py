@@ -74,7 +74,7 @@ def ni_run_measurement(M):
     intask.timing.cfg_samp_clk_timing(
         rate=M.fs,
         source="OnboardClock",
-        active_edge=niconst.Edge.FALLING,
+        #active_edge=niconst.Edge.FALLING,
         sample_mode=niconst.AcquisitionType.FINITE, samps_per_chan=nsamps)
 
 
@@ -90,14 +90,14 @@ def ni_run_measurement(M):
             outtask.timing.cfg_samp_clk_timing(
                 rate=M.fs,
                 source="/" + M.in_device + "/ai/SampleClock", #"OnboardClock",
-                active_edge=niconst.Edge.FALLING,
+                #active_edge=niconst.Edge.FALLING,
                 sample_mode=niconst.AcquisitionType.FINITE, samps_per_chan=nsamps)
         except:
             print("Error when choosing \""+"/" + M.in_device + "/ai/SampleClock\" as clock source, let's try \"OnboardClock\" ")
             outtask.timing.cfg_samp_clk_timing(
                 rate=M.fs,
                 source="OnboardClock",
-                active_edge=niconst.Edge.FALLING,
+                #active_edge=niconst.Edge.FALLING,
                 sample_mode=niconst.AcquisitionType.FINITE, samps_per_chan=nsamps)
 
         if len(M.out_map)==1:
