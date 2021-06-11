@@ -122,7 +122,7 @@ class Measurement:
                                                 unit=self.in_unit[n],
                                                 cal=self.in_cal[n],
                                                 dbfs=self.in_dbfs[n])
-        self.datakeys = list(self.data.keys())
+        self.data_keys = list(self.data.keys())
         
     def create_output(self):
         """ Creates the output signals, if out_sig is 'noise',
@@ -317,6 +317,8 @@ class Measurement:
         self.out_device=convl1(str,meas['out_device'])
         self.device_type=convl1(str,meas['device_type'])
         self.data_keys=convl(str,meas['data_keys'])
+        print('In _from_dict')
+        print(self.data)
 
     def to_pickle(self,filename):
         with open(filename, 'wb') as handle:
@@ -363,6 +365,7 @@ class Measurement:
     def _data_from_wav(self,filename):
         _, dat = wav.read(filename)
         n = 0
+        print(self.data)
         for key in self.data_keys:
             self.data[key].raw = dat[:,n]
             n += 1
@@ -417,10 +420,16 @@ class Measurement:
         """
         M=cls()
         M._csv_to_params(filebase+'.csv')
-        try:
-            M._data_from_wav(filebase+'.wav')
-        except:
-            print('data_from_wav failed (file not present?)')
+        if M.out_sig!=None:
+            M=cls(out_name=M.out_name,in_name=M.in_name)
+        else:
+            M=cls(in_name=M.in_name)
+        M._csv_to_params(filebase+'.csv')
+        #try:
+        M._data_from_wav(filebase+'.wav')
+        #except:
+        #    print(filebase+'.wav')
+        #    print('data_from_wav failed (file not present?)')
         return M
 
     def to_jsonwav(self,filebase):
