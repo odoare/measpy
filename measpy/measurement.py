@@ -317,8 +317,8 @@ class Measurement:
         self.out_device=convl1(str,meas['out_device'])
         self.device_type=convl1(str,meas['device_type'])
         self.data_keys=convl(str,meas['data_keys'])
-        print('In _from_dict')
-        print(self.data)
+        # print('In _from_dict')
+        # print(self.data)
 
     def to_pickle(self,filename):
         with open(filename, 'wb') as handle:
@@ -487,7 +487,6 @@ class Measurement:
         plt.title('Measurement date: '+str(self.date)+"   "+str(self.time))
         #plt.grid('on',color='grey',linestyle=':')
         plt.grid('on')
-
 
     def tfe(self,nperseg=2**16,noverlap=None,plotH=False):
         """ Helper function that calculates the transfer function between
