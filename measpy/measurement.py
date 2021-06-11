@@ -365,7 +365,7 @@ class Measurement:
     def _data_from_wav(self,filename):
         _, dat = wav.read(filename)
         n = 0
-        print(self.data)
+        #print(self.data)
         for key in self.data_keys:
             self.data[key].raw = dat[:,n]
             n += 1
