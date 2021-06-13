@@ -1,22 +1,60 @@
-#%%
+# ------------------------
+#
+# measpy - A Python package to perform measurements an signal analysis
+#
+# (c) 2021 Olivier Doaré
+#
+# olivier.doare@ensta-paris.fr
+#
+# -------------------------
 
-#from measpy import measpyaudio as ma
-#from pint.unit import Unit
+
+# Note : this Python scrip uses cell mode of the Vscode extension
+# (cells begin with #%%)
+
+#%% Import Packages
+
+# Add to path the parent directory in to 
+import sys
+sys.path.insert(0, "..")
+
 from unyt import Unit
 import measpy as mp
 from measpy.audio import audio_run_measurement, audio_get_devices
 
+
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib
-#plt.style.use('dark_background')
 
 plt.style.use('seaborn')
-# matplotlib.use('TkAgg')
+
 %matplotlib auto
 
-#%% Define and run a measurement
+
+#%% Get the list of audio devices present on the system
+
+audio_get_devices()
+
+# measpy wants the input and output devices as strings
+# On Ubuntu, 'default' corresponds to the main input and output
+
+indev = 'default'
+outdev = 'default'
+
+
+#%% Define and run an audio measurement
+
+# Outputs a logarithmic sweep at output 1
+# (with a fade in and out of 10 samples at begining and end)
+#
+# measure a pressure at input 1 and an acceleration at input 2
+#
+# Pressure calibration is 2V/Pa
+# Acceleration calibration is 01.V/Pa
+
 M1 = mp.Measurement(out_sig='logsweep',
+                    fs = 44100,
                     out_map=[1],
                     out_desc=['Out1'],
                     out_dbfs=[1.0],
@@ -28,60 +66,40 @@ M1 = mp.Measurement(out_sig='logsweep',
                     extrat=[0,0],
                     out_sig_fades=[10,10],
                     dur=5,
-                    in_device='Default',
-                    out_device='Default',
-                    io_sync=1,
+                    in_device=indev,
+                    out_device=outdev,
+                    io_sync=0,
                     out_amp=0.5)
-audio_run_measurement(M1)
+
+# Run the measurement
+audio_run_measurement(M2)
+
+# Plot the data
 M1.plot()
 
 #%% Save in three different formats
 M1.to_jsonwav('jtest')
-M1.to_csvwav('jtest')
+M1.to_csvwav('ctest')
 M1.to_pickle('test.pck')
 
-# %%
+# %% Load the data into a new measurement object
 
-M1 = mp.Measurement(out_sig='logsweep',
-                    out_map=[1],
-                    out_desc=['Out1'],
-                    out_dbfs=[1.0],
-                    in_map=[1],
-                    in_desc=['In1'],
-                    in_cal=[1.0],
-                    in_unit=['V'],
-                    in_dbfs=[1.0],
-                    extrat=[0.0,0.0],
-                    out_sig_fades=[10,10],
-                    dur=5)
-M1.run_measurement()
-M1.plot_with_cal()
+M2 = mp.Measurement.from_csvwav('ctest')
 
-# %% Test weightings
-wa=mp.Weighting.from_csv('measpy/data/dBA.csv')
-wc=mp.Weighting.from_csv('measpy/data/dBC.csv')
-sp=mp.Spectral(values=np.arange(44100),fs=44100)
-spa=sp.similar(w=wa,desc='dBA')
-spc=sp.similar(w=wc,desc='dBC')
+# %% Basic signal manipulation and plotting
 
-plt.figure(1)
-spa.plot(axestype='logdb')
-spc.plot(axestype='logdb')
-plt.plot(wa.freqs,wa.adb,'*')
-plt.plot(wc.freqs,wc.adb,'*')
-plt.title('dBA and dBC weighting functions')
-plt.xlim([10,20000])
+# A measurement stores its data as a dictionnary of signals
+sig1=M2.data['In1'] # This is the pressure
+sig2=M2.data['In2'] # This is the acceleration
 
-
-# %% Test measurement to weighting
-m=mp.Measurement.from_pickle('test.mpk')
-sig1=m.data['In1']
-sig2=m.data['In2']
-
+# Let us plot the first signal
+# (the Signal.plot() method returns an axes object)
 a = sig1.plot(lw=0.5)
+
+# To plot the smoothed rms of sig1 on the same axes, in black
 sig1.rms_smooth(nperseg=1024).plot(ax=a,lw=2,c='k')
 (-sig1.rms_smooth(nperseg=1024)).plot(ax=a,lw=2,c='k')
-(sig1*sig1).plot(ax=a)
+
 
 a2 = sig1.rms_smooth().dB_SPL().plot()
 

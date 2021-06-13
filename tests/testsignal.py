@@ -1,4 +1,23 @@
-#%% Load modules
+# ------------------------
+#
+# measpy - A Python package to perform measurements an signal analysis
+#
+# (c) 2021 Olivier Doaré
+#
+# olivier.doare@ensta-paris.fr
+#
+# -------------------------
+
+# Examples of signal manipulation
+
+# Note : this Python scrip uses cell mode of the Vscode extension
+# (cells begin with #%%)
+
+#%% Import Packages
+
+# Add to path the parent directory in to 
+import sys
+sys.path.insert(0, "..")
 
 from unyt import Unit
 import measpy.signal as mp
@@ -50,35 +69,29 @@ print(sadd)
 #s2+s1 has the dimension of s2
 sadd2 = s2+s1
 print(sadd2)
+print('\n')
 
-print('Max value of s1+s2')
-print(max(sadd.values))
-print('Max value of s2+s1')
-print(max(sadd2.values))
+print('Max value of s1+s2 : ' + str(max(sadd.values)) + ' ' + str(sadd.unit) + '\n' )
+print('Max value of s2+s1 : ' + str(max(sadd2.values)) + ' ' + str(sadd2.unit) + '\n')
 print('Conversion of s2+s1 to the units of s1+s2') 
-print(str(max(sadd2.unit_to(sadd.unit).values)))
-print('Conversion of s2+s1 to the standard unit of this dimension') 
-print(max(sadd2.unit_to(sadd.unit).values))
+sadd3 = sadd2.unit_to(sadd.unit)
+print ('Max value : ' + str(max(sadd3.values)) + ' ' + str(sadd3.unit) + '\n')
+print("Conversion of s2+s1 to the standard unit of it's dimension") 
+print('Max value : ' + str(max(sadd2.unit_to_std().values)))
 
-plt.figure(1)
 s1inv=~s1
+print('Inverse of signal 1 :')
 print(s1inv)
-s1inv.plot()
+a=s1inv.plot()
 
-plt.figure(2)
 smul = s1*s2
+print('Product of signal 1 and signal 2 :')
 print(smul)
-smul.plot()
+print('Conversion of this signal to a standard unit')
+print(smul.unit_to_std())
+b=smul.plot()
 
-plt.figure(3)
 sdiv = s1/s2
 print(sdiv)
-sdiv.plot()
+c=sdiv.plot()
 
-
-# %% Spectral data
-sp1=(1000*s1+s2).rfft()
-sp1.abs().plot(axestype='lin',ylabel1=str(sp1.unit))
-
-
-# %%
