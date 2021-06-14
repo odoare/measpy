@@ -22,7 +22,6 @@ from unyt import Unit
 import measpy as mp
 from measpy.audio import audio_run_measurement, audio_get_devices
 
-
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib
