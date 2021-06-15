@@ -369,6 +369,18 @@ class Measurement:
         for key in self.data_keys:
             self.data[key].raw = dat[:,n]
             n += 1
+        for key in self.in_name:
+            pos = self.in_name.index(key)
+            self.data[key].unit = Unit(self.in_unit[pos])
+            self.data[key].cal = self.in_cal[pos]
+            self.data[key].dbfs = self.in_dbfs[pos]
+            self.data[key].desc = self.in_desc[pos]
+        if self.out_sig!=None:
+            for key in self.out_name:
+                pos = self.out_name.index(key)
+                self.data[key].unit = Unit('V')
+                self.data[key].dbfs = self.out_dbfs[pos]
+                self.data[key].desc = self.out_desc[pos]
 
     def _params_to_csv(self,filename):
         """ Writes all the Measurement object parameters to a csv file """
@@ -455,10 +467,15 @@ class Measurement:
         """
         M=cls()
         M._json_to_params(filebase+'.json')
-        try:
-            M._data_from_wav(filebase+'.wav')
-        except:
-            print('data_from_wav failed (file not present?)')
+        if M.out_sig!=None:
+            M=cls(out_name=M.out_name,in_name=M.in_name)
+        else:
+            M=cls(in_name=M.in_name)
+        M._json_to_params(filebase+'.json')
+        # try:
+        M._data_from_wav(filebase+'.wav')
+        # except:
+        # print('data_from_wav failed (file not present?)')
         return M
 
     def plot(self,ytype='units',limit=None):
