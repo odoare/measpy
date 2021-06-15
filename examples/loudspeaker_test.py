@@ -1,8 +1,8 @@
 #%%
 # We add to the search path the parent directory
 # in order to work and test on the local branch
-import sys
-sys.path.insert(0,'../')
+# import sys
+# sys.path.insert(0,'../')
 
 from unyt import Unit
 import measpy as mp
