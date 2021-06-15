@@ -1004,6 +1004,14 @@ class Spectral:
             desc=add_step(self.desc,'dBu')
         )
 
+    def group_delay(self):
+        phase = np.unwrap(np.angle(self.values))
+        return self.similar(
+            values=self.dur*np.diff(phase)/2/np.pi,
+            unit='s',
+            desc='Group delay of '+self.desc
+        )
+
     def plot(self,axestype='logdb_arg',ylabel1=None,ylabel2=None):
         if axestype=='logdb_arg':
             plt.subplot(2,1,1)
@@ -1257,6 +1265,12 @@ class Spectral:
     @property
     def length(self):
         return len(self._values)
+    @property
+    def dur(self):
+        if self.full:
+            return len(self._values)/self.fs
+        else:
+            return 2*len(self._values)/self.fs
 
     # END of Spectral
 

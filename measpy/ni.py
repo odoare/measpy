@@ -107,7 +107,7 @@ def ni_run_measurement(M):
 
         outtask.start() # Start the write task first, waiting for the analog input sample clock
 
-    y = intask.read(nsamps,timeout=M.dur) # Start the read task
+    y = intask.read(nsamps,timeout=M.dur+10) # Start the read task
 
     intask.close()
 
