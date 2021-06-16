@@ -15,8 +15,8 @@
 
 # Add to path the parent directory in order to use the local measpy 
 # Comment in order to use the installed version (e.g. via pip install)
-import sys
-sys.path.insert(0, "..")
+# import sys
+# sys.path.insert(0, "..")
 
 from unyt import Unit
 import measpy as mp
