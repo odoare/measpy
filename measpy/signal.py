@@ -1012,39 +1012,41 @@ class Spectral:
             desc='Group delay of '+self.desc
         )
 
-    def plot(self,axestype='logdb_arg',ylabel1=None,ylabel2=None):
-        if axestype=='logdb_arg':
-            plt.subplot(2,1,1)
-            plt.semilogx(self.freqs,20*np.log10(np.abs(self.values)))
-            plt.xlabel('Freq (Hz)')
-            if ylabel1!=None:
-                plt.ylabel(ylabel1)
+    def plot(self,ax=None,logx=True,dby=True,plotphase=True,**kwargs):
+               
+        if type(ax)==type(None):
+            if plotphase:
+                _,ax = plt.subplots(2)
+                ax_0 = ax[0]
             else:
-                plt.ylabel('20 Log |H|')
-            plt.title(self.desc)
-            plt.subplot(2,1,2)
-            plt.semilogx(self.freqs,np.unwrap(np.angle(self.values)))
-            plt.xlabel('Freq (Hz)')
-            if ylabel2!=None:
-                plt.ylabel(ylabel2)
+                _,ax = plt.subplots(1)
+                ax_0 = ax
+        else:
+            if plotphase:
+                ax_0 = ax[0]
             else:
-                plt.ylabel('Arg(H)')
-        if axestype=='logdb':
-            plt.semilogx(self.freqs,20*np.log10(np.abs(self.values)))
-            plt.xlabel('Freq (Hz)')
-            if ylabel1!=None:
-                plt.ylabel(ylabel1)
-            else:
-                plt.ylabel('20 Log |H|')
-            plt.title(self.desc)
-        if axestype=='lin':
-            plt.semilogx(self.freqs,self.values)
-            plt.xlabel('Freq (Hz)')
-            if ylabel1!=None:
-                plt.ylabel(ylabel1)
-            else:
-                plt.ylabel('H')
-            plt.title(self.desc)
+                ax_0 = ax
+
+        if dby:
+            values_to_plot = 20*np.log10(np.abs(self.values))
+            label = '20 Log |H|'
+        else:
+            values_to_plot = self.values
+            label = 'H'
+
+        ax_0.plot(self.freqs,values_to_plot,label=self.desc+' ['+str(self.unit.units)+']')
+        ax_0.set_xlabel('Freq (Hz)')
+        ax_0.set_ylabel(label)       
+        if logx:
+            ax_0.set_xscale('log')
+        if plotphase:
+            ax[1].plot(self.freqs,np.unwrap(np.angle(self.values)))
+            ax[1].set_ylabel('Phase')
+            ax[1].set_xlabel('Freq (Hz')
+            if logx:
+                ax[1].set_xscale('log')
+        return ax
+        
 
     def _add(self,other):
         """Add two spectra
