@@ -1007,7 +1007,7 @@ class Spectral:
     def group_delay(self):
         phase = np.unwrap(np.angle(self.values))
         return self.similar(
-            values=self.dur*np.diff(phase)/2/np.pi,
+            values=-self.dur*np.diff(phase)/2/np.pi,
             unit='s',
             desc='Group delay of '+self.desc
         )
