@@ -398,6 +398,54 @@ class Signal:
             writer.writerow(['dbfs',self.dbfs])
         wav.write(filename+'.wav',int(round(self.fs)),self.raw)
 
+    def harmonic_disto(self,nh=4,freqs=[20,20000],delay=None):
+
+        # Length of the window for spectra calculations
+        l = 2**13
+
+        # Compute transfer function using Farina's method
+        sp = self.tfe_farina(freqs)
+
+        if type(delay)==type(None):
+            # Estimate the delay by calculating the mean value of
+            # the group delay
+            gd = sp.group_delay()
+            delay = np.mean(
+                gd.values[(gd.freqs > freqs[0])&(gd.freqs < freqs[1])]
+            ) - 0.5*l/sp.fs
+
+        G=sp.irfft()
+        L = self.dur/np.log(freqs[1]/freqs[0])
+
+        dt = L*np.log(np.arange(nh)+1)
+        ns = np.round((G.dur-dt+delay)*G.fs)
+        ts = np.take(G.time,list(map(int,list(ns))),mode='wrap')
+        tf = ts+l/sp.fs
+        maxG = np.max(np.abs(G.values))
+        axG=G.plot()
+        for ii in range(nh):
+            axG.plot([ts[ii],ts[ii]],[-maxG/10,maxG/10],lw=0.5,c='b')
+            axG.plot([tf[ii],tf[ii]],[-maxG/10,maxG/10],lw=0.5,c='r')
+
+        Gnl = {}
+        Hnl = {}
+        a1 = sp.plot(plotphase=False)
+        for ii in range(nh):
+            Gnl[ii]=G.similar(
+                values=np.take(G.values,list(range(int(ns[ii]),int(ns[ii]+l))),mode='wrap'))
+            Hnl[ii]=Gnl[ii].rfft().filterout(freqs).nth_oct_smooth_complex(6)
+            Hnl[ii].plot(ax=a1,plotphase=False,label='Harmonic '+str(ii))
+            if ii==1:
+                thd = Hnl[ii].abs()
+            elif ii>1:
+                thd += Hnl[ii].abs()
+        # thd = thd.similar(desc='THD')
+        thd.plot(ax=a1,plotphase=False,label='THD')
+        a1.set_xlim([20,20000])
+        a1.legend()
+
+        return Hnl
+
     @classmethod
     def noise(cls,fs=44100,dur=2.0,amp=1.0,freqs=[20.0,20000.0],unit='1',cal=1.0,dbfs=1.0):
         return cls(
@@ -822,6 +870,8 @@ class Spectral:
 
     def nth_oct_smooth_to_weight(self,n=3,fmin=5,fmax=20000):
         """ Nth octave smoothing
+            Works on real valued spectra. For complex values,
+            use nth_oct_smooth_to_weight_complex.
 
             Converts a Spectral object into a Weighting object
             (a series of frequencies logarithmically spaced,
@@ -898,6 +948,8 @@ class Spectral:
 
     def nth_oct_smooth(self,n,fmin=5,fmax=20000):
         """ Nth octave smoothing
+            Works on real valued spectra. For complex values,
+            use nth_oct_smooth_complex.
 
             :param n: Ratio of smoothing (1/nth smoothing), defaults to 3
             :type n: int, optionnal
@@ -914,7 +966,8 @@ class Spectral:
         )
 
     def nth_oct_smooth_complex(self,n,fmin=5,fmax=20000):
-        """ Nth octave smoothing, complex version
+        """ Nth octave smoothing
+            Complex signal version 
 
             :param n: Ratio of smoothing (1/nth smoothing), defaults to 3
             :type n: int, optionnal
@@ -1013,7 +1066,22 @@ class Spectral:
         )
 
     def plot(self,ax=None,logx=True,dby=True,plotphase=True,**kwargs):
-               
+        """Plot spectral data
+
+        :param ax: Axis where to plot the data, defaults to None
+        :type ax: Axis type, optional
+        :param logx: If true, the frequency axis is in log scale, defaults to True
+        :type logx: bool, optional
+        :param dby: If true dB are plotted (20 log10 of absolute value), defaults to True
+        :type dby: bool, optional
+        :param plotphase: If True, also plots the phase , defaults to True
+        :type plotphase: bool, optional
+        :return: An axes type object if plotphase is False, a list of two axes objects if plotphase is True
+        :rtype: axes, or list of axes
+        """
+
+        plotlabel = kwargs.setdefault("label",self.desc+' ['+str(self.unit.units)+']')
+
         if type(ax)==type(None):
             if plotphase:
                 _,ax = plt.subplots(2)
@@ -1034,7 +1102,7 @@ class Spectral:
             values_to_plot = self.values
             label = 'H'
 
-        ax_0.plot(self.freqs,values_to_plot,label=self.desc+' ['+str(self.unit.units)+']')
+        ax_0.plot(self.freqs,values_to_plot,label=plotlabel)
         ax_0.set_xlabel('Freq (Hz)')
         ax_0.set_ylabel(label)       
         if logx:
