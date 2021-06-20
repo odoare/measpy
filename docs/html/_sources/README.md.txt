@@ -26,7 +26,7 @@ from measpy.audio import audio_run_measurement
 ```
 If it is a NI daq card:
 ```python
-from measpy.ni import audio_run_measurement
+from measpy.ni import ni_run_measurement
 ```
 
 In theses modules, there's also the ```audio_get_devices``` and ```ni_get_devices``` functions to get a liste of devices present in the system.

@@ -1,0 +1,481 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Tutorial: Play with the measpy.Signal class &mdash; measpy  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="copyright" title="Copyright" href="copyright.html" />
+    <link rel="next" title="GNU LESSER GENERAL PUBLIC LICENSE" href="copyright.html" />
+    <link rel="prev" title="measpy - Measurements with Python" href="README.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> measpy
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="README.html">Readme</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Signal tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#basics">1. Basics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#units">2. Units</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#calibrations">3. Calibrations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="copyright.html">Copyright</a></li>
+<li class="toctree-l1"><a class="reference internal" href="measpy.html">measpy package</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">measpy</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Tutorial: Play with the measpy.Signal class</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/play_with_signals.md.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="tutorial-play-with-the-measpy-signal-class">
+<h1>Tutorial: Play with the measpy.Signal class<a class="headerlink" href="#tutorial-play-with-the-measpy-signal-class" title="Permalink to this headline">¶</a></h1>
+<p>The <code class="docutils literal notranslate"><span class="pre">measpy.signal.Signal</span></code> class describes a sampled temporal signal. It is at the core of the <code class="docutils literal notranslate"><span class="pre">measpy.Measurement</span></code> class, which helps in performing data acquisition. It is hence important to understand its inner workings.</p>
+<p>An object of the class <code class="docutils literal notranslate"><span class="pre">Signal</span></code> is described by the following properties:</p>
+<ul class="simple">
+<li><p>A sampling frequency <code class="docutils literal notranslate"><span class="pre">fs</span></code></p></li>
+<li><p>A physical unit <code class="docutils literal notranslate"><span class="pre">unit</span></code></p></li>
+<li><p>A calibration <code class="docutils literal notranslate"><span class="pre">cal</span></code> in unit per Volt (if the signal comes from an DAQ acquisition)</p></li>
+<li><p>A multiplicative constant <code class="docutils literal notranslate"><span class="pre">dbfs</span></code> which express the voltage amplitude for which the acquired data equals 1 (one). This is a classical quantity when acquiring signals with audio cards, but can be ignored and kept at 1.0 with most data acquisition cards.</p></li>
+<li><p>A numpy array <code class="docutils literal notranslate"><span class="pre">_rawvalues</span></code>, which corresponds to the raw data given by the digital acquisition process.</p></li>
+<li><p>A description <code class="docutils literal notranslate"><span class="pre">desc</span></code> (a string that describes the signal)</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1">#This is here in case we want to use the local measy directory</span>
+<span class="c1">#import sys</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">measpy</span> <span class="k">as</span> <span class="nn">mp</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+</pre></div>
+</div>
+<div class="section" id="basics">
+<h2>1. Basics<a class="headerlink" href="#basics" title="Permalink to this headline">¶</a></h2>
+<p>Let us create a signal <code class="docutils literal notranslate"><span class="pre">S</span></code> with a sampling frequency of 44100 Hz.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">unit</span></code>, <code class="docutils literal notranslate"><span class="pre">calibration</span></code> and <code class="docutils literal notranslate"><span class="pre">dbfs</span></code> are not specified they are defaulted to dimensionless, 1.0 and 1.0 respectively. And if no content is given the samples doesn’t exist and <code class="docutils literal notranslate"><span class="pre">_rawvalues</span></code> equals <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">S</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="mi">44100</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">_rawvalues</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">measpy</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="mi">44100</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;A signal&#39;</span><span class="p">,</span> <span class="n">cal</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">,</span> <span class="n">dbfs</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+<span class="kc">None</span>
+</pre></div>
+</div>
+<p>As such, the above signal isn’t very useful. Let us give to it some content, for instance a sinusoid at the frequency 100Hz of duration 1 second.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">S</span><span class="o">.</span><span class="n">raw</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="mi">100</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="o">/</span><span class="n">S</span><span class="o">.</span><span class="n">fs</span><span class="p">))</span>
+<span class="n">S</span><span class="o">.</span><span class="n">desc</span> <span class="o">=</span> <span class="s1">&#39;A sinusoidal signal at 1000Hz&#39;</span>
+</pre></div>
+</div>
+<p>Note that using S._rawvalues instead of S.raw would lead to the same result. More precisely the actual array is S._rawvalues, and S.raw is a shortcut (a &#64;setter/&#64;getter method).</p>
+<p>Now that it contains data, the signal can be plotted.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">S</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">AxesSubplot</span><span class="p">:</span><span class="n">xlabel</span><span class="o">=</span><span class="s1">&#39;Time (s)&#39;</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p><img alt="svg" src="_images/play_with_signals_7_1.svg" /></p>
+<p>All what we have done before could be performed in one step at the initialization phase, as below.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">samplingfreq</span> <span class="o">=</span> <span class="mi">44100</span>
+<span class="n">S</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">samplingfreq</span><span class="p">,</span><span class="n">desc</span><span class="o">=</span><span class="s1">&#39;100Hz sinusoidal signal&#39;</span><span class="p">,</span><span class="n">raw</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="mi">100</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="o">/</span><span class="n">samplingfreq</span><span class="p">)))</span>
+<span class="n">S</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">AxesSubplot</span><span class="p">:</span><span class="n">xlabel</span><span class="o">=</span><span class="s1">&#39;Time (s)&#39;</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p><img alt="svg" src="_images/play_with_signals_9_1.svg" /></p>
+<p>There is a lot of additionnal properties for the signal. For instance, the duration and the time vector. These properties are not stored in memory. When asked for, they are calculated based on the number of samples in the signal, as in the example below:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">time</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">dur</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="mf">0.00000000e+00</span> <span class="mf">2.26762512e-05</span> <span class="mf">4.53525023e-05</span> <span class="o">...</span> <span class="mf">9.99954647e-01</span>
+ <span class="mf">9.99977324e-01</span> <span class="mf">1.00000000e+00</span><span class="p">]</span>
+<span class="mf">1.0</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="units">
+<h2>2. Units<a class="headerlink" href="#units" title="Permalink to this headline">¶</a></h2>
+<p>Let us now give a physical unit to this signal. Consider for instance that it is a velocity, in meter per second. In order to create such signal we have to additionnally specify the <code class="docutils literal notranslate"><span class="pre">unit</span></code> optionnal argument:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">velsig</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">samplingfreq</span><span class="p">,</span><span class="n">desc</span><span class="o">=</span><span class="s1">&#39;100Hz sinusoidal velocity&#39;</span><span class="p">,</span><span class="n">raw</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="mi">100</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="o">/</span><span class="n">samplingfreq</span><span class="p">)),</span><span class="n">unit</span><span class="o">=</span><span class="s1">&#39;m/s&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Consider a second signal, for instance a force in Newtons (N), in phase with the velocity. It is created in the same way:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">forcesig</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">samplingfreq</span><span class="p">,</span><span class="n">desc</span><span class="o">=</span><span class="s1">&#39;100Hz sinusoidal force&#39;</span><span class="p">,</span><span class="n">raw</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="mi">100</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="o">/</span><span class="n">samplingfreq</span><span class="p">)),</span><span class="n">unit</span><span class="o">=</span><span class="s1">&#39;N&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>These two signal can be multiplied together, giving an instantaneous power!</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">power</span> <span class="o">=</span> <span class="n">forcesig</span> <span class="o">*</span> <span class="n">velsig</span>
+<span class="n">power</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">AxesSubplot</span><span class="p">:</span><span class="n">xlabel</span><span class="o">=</span><span class="s1">&#39;Time (s)&#39;</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p><img alt="svg" src="_images/play_with_signals_17_1.svg" /></p>
+<p>Note that by default, the units are simply multiplied together. It it howver possible to ask for a standard unit of the same dimension for this signal. The below command will convert the signal to the standard unit for power (which is Watt)</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">power</span> <span class="o">=</span> <span class="n">power</span><span class="o">.</span><span class="n">unit_to_std</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">power</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">measpy</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="mi">44100</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;100Hz sinusoidal force</span>
+ <span class="o">*</span> <span class="mi">100</span><span class="n">Hz</span> <span class="n">sinusoidal</span> <span class="n">velocity</span>
+ <span class="o">--&gt;</span><span class="n">Unit</span> <span class="n">to</span> <span class="n">W</span><span class="s1">&#39;, cal=1.0, unit=&#39;</span><span class="n">W</span><span class="s1">&#39;, dbfs=1.0)</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">similar</span></code> method makes a copy of the Signal object and modifies its properties specified in its arguments. Using this method, we can do the same as before and change the description at the same time.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">power</span> <span class="o">=</span> <span class="p">(</span><span class="n">velsig</span><span class="o">*</span><span class="n">forcesig</span><span class="p">)</span><span class="o">.</span><span class="n">unit_to_std</span><span class="p">()</span><span class="o">.</span><span class="n">similar</span><span class="p">(</span><span class="n">desc</span><span class="o">=</span><span class="s1">&#39;The power given to the system&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">power</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">measpy</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="mi">44100</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;The power given to the system&#39;</span><span class="p">,</span> <span class="n">cal</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;W&#39;</span><span class="p">,</span> <span class="n">dbfs</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Conversely to multiplication, in order to perform an addition, the signals have to be of compatible physical units. We cannot add force and velocity! The below command should raise an <code class="docutils literal notranslate"><span class="pre">Exception</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">forcesig</span><span class="o">+</span><span class="n">velsig</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">---------------------------------------------------------------------------</span>
+
+<span class="ne">Exception</span>                                 <span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">)</span>
+
+<span class="o">&lt;</span><span class="n">ipython</span><span class="o">-</span><span class="nb">input</span><span class="o">-</span><span class="mi">19</span><span class="o">-</span><span class="mi">4</span><span class="n">fcb25564c19</span><span class="o">&gt;</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+<span class="o">----&gt;</span> <span class="mi">1</span> <span class="n">forcesig</span><span class="o">+</span><span class="n">velsig</span>
+
+
+<span class="o">~/.</span><span class="n">venv</span><span class="o">/</span><span class="n">numerics</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">python3</span><span class="o">.</span><span class="mi">8</span><span class="o">/</span><span class="n">site</span><span class="o">-</span><span class="n">packages</span><span class="o">/</span><span class="n">measpy</span><span class="o">/</span><span class="n">signal</span><span class="o">.</span><span class="n">py</span> <span class="ow">in</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+    <span class="mi">553</span>         <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    554         if type(other)==Signal:</span>
+<span class="s2">--&gt; 555             return self._add(other)</span>
+<span class="s2">    556 </span>
+<span class="s2">    557         if (type(other)==float) or (type(other)==int):</span>
+
+
+<span class="s2">~/.venv/numerics/lib/python3.8/site-packages/measpy/signal.py in _add(self, other)</span>
+<span class="s2">    533 </span>
+<span class="s2">    534         if not self.unit.same_dimensions_as(other.unit):</span>
+<span class="s2">--&gt; 535             raise Exception(&#39;Incompatible units in addition of sginals&#39;)</span>
+<span class="s2">    536         if self.fs!=other.fs:</span>
+<span class="s2">    537             raise Exception(&#39;Incompatible sampling frequencies in addition of signals&#39;)</span>
+
+
+<span class="s2">Exception: Incompatible units in addition of sginals</span>
+</pre></div>
+</div>
+<p>Added signals can have different dimensions if they are compatible. Let us create a signal in meter, a signal in decameter, add them, and finally plot the resulting signal.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">distance1</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">samplingfreq</span><span class="p">,</span><span class="n">desc</span><span class="o">=</span><span class="s1">&#39;A length&#39;</span><span class="p">,</span><span class="n">raw</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="mi">100</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="o">/</span><span class="n">samplingfreq</span><span class="p">)),</span><span class="n">unit</span><span class="o">=</span><span class="s1">&#39;m&#39;</span><span class="p">)</span>
+<span class="n">distance2</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">samplingfreq</span><span class="p">,</span><span class="n">desc</span><span class="o">=</span><span class="s1">&#39;Another length&#39;</span><span class="p">,</span><span class="n">raw</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="mi">120</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="o">/</span><span class="n">samplingfreq</span><span class="p">)),</span><span class="n">unit</span><span class="o">=</span><span class="s1">&#39;dam&#39;</span><span class="p">)</span>
+<span class="n">distancetot</span> <span class="o">=</span> <span class="n">distance1</span><span class="o">+</span><span class="n">distance2</span>
+<span class="n">distancetot</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">AxesSubplot</span><span class="p">:</span><span class="n">xlabel</span><span class="o">=</span><span class="s1">&#39;Time (s)&#39;</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p><img alt="svg" src="_images/play_with_signals_25_1.svg" /></p>
+<p>When performing addition of signals, the final unit is that of the first operand. That’s why we get meters in the above calculation. If we switch the signals, we get the same thing, but in decameters…</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">distancetot</span> <span class="o">=</span> <span class="n">distance2</span><span class="o">+</span><span class="n">distance1</span>
+<span class="n">distancetot</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">AxesSubplot</span><span class="p">:</span><span class="n">xlabel</span><span class="o">=</span><span class="s1">&#39;Time (s)&#39;</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p><img alt="svg" src="_images/play_with_signals_27_1.svg" /></p>
+<p>We might want to convert this to millimeters… There is a method for that.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">distancetot</span><span class="o">.</span><span class="n">unit_to</span><span class="p">(</span><span class="s1">&#39;mm&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">AxesSubplot</span><span class="p">:</span><span class="n">xlabel</span><span class="o">=</span><span class="s1">&#39;Time (s)&#39;</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p><img alt="svg" src="_images/play_with_signals_29_1.svg" /></p>
+<p>Any operation on signals necessitates that the operands are signals of same length and frequency. For instance, consider a for signal of different sampling frequency, and try to add it to the previous force signal. This should give us an error.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">samplingfreq2</span><span class="o">=</span><span class="mi">48000</span>
+<span class="n">forcesig2</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">samplingfreq2</span><span class="p">,</span><span class="n">desc</span><span class="o">=</span><span class="s1">&#39;100Hz sinusoidal force at fs=48000Hz&#39;</span><span class="p">,</span><span class="n">raw</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="mi">100</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="o">/</span><span class="n">samplingfreq2</span><span class="p">)),</span><span class="n">unit</span><span class="o">=</span><span class="s1">&#39;N&#39;</span><span class="p">)</span>
+<span class="n">forcetot</span> <span class="o">=</span> <span class="n">forcesig</span><span class="o">+</span><span class="n">forcesig2</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">---------------------------------------------------------------------------</span>
+
+<span class="ne">Exception</span>                                 <span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">)</span>
+
+<span class="o">&lt;</span><span class="n">ipython</span><span class="o">-</span><span class="nb">input</span><span class="o">-</span><span class="mi">23</span><span class="o">-</span><span class="n">beb9d939dcca</span><span class="o">&gt;</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+      <span class="mi">1</span> <span class="n">samplingfreq2</span><span class="o">=</span><span class="mi">48000</span>
+      <span class="mi">2</span> <span class="n">forcesig2</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">samplingfreq2</span><span class="p">,</span><span class="n">desc</span><span class="o">=</span><span class="s1">&#39;100Hz sinusoidal force at fs=48000Hz&#39;</span><span class="p">,</span><span class="n">raw</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="mi">100</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="o">/</span><span class="n">samplingfreq2</span><span class="p">)),</span><span class="n">unit</span><span class="o">=</span><span class="s1">&#39;N&#39;</span><span class="p">)</span>
+<span class="o">----&gt;</span> <span class="mi">3</span> <span class="n">forcesig</span><span class="o">+</span><span class="n">forcesig2</span>
+
+
+<span class="o">~/.</span><span class="n">venv</span><span class="o">/</span><span class="n">numerics</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">python3</span><span class="o">.</span><span class="mi">8</span><span class="o">/</span><span class="n">site</span><span class="o">-</span><span class="n">packages</span><span class="o">/</span><span class="n">measpy</span><span class="o">/</span><span class="n">signal</span><span class="o">.</span><span class="n">py</span> <span class="ow">in</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+    <span class="mi">553</span>         <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    554         if type(other)==Signal:</span>
+<span class="s2">--&gt; 555             return self._add(other)</span>
+<span class="s2">    556 </span>
+<span class="s2">    557         if (type(other)==float) or (type(other)==int):</span>
+
+
+<span class="s2">~/.venv/numerics/lib/python3.8/site-packages/measpy/signal.py in _add(self, other)</span>
+<span class="s2">    535             raise Exception(&#39;Incompatible units in addition of sginals&#39;)</span>
+<span class="s2">    536         if self.fs!=other.fs:</span>
+<span class="s2">--&gt; 537             raise Exception(&#39;Incompatible sampling frequencies in addition of signals&#39;)</span>
+<span class="s2">    538         if self.length!=other.length:</span>
+<span class="s2">    539             raise Exception(&#39;Incompatible signal lengths&#39;)</span>
+
+
+<span class="s2">Exception: Incompatible sampling frequencies in addition of signals</span>
+</pre></div>
+</div>
+<p>But we can try to resample one signal to match the sampling frequency of the orther…</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">forcetot</span> <span class="o">=</span> <span class="n">forcesig</span><span class="o">+</span><span class="n">forcesig2</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="n">forcesig</span><span class="o">.</span><span class="n">fs</span><span class="p">)</span>
+<span class="n">forcetot</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">AxesSubplot</span><span class="p">:</span><span class="n">xlabel</span><span class="o">=</span><span class="s1">&#39;Time (s)&#39;</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p><img alt="svg" src="_images/play_with_signals_33_1.svg" /></p>
+</div>
+<div class="section" id="calibrations">
+<h2>3. Calibrations<a class="headerlink" href="#calibrations" title="Permalink to this headline">¶</a></h2>
+<p>Up to now, we didn’t care about calibration. In fact, if we worked only with such synthesized signal, there wouldn’t be any reason to.</p>
+<p>Most of the time, these signals come from data acquisition process, where an accelerometer, a force/torque sensor, a microphone or an optical velocity measurement device is involved.</p>
+<p>Conditionners generally produce a voltage signal that is proportionnal to the measured quantity. The calibration <code class="docutils literal notranslate"><span class="pre">cal</span></code> is hence a float number which in expressed in Volts/units.</p>
+<p>The data acquisition device the captures this voltage signal at a given sampling frequency. If the acquired samples directly express the voltage input, <code class="docutils literal notranslate"><span class="pre">dbfs=1</span></code>. With some devices (for instance line inputs of sound cards), the acquired sample values are proportionnal, but not equal. The coefficient of proportionnality is <code class="docutils literal notranslate"><span class="pre">dbfs</span></code>.</p>
+<p>The true signal expressed in unit is hence given by multiplying the <code class="docutils literal notranslate"><span class="pre">_rawvalues</span></code> property by dbfs (to convert it in volts) and dividing the resulting array by <code class="docutils literal notranslate"><span class="pre">cal</span></code>.</p>
+<p>There are methods for that.</p>
+<p>Consider the signal below. A sinusoidal velocity. The calibration was 2V/(m/s) and the input measures 1.0 when there is 5 incoming Volts.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">velsig</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">samplingfreq</span><span class="p">,</span>
+    <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;100Hz sinusoidal velocity&#39;</span><span class="p">,</span>
+    <span class="n">raw</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="mi">100</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="o">/</span><span class="n">samplingfreq</span><span class="p">)),</span>
+    <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;m/s&#39;</span><span class="p">,</span>
+    <span class="n">cal</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span>
+    <span class="n">dbfs</span><span class="o">=</span><span class="mf">5.0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The raw values given by the sound card are accessed by using the <code class="docutils literal notranslate"><span class="pre">_rawvalues</span></code> property or <code class="docutils literal notranslate"><span class="pre">raw</span></code>, which is a shortcut method, and is preferrable.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">velsig</span><span class="o">.</span><span class="n">raw</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">array</span><span class="p">([</span> <span class="mf">0.</span>        <span class="p">,</span>  <span class="mf">0.0142471</span> <span class="p">,</span>  <span class="mf">0.02849132</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.04272974</span><span class="p">,</span>
+       <span class="o">-</span><span class="mf">0.02849132</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0142471</span> <span class="p">])</span>
+</pre></div>
+</div>
+<p>We might want for some reason the actual voltage that was going into the daq card.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">velsig</span><span class="o">.</span><span class="n">volts</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">array</span><span class="p">([</span> <span class="mf">0.</span>        <span class="p">,</span>  <span class="mf">0.07123552</span><span class="p">,</span>  <span class="mf">0.14245658</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.21364872</span><span class="p">,</span>
+       <span class="o">-</span><span class="mf">0.14245658</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.07123552</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>The measured values in m/s are accessed using the <code class="docutils literal notranslate"><span class="pre">values</span></code> property… And this is what is plotted when we use the <code class="docutils literal notranslate"><span class="pre">velsig.plot()</span></code> method.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">velsig</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+<span class="n">velsig</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span> <span class="mf">0.</span>          <span class="mf">0.03561776</span>  <span class="mf">0.07122829</span> <span class="o">...</span> <span class="o">-</span><span class="mf">0.10682436</span> <span class="o">-</span><span class="mf">0.07122829</span>
+ <span class="o">-</span><span class="mf">0.03561776</span><span class="p">]</span>
+
+
+
+
+
+<span class="o">&lt;</span><span class="n">AxesSubplot</span><span class="p">:</span><span class="n">xlabel</span><span class="o">=</span><span class="s1">&#39;Time (s)&#39;</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p><img alt="svg" src="_images/play_with_signals_42_2.svg" /></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="copyright.html" class="btn btn-neutral float-right" title="GNU LESSER GENERAL PUBLIC LICENSE" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="README.html" class="btn btn-neutral float-left" title="measpy - Measurements with Python" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; <a href="copyright.html">Copyright</a> 2021, Olivier Doaré.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
