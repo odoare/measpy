@@ -8,7 +8,7 @@ from warnings import WarningMessage
 import numpy as np
 import matplotlib.pyplot as plt
 from numpy.core.numeric import ones_like
-from scipy.signal import welch, csd, coherence, resample
+from scipy.signal import welch, csd, coherence, resample, iirfilter, sosfilt
 #from scipy.interpolate import InterpolatedUnivariateSpline
 from csaps import csaps
 import scipy.io.wavfile as wav
@@ -264,7 +264,7 @@ class Signal:
             raise Exception('Lengths have to be the same')
 
         return Spectral(
-            values=csd(self.values, x.values, **kwargs)[1]/welch(x.values, **kwargs)[1],
+            values=csd(x.values, self.values, **kwargs)[1]/welch(x.values, **kwargs)[1],
             desc='Transfer function between '+x.desc+' and '+self.desc,
             fs=self.fs,
             unit=self.unit/x.unit,
@@ -445,6 +445,15 @@ class Signal:
         a1.legend()
 
         return Hnl
+
+    def iir(self,N=2, Wn=[20,20000], rp=None, rs=None, btype='band',  ftype='butter'):
+
+        sos = iirfilter(N=N, Wn=Wn, rs=rs, rp=rp, btype=btype,
+                       analog=False, ftype=ftype, fs=self.fs,
+                       output='sos')
+        return self.similar(
+            values=sosfilt(sos, self.values),
+            desc=add_step(self.desc,'filtered'))
 
     @classmethod
     def noise(cls,fs=44100,dur=2.0,amp=1.0,freqs=[20.0,20000.0],unit='1',cal=1.0,dbfs=1.0):
@@ -1108,7 +1117,7 @@ class Spectral:
         if logx:
             ax_0.set_xscale('log')
         if plotphase:
-            ax[1].plot(self.freqs,np.unwrap(np.angle(self.values)))
+            ax[1].plot(self.freqs,np.unwrap(np.angle(self.values)),label=plotlabel)
             ax[1].set_ylabel('Phase')
             ax[1].set_xlabel('Freq (Hz')
             if logx:
