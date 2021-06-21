@@ -460,7 +460,26 @@ class Signal:
 
         return Hnl
 
-    def iir(self,N=2, Wn=[20,20000], rp=None, rs=None, btype='band',  ftype='butter'):
+    def iir(self,N=2, Wn=(20,20000), rp=None, rs=None, btype='band',  ftype='butter'):
+        """Infinite impulse response filter of a signal.
+
+        The signal is filtered accordingly to the parameters. Most of them are that of the same scipy.signal functionss. This method is a wrapper arounf the scipy.signal function, for a more convenient and rapid usage.
+
+        :param N: Filter order, defaults to 2
+        :type N: int, optional
+        :param Wn: a cutoff frequency (if low or highpass) or a tuple of frequency (if bandpass/stop), defaults to (20,20000)
+        :type Wn: tuple, optional
+        :param rp: [description], defaults to None
+        :type rp: [type], optional
+        :param rs: [description], defaults to None
+        :type rs: [type], optional
+        :param btype: Type of filter (band, hp, lp), defaults to 'band'
+        :type btype: str, optional
+        :param ftype: Type of dilter (butter, elliptic, etc.), defaults to 'butter'
+        :type ftype: str, optional
+        :return: A filtered signal
+        :rtype: measpy.signal.Signal
+        """
 
         sos = iirfilter(N=N, Wn=Wn, rs=rs, rp=rp, btype=btype,
                        analog=False, ftype=ftype, fs=self.fs,
