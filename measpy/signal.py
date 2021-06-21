@@ -396,7 +396,23 @@ class Signal:
             writer.writerow(['dbfs',self.dbfs])
         wav.write(filename+'.wav',int(round(self.fs)),self.raw)
 
-    def harmonic_disto(self,nh=4,freqs=[20,20000],delay=None):
+    def harmonic_disto(self,nh=4,freqs=(20,20000),delay=None):
+        """Compute the harmonic distorsion of an in/out system
+        using the method proposed by Farina (2000).
+
+        The signal object (```self```) has to be the response of a
+        system to a logaithmic sweep created with the
+        ```Signal.log_sweep``` method.
+
+        :param nh: number pf harmonics, including harmonic 0, which is the linear part of the response, defaults to 4
+        :type nh: int, optional
+        :param freqs: frequencies between which the output signal sweeps, defaults to [20,20000]
+        :type freqs: tuple, optional
+        :param delay: the mean delay between output and input, defaults to None. If None, the delay is estimated by calculating the mean values of the group delay between the freauencies of the sweep
+        :type delay: float, optional
+        :return: A dictionnary of Spectral objects representing the different harmonics as function of the frequencyu 
+        :rtype: dict of measpy.Spectral
+        """
 
         # Length of the window for spectra calculations
         l = 2**13
