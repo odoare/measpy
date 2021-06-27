@@ -4,16 +4,13 @@
 import sys
 sys.path.insert(0,'../')
 
-
 from unyt import Unit
 import measpy as mp
 from measpy.ni import ni_run_measurement, ni_get_devices
 
 import matplotlib.pyplot as plt
-import numpy as np
-import matplotlib
-#plt.style.use('dark_background')
 
+#plt.style.use('dark_background')
 plt.style.use('seaborn')
 %matplotlib auto
 
