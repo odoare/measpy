@@ -463,7 +463,7 @@ class Signal:
     def iir(self,N=2, Wn=(20,20000), rp=None, rs=None, btype='band',  ftype='butter'):
         """Infinite impulse response filter of a signal.
 
-        The signal is filtered accordingly to the parameters. Most of them are that of the same scipy.signal functionss. This method is a wrapper arounf the scipy.signal function, for a more convenient and rapid usage.
+        The signal is filtered accordingly to the parameters. This method is a wrapper around the scipy.signal iir functions, most of the parameters are hence the same.
 
         :param N: Filter order, defaults to 2
         :type N: int, optional
