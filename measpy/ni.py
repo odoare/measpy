@@ -13,6 +13,14 @@ def n_to_ain(n):
 def n_to_aon(n):
     return 'ao'+str(n-1)
 
+
+def callback(task_handle, every_n_samples_event_type,
+                number_of_samples, callback_data):
+    print('Every N Samples callback invoked.')
+
+    return 0
+
+
 def ni_run_measurement(M):
     system = nidaqmx.system.System.local()
     nsamps = int(round(M.dur*M.fs))
@@ -73,9 +81,8 @@ def ni_run_measurement(M):
 
     intask.timing.cfg_samp_clk_timing(
         rate=M.fs,
-        source="OnboardClock",
-        #active_edge=niconst.Edge.FALLING,
-        sample_mode=niconst.AcquisitionType.FINITE, samps_per_chan=nsamps)
+        sample_mode=niconst.AcquisitionType.CONTINUOUS,
+        samps_per_chan=nsamps)
 
 
     if M.out_sig!=None:
@@ -85,20 +92,36 @@ def ni_run_measurement(M):
                 physical_channel=M.out_device + "/" + n_to_aon(n), 
                 min_val=-10, max_val=10,
                 units=niconst.VoltageUnits.VOLTS)
-
-        try:
+      
+        if M.in_device.startswith('myDAQ'):
+            # If the device is a myDAQ card, we keep most default values
+            # The myDAQ devices are set up separately because
+            # there is no error messages when setting up properties
+            # that are not supported, and the acquisition then fails
+            print("This is a NI my DAQ device")
             outtask.timing.cfg_samp_clk_timing(
                 rate=M.fs,
-                source="/" + M.in_device + "/ai/SampleClock", #"OnboardClock",
-                #active_edge=niconst.Edge.FALLING,
-                sample_mode=niconst.AcquisitionType.FINITE, samps_per_chan=nsamps)
-        except:
-            print("Error when choosing \""+"/" + M.in_device + "/ai/SampleClock\" as clock source, let's try \"OnboardClock\" ")
-            outtask.timing.cfg_samp_clk_timing(
-                rate=M.fs,
-                source="OnboardClock",
-                #active_edge=niconst.Edge.FALLING,
-                sample_mode=niconst.AcquisitionType.FINITE, samps_per_chan=nsamps)
+                sample_mode=niconst.AcquisitionType.CONTINUOUS,
+                samps_per_chan=nsamps)
+        else:
+            try:
+                # We first try to use analog input sample clock as output clock
+                outtask.timing.cfg_samp_clk_timing(
+                    rate=M.fs,
+                    source="/" + M.in_device + "/ai/SampleClock", #"OnboardClock",
+                    sample_mode=niconst.AcquisitionType.CONTINUOUS,
+                    samps_per_chan=nsamps)
+                print('Use of /'+ M.in_device + '/ai/SampleClock as output clock : success !')
+            except:
+                # If it fails, use defaults
+                # Then the in/out are not synchronized
+                # There is hence the possibility to use one analog input
+                # to do the in/out sync (io_sync=input channel number)
+                print("Error when choosing \""+"/" + M.in_device + "/ai/SampleClock\" as clock source, let's try \"OnboardClock\" ")
+                outtask.timing.cfg_samp_clk_timing(
+                    rate=M.fs,
+                    sample_mode=niconst.AcquisitionType.CONTINUOUS,
+                    samps_per_chan=nsamps)
 
         if len(M.out_map)==1:
             outtask.write(outx[:,0], auto_start=False)
