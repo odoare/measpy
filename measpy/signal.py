@@ -8,7 +8,7 @@ from warnings import WarningMessage
 import numpy as np
 import matplotlib.pyplot as plt
 from numpy.core.numeric import ones_like
-from scipy.signal import welch, csd, coherence, resample, iirfilter, sosfilt
+from scipy.signal import welch, csd, coherence, resample, iirfilter, sosfilt, correlate
 #from scipy.interpolate import InterpolatedUnivariateSpline
 from csaps import csaps
 import scipy.io.wavfile as wav
@@ -287,6 +287,20 @@ class Signal:
             unit=self.unit/x.unit,
             full=False
         )
+
+    def corr(self,x,**kwargs):
+        """ Compute the cross correlation between signal x and the actual signal
+
+            Not finished : Returns a signal, but as time vector always stats at zero for now,
+            the corresopnding time values are incorrect.
+
+            :param x: Other signal to compute the coherence with
+            :type x: measpy.signal.Signal
+        """
+
+        return self.similar(
+            values=correlate(self.values,x.values,**kwargs), 
+            desc=add_step(self.desc,'correlation with '+x.desc))
     
     def cut(self,**kwargs):
         """ Cut signal between positions.
