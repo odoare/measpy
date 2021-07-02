@@ -99,7 +99,7 @@ class Signal:
         out += ", dbfs="+str(self.dbfs)+')'
         return out
 
-    def similar(self, **kwargs):
+    def similar2(self, **kwargs):
         """ Returns a copy of the Signal object
             with properties changed as specified
             by the optionnal arguments.
@@ -143,6 +143,49 @@ class Signal:
             return Signal(raw=kwargs['raw'],fs=fs,desc=desc,unit=unit,cal=cal,dbfs=dbfs)
         else:
             return Signal(raw=self.raw,fs=fs,desc=desc,unit=unit,cal=cal,dbfs=dbfs)
+
+    def similar(self, **kwargs):
+        """ Returns a copy of the Signal object
+            with properties changed as specified
+            by the optionnal arguments.
+
+            :param fs: Sampling frequency
+            :type fs: int, optional
+            :param desc: Description
+            :type desc: str, optional
+            :param unit: Signal unit
+            :type unit: str, unyt.Unit, optional
+            :param cal: Calibration in volts/unit
+            :type cal: float, optional
+            :param dbfs: Input voltage for raw value = 1
+            :type dbfs: float, optional
+            :param values: Signal values given in unit
+            :type values: numpy.array, optional
+            :param volts: Signal values given in volts
+            :type volts: numpy.array, optional
+            :param raw: Signal values given as raw samples
+            :type raw: numpy.array, optional
+            :return: A signal
+            :rtype: measpy.signal.Signal
+
+            Only one of the following parameters should
+            be specifified : raw, volts, values
+            If values is specified, the two others are not
+            taken into account. If volts and raw are given,
+            only volts is taken into account.
+
+        """
+        out = self
+        for arg in kwargs:
+            if arg=='values':
+                out.values=kwargs[arg]
+            elif arg=='volts':
+                out.volts=kwargs[arg]
+            elif arg=='raw':
+                out.raw=kwargs[arg]
+            else:
+                out.__dict__[arg] = kwargs[arg]
+        return out
 
     def plot(self,ax=None,**kwargs):
         """ Basic plotting of the signal
