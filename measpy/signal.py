@@ -7,6 +7,7 @@
 from warnings import WarningMessage
 import numpy as np
 import matplotlib.pyplot as plt
+from numpy.core.fromnumeric import argmax
 from numpy.core.numeric import ones_like
 from scipy.signal import welch, csd, coherence, resample, iirfilter, sosfilt, correlate, correlation_lags
 #from scipy.interpolate import InterpolatedUnivariateSpline
@@ -389,9 +390,6 @@ class Signal:
     def corr(self,x,**kwargs):
         """ Compute the cross correlation between signal x and the actual signal
 
-            Not finished : Returns a signal, but as time vector always stats at zero for now,
-            the corresopnding time values are incorrect.
-
             :param x: Other signal to compute the coherence with
             :type x: measpy.signal.Signal
         """
@@ -401,6 +399,10 @@ class Signal:
             desc=add_step(self.desc,'correlation with '+x.desc),
             t0 = (correlation_lags(self.length,x.length)[0]-0.5)/self.fs)
     
+    def timelag(self,x):
+        c = self.corr(x)
+        return c.time[np.argmax(c.values)]
+
     def cut(self,**kwargs):
         """ Cut signal between positions.
 
