@@ -8,7 +8,7 @@ from warnings import WarningMessage
 import numpy as np
 import matplotlib.pyplot as plt
 from numpy.core.numeric import ones_like
-from scipy.signal import welch, csd, coherence, resample, iirfilter, sosfilt, correlate
+from scipy.signal import welch, csd, coherence, resample, iirfilter, sosfilt, correlate, correlation_lags
 #from scipy.interpolate import InterpolatedUnivariateSpline
 from csaps import csaps
 import scipy.io.wavfile as wav
@@ -108,7 +108,7 @@ class Signal:
         # We have to make sure that properties such as dbfs
         # and cal are the correct ones BEFORE values are calculated
         # Thus, we run the loop two times
-        
+
         for arg in kwargs:
             if arg=='values':
                 pass
@@ -116,6 +116,8 @@ class Signal:
                 pass
             elif arg=='raw':
                 pass
+            elif arg=='unit':
+                self.unit=Unit(kwargs[arg])
             else:
                 self.__dict__[arg] = kwargs[arg]
 
@@ -396,7 +398,8 @@ class Signal:
 
         return self.similar(
             values=correlate(self.values,x.values,**kwargs), 
-            desc=add_step(self.desc,'correlation with '+x.desc))
+            desc=add_step(self.desc,'correlation with '+x.desc),
+            t0 = (correlation_lags(self.length,x.length)[0]-0.5)/self.fs)
     
     def cut(self,**kwargs):
         """ Cut signal between positions.
@@ -684,7 +687,10 @@ class Signal:
         self._rawvalues = val/self.dbfs
     @property
     def time(self):
-        return create_time(self.fs,length=len(self._rawvalues))
+        if hasattr(self,'t0'):
+            return create_time(self.fs,length=len(self._rawvalues))+self.t0
+        else:    
+            return create_time(self.fs,length=len(self._rawvalues))
     @property
     def length(self):
         return len(self._rawvalues)
