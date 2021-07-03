@@ -73,7 +73,8 @@ class Signal:
         * time (time array)
     """
 
-    def __init__(self,**kwargs):
+    def __init__2(self,**kwargs):
+        # Old version of init
         """ Initializes a Signal object with the specified entries """
         self.desc = kwargs.setdefault('desc','A signal')
         unit = kwargs.setdefault('unit','1')
@@ -90,6 +91,43 @@ class Signal:
         else:
             self.raw=np.array(None)
 
+    def __init__(self,**kwargs):
+        """ Initializes a Signal object with the specified entries """
+
+        if 'fs' not in kwargs:
+            self.fs = 1.0
+        if 'cal' not in kwargs:
+            self.cal = 1.0
+        if 'dbfs' not in kwargs:
+            self.dbfs = 1.0
+        if 'desc' not in kwargs:
+            self.desc = 'A signal'
+        if 'unit' not in kwargs:
+            self.unit = Unit('1')
+
+        # We have to make sure that properties such as dbfs
+        # and cal are the correct ones BEFORE values are calculated
+        # Thus, we run the loop two times
+        
+        for arg in kwargs:
+            if arg=='values':
+                pass
+            elif arg=='volts':
+                pass
+            elif arg=='raw':
+                pass
+            else:
+                self.__dict__[arg] = kwargs[arg]
+
+        for arg in kwargs:
+            if arg=='values':
+                self.values=kwargs[arg]
+            elif arg=='volts':
+                self.volts=kwargs[arg]
+            elif arg=='raw':
+                self.raw=kwargs[arg]
+
+
     def __repr__(self):
         out = "measpy.Signal("
         out += "fs="+str(self.fs)
@@ -100,9 +138,12 @@ class Signal:
         return out
 
     def similar2(self, **kwargs):
+        # This is the old version of similar
         """ Returns a copy of the Signal object
             with properties changed as specified
             by the optionnal arguments.
+
+            This is the old version of similar
 
             :param fs: Sampling frequency
             :type fs: int, optional
@@ -175,7 +216,21 @@ class Signal:
             only volts is taken into account.
 
         """
+        
         out = self
+
+        # We have to make sure that properties such as dbfs
+        # and cal are the correct ones BEFORE values are calculated
+        # Thus, we run the loop two times
+        for arg in kwargs:
+            if arg=='values':
+                pass
+            elif arg=='volts':
+                pass
+            elif arg=='raw':
+                pass
+            else:
+                out.__dict__[arg] = kwargs[arg]
         for arg in kwargs:
             if arg=='values':
                 out.values=kwargs[arg]
@@ -183,8 +238,6 @@ class Signal:
                 out.volts=kwargs[arg]
             elif arg=='raw':
                 out.raw=kwargs[arg]
-            else:
-                out.__dict__[arg] = kwargs[arg]
         return out
 
     def plot(self,ax=None,**kwargs):
