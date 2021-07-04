@@ -14,6 +14,7 @@ from scipy.signal import welch, csd, coherence, resample, iirfilter, sosfilt, co
 from csaps import csaps
 import scipy.io.wavfile as wav
 import csv
+import copy
 
 import unyt
 from unyt import Unit
@@ -220,7 +221,7 @@ class Signal:
 
         """
         
-        out = self
+        out = copy.deepcopy(self)
 
         # We have to make sure that properties such as dbfs
         # and cal are the correct ones BEFORE values are calculated
@@ -530,38 +531,56 @@ class Signal:
         """
 
         # Length of the window for spectra calculations
-        l = 2**13
+        l = 2**12
+
+        # Time shift (in samples)
+        dl = l/8
 
         # Compute transfer function using Farina's method
         sp = self.tfe_farina(freqs)
 
+        # This is anothed method based on group delay (less robust)
+        # if type(delay)==type(None):
+        #     # Estimate the delay by calculating the mean value of
+        #     # the group delay
+        #     gd = sp.group_delay()
+        #     delay = np.mean(
+        #         gd.values[(gd.freqs > freqs[0])&(gd.freqs < freqs[1])]
+        #     ) - 0.5*l/sp.fs
+
+        # print (delay)
+
+        # Compute delay from cross correlation
+        # (timelag method)
         if type(delay)==type(None):
-            # Estimate the delay by calculating the mean value of
-            # the group delay
-            gd = sp.group_delay()
-            delay = np.mean(
-                gd.values[(gd.freqs > freqs[0])&(gd.freqs < freqs[1])]
-            ) - 0.5*l/sp.fs
+            delay = self.timelag(Signal.log_sweep(
+                fs=self.fs,
+                dur=self.dur,
+                freqs=freqs))
 
         G=sp.irfft()
         L = self.dur/np.log(freqs[1]/freqs[0])
 
         dt = L*np.log(np.arange(nh)+1)
-        ns = np.round((G.dur-dt+delay)*G.fs)
+        ns = np.round((G.dur-dt+delay)*G.fs)-dl
         ts = np.take(G.time,list(map(int,list(ns))),mode='wrap')
         tf = ts+l/sp.fs
         maxG = np.max(np.abs(G.values))
         axG=G.plot()
         for ii in range(nh):
-            axG.plot([ts[ii],ts[ii]],[-maxG/10,maxG/10],lw=0.5,c='b')
-            axG.plot([tf[ii],tf[ii]],[-maxG/10,maxG/10],lw=0.5,c='r')
-
+            axG.plot([ts[ii],ts[ii]],[-maxG/10,maxG/10],lw=1,c='k')
+            axG.plot([tf[ii],tf[ii]],[-maxG/10,maxG/10],lw=1,c='k')
+            axG.plot([ts[ii],tf[ii]],[maxG/10,maxG/10],lw=1,c='k')
+            axG.plot([ts[ii],tf[ii]],[-maxG/10,-maxG/10],lw=1,c='k')
+            
         Gnl = {}
         Hnl = {}
         a1 = sp.plot(plotphase=False)
         for ii in range(nh):
             Gnl[ii]=G.similar(
-                values=np.take(G.values,list(range(int(ns[ii]),int(ns[ii]+l))),mode='wrap'))
+                values=np.take(G.values,list(range(int(ns[ii]),int(ns[ii]+l))),mode='wrap')
+                )
+
             Hnl[ii]=Gnl[ii].rfft().filterout(freqs).nth_oct_smooth_complex(6)
             Hnl[ii].plot(ax=a1,plotphase=False,label='Harmonic '+str(ii))
             if ii==1:
@@ -617,7 +636,7 @@ class Signal:
     @classmethod
     def log_sweep(cls,fs=44100,dur=2.0,amp=1.0,freqs=[20.0,20000.0],unit='1',cal=1.0,dbfs=1.0):
         return cls(
-            raw=log_sweep(fs,dur,amp,freqs),
+            raw=_log_sweep(fs,dur,amp,freqs),
             fs=fs,
             unit=unit,
             cal=cal,
@@ -1751,7 +1770,7 @@ def tfe_welch(x, y, fs=None, nperseg=2**12,noverlap=None):
     return f, c/p
 
 
-def log_sweep(fs, dur, out_amp, freqs):
+def _log_sweep(fs, dur, out_amp, freqs):
     """ Create log swwep """
     L = dur/np.log(freqs[1]/freqs[0])
     t = create_time(fs, dur=dur)
