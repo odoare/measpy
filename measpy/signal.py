@@ -132,13 +132,24 @@ class Signal:
                 self.raw=kwargs[arg]
 
 
-    def __repr__(self):
+    def __repr__2(self):
+        # Old version
         out = "measpy.Signal("
         out += "fs="+str(self.fs)
         out += ", desc='"+str(self.desc)+"'"
         out += ", cal="+str(self.cal)
         out += ", unit='"+str(self.unit)+"'"
         out += ", dbfs="+str(self.dbfs)+')'
+        return out
+
+    def __repr__(self):
+        out = "measpy.Signal("
+        for arg in self.__dict__.keys():
+            if type(self.__dict__[arg])==str:
+                out += arg+"='"+self.__dict__[arg]+"',"
+            else:
+                out += arg+"="+str(self.__dict__[arg])+","
+        out += ')'
         return out
 
     def similar2(self, **kwargs):
