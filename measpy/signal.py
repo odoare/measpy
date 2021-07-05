@@ -4,6 +4,7 @@
 #
 # OD - 2021
 
+from tkinter.constants import Y
 from warnings import WarningMessage
 import numpy as np
 import matplotlib.pyplot as plt
@@ -707,10 +708,27 @@ class Signal:
         self._rawvalues = val
     @property
     def values(self):
-        return self._rawvalues*self.dbfs/self.cal
+        if isinstance(self.cal,(int,float)):
+            return self._rawvalues*self.dbfs/self.cal
+        elif type(self.cal)==str:
+            d={}
+            d['x']=self.raw*self.dbfs
+            command='y='+self.cal
+            exec(command,d)
+            return d['y']
+        else:
+            print('cal property not recognized')
     @values.setter
     def values(self,val):
-        self._rawvalues = val*self.cal/self.dbfs
+        if isinstance(self.cal,(int,float)):
+            self._rawvalues = val*self.cal/self.dbfs
+        elif type(self.cal)==str:
+            if hasattr(self,'invcal'):
+                d={'np':np,'y':val}
+                exec('x='+self.invcal,d)
+                self._rawvalues = d['x']/self.dbfs
+            else:
+                print('cal property seems to be a function whereas no invcal property has been given: values cannot be set')
     @property
     def volts(self):
         return self._rawvalues*self.dbfs
@@ -721,7 +739,7 @@ class Signal:
     def time(self):
         if hasattr(self,'t0'):
             return create_time(self.fs,length=len(self._rawvalues))+self.t0
-        else:    
+        else:
             return create_time(self.fs,length=len(self._rawvalues))
     @property
     def length(self):
