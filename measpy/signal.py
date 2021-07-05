@@ -4,7 +4,6 @@
 #
 # OD - 2021
 
-from tkinter.constants import Y
 from warnings import WarningMessage
 import numpy as np
 import matplotlib.pyplot as plt
