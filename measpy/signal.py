@@ -503,7 +503,7 @@ class Signal:
                                 full=False,
                                 desc=add_step(self.desc,'RFFT'))
     
-    def to_csvwav(self,filename):
+    def to_csvwav_old(self,filename):
         """Saves the signal into a pair of files:
 
         * A CSV file with the signal parameters
@@ -521,6 +521,24 @@ class Signal:
             writer.writerow(['unit',str(self.unit.units)])
             writer.writerow(['cal',self.cal])
             writer.writerow(['dbfs',self.dbfs])
+        wav.write(filename+'.wav',int(round(self.fs)),self.raw)
+
+    def to_csvwav(self,filename):
+        """Saves the signal into a pair of files:
+
+        * A CSV file with the signal parameters
+        * A WAV file with the raw data
+
+        If the str parameter filename='file', the created files are file.csv and file.wav
+
+        :param filename: string for the base file name
+        :type filename: str
+        """
+        with open(filename+'.csv', 'w', newline='') as file:
+            writer = csv.writer(file)
+            for arg in self.__dict__.keys():
+                if arg!='_rawvalues':
+                    writer.writerow([arg,self.__dict__[arg]])
         wav.write(filename+'.wav',int(round(self.fs)),self.raw)
 
     def harmonic_disto(self,nh=4,freqs=(20,20000),delay=None):
@@ -656,7 +674,7 @@ class Signal:
         )
 
     @classmethod
-    def from_csvwav(cls,filename):
+    def from_csvwav_old(cls,filename):
         """Load a signal from a pair of csv and wav files
 
         :param filename: base file name
@@ -678,6 +696,32 @@ class Signal:
                     out.cal=float(row[1])
                 if row[0]=='dbfs':
                     out.dbfs=float(row[1])
+        _, out._rawvalues = wav.read(filename+'.wav')
+        return out
+
+    @classmethod
+    def from_csvwav(cls,filename):
+        """Load a signal from a pair of csv and wav files
+
+        :param filename: base file name
+        :type filename: str
+        :return: The loaded signal
+        :rtype: measpy.signal.Signal
+        """
+        out = cls()
+        with open(filename+'.csv', 'r') as file:
+            reader = csv.reader(file)
+            for row in reader:
+                print(len(row))
+                if row[0]=='unit':
+                    out.__dict__[row[0]] = Unit(row[1])
+                elif len(row)<3:
+                    try:
+                        out.__dict__[row[0]] = float(row[1])
+                    except:
+                        out.__dict__[row[0]] = row[1]
+                else:
+                    out.__dict__[row[0]] = row[1:]
         _, out._rawvalues = wav.read(filename+'.wav')
         return out
 
