@@ -299,8 +299,10 @@ class Signal:
             :rtype: measpy.signal.Signal       
         """
         return self.similar(
-            raw=np.sqrt(smooth(self.raw**2,nperseg)),
-            desc=add_step(self.desc,'RMS smoothed on '+str(nperseg)+' data points')
+            values=np.sqrt(smooth(self.values**2,nperseg)),
+            desc=add_step(self.desc,'RMS smoothed on '+str(nperseg)+' data points',
+            cal=1.0,
+            dbfs=1.0)
         )
 
     def rms(self):
