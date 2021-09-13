@@ -87,6 +87,13 @@ class Measurement:
 
         self.fs = params.setdefault("fs",44100)
         self.dur = params.setdefault("dur",2.0)
+
+        if 'in_name' in params:
+            self.in_map = params.setdefault("in_map",list(range(1,len(params['in_name'])+1)))
+        else:
+            self.in_map = params.setdefault("in_map",[1,2])
+        self.in_name = params.setdefault("in_name",list('In'+str(b) for b in self.in_map))
+
         self.in_map = params.setdefault("in_map",[1,2])
         self.in_cal = params.setdefault("in_cal",list(1.0 for b in self.in_map))
         self.in_dbfs = params.setdefault("in_dbfs",list(1.0 for b in self.in_map))
