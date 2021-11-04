@@ -1,6 +1,6 @@
 # ------------------------
 #
-# measpy - A Python package to perform measurements an signal analysis
+# measpy - A Python package to perform measurements and signal analysis
 #
 # (c) 2021 Olivier Doaré
 #
