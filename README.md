@@ -2,13 +2,13 @@
 
 Contact: olivier.doare@ensta-paris.fr
 
-measpy is a set of classes and methods to help the data acquisition and analysis of signals. It is mainly acoustics and vibrations oriented. This package is very recent, it is still incomplete and many bugs may appear.
+measpy is a set of classes and methods to help data acquisition with DAQ cards or sound cards and analysis of signals. It is mainly acoustics and vibrations oriented.
 
 The base classes are:
-- ```Signal```: It is basically a class that contain a 1D numpy array, an a few other properties to describe the data as: sampling frequency, calibration and unit.
-- ```Spectral```: A spectral data class that contains the complex amplitudes as a 1D numpy array for frequencies up to the Nyquist frequency, and some properties as sampling frequency, unit, description
+- ```Signal```: A class that contain a 1D numpy array, and a few other properties to describe the data as: sampling frequency, calibration and unit.
+- ```Spectral```: A spectral data class that contains the complex amplitudes as a 1D numpy array for frequencies up to the Nyquist frequency ot the sampling frequency, and some properties as sampling frequency, unit, description
 - ```Measurement``` : A class that describe a data acquisition process, its outputs (Signal objects), its inputs (Signal objects)...
-- ```Weighting``` : Weighting spectral functions (Not yet fully test/functionnal)
+- ```Weighting``` : A weighting class that holds complex values for a list of frequencies, and methods to to smoothing, interpolation, etc.
 
 For now, these daq devices are implemented :
 - Audio cards, via the ```sounddevice``` package,
@@ -29,27 +29,33 @@ If it is a NI daq card:
 from measpy.ni import ni_run_measurement
 ```
 
-In theses modules, there's also the ```audio_get_devices``` and ```ni_get_devices``` functions to get a liste of devices present in the system.
+In theses modules, there's also the ```audio_get_devices``` and ```ni_get_devices``` functions to get a liste of devices present in the system. To get the list of devices, do for example:
+
+```python
+from measpy.audio import audio_get_devices
+l = audio_get_devices()
+print(l)
+```
 
 ## TODO
 
 Things to improve, implement, fix:
-- Many processing methods have to be implemented
+- New processing methods have to be implemented (e.g. Hilbert Transform, more filters, FIR, etc.)
 - Improve plotting methods
-- Other In/Out synchronization methods (implemented for now using a peak sync before measurement)
+- Other In/Out synchronization methods (for now a method using a peak sync before measurement is implemented)
 - More documentation
 - More testing scripts
 - GUI ?
 
 ## Usage example
 
-Consider the following experiment:
+Consider the following experiment in which we want to record a pressure and an acceleration while we send a white noise at the sound card output (typical sound and vibration transfer function measurement):
 - a white noise between 20Hz and 20kHz is sent to output 1 of the soundcard
 - a pressure is acquired at input 1 (Unit pascals)
 - an acceleration is acquired at input 2 (unit m/s^2)
 - the sampling frequency is 44100Hz
 - the calibration of signal conditionners are : 1V/pascal, 0.1V/(m/s^2)
-- the soundcard input is 5V for a unit sample (input or output)
+- the soundcard input gain is such that for 5V at its inputs, the sample amplitude is 1.0 (input or output). This value is referred to as 0dB full scale (0dBFS)
 - the duration of the measurement is 5s
 - the soundcard name is 'My card', as given by measpy.audio.audio_get_devices()
 
@@ -98,14 +104,15 @@ Compute transfer functions:
 ```python
 sp = M1.tfe()
 ```
-This compute the transfer function between the output signal and all the input signals as a dict of ```Spectral``` objects. The method that is actually used depends on the output type. If a 'noise' or '*wav' type signal is sent, Welch's method is used. If a 'logsweep' type is use, Farina's method is used. This basic helper function works only if there is a unique output.
+This compute the transfer function between the output signal and all the input signals as a dict of ```Spectral``` objects. The method that is actually used depends on the output type, as specified in the out_sig property of the measurement object. If a 'noise' or '*wav' type signal is sent, Welch's method is used. If a 'logsweep' type is used, Farina's method is used. This basic helper function works only if there is a unique output.
 
 In general is is preferable to work on individual signals. All the acquired and sent signals are stored into the data property. It is basically a dict of signals, the keys being set by the in_name and out_name arguments when measurement is called. To plot only the measured pressure:
 ```python
-M1.data['Press'].plot()
+a=M1.data['Press'].plot()
 ```
+If no arguments are given, the ```plot``` method of signal objects creates a new figure, draw the signal with the correct dimension and put the correct labels on all axes. This methods returns an axes object that can be used later to plot new signals on the same figure.
 
-Calculate the power spectral density of the pressure (Welch's method on 2**12 points, 50% overlaping):
+One may want to calculate the power spectral density of the pressure (Welch's method on 2**12 points, 50% overlaping):
 ```python
 PressPSD = M1.data['Press'].psd(nperseg=2**12)
 ```
