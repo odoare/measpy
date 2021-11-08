@@ -122,6 +122,8 @@ class Signal:
                 self.unit=Unit(kwargs[arg])
             else:
                 self.__dict__[arg] = kwargs[arg]
+        
+        self.raw=np.array(None)
 
         for arg in kwargs:
             if arg=='values':
@@ -130,7 +132,6 @@ class Signal:
                 self.volts=kwargs[arg]
             elif arg=='raw':
                 self.raw=kwargs[arg]
-
 
     def __repr__2(self):
         # Old version
@@ -231,7 +232,7 @@ class Signal:
             only volts is taken into account.
 
         """
-        
+
         out = copy.deepcopy(self)
 
         # We have to make sure that properties such as dbfs
@@ -244,6 +245,8 @@ class Signal:
                 pass
             elif arg=='raw':
                 pass
+            elif arg=='unit':
+                out.unit=Unit(kwargs[arg])
             else:
                 out.__dict__[arg] = kwargs[arg]
         for arg in kwargs:
@@ -263,7 +266,7 @@ class Signal:
             - **kwargs : all the optionnal arguments of matplotlib.pyplot.line2D
 
             Returns:
-            - ax : an axes object       
+            - ax : an axes object
         """
         if ax==None:
             _,ax = plt.subplots(1)
@@ -1530,7 +1533,7 @@ class Spectral:
         :param other: other spectral object
         :type other: Spectral
         """
-        if type(other)==Signal:
+        if type(other)==Spectral:
             if self.fs!=other.fs:
                 raise Exception('Incompatible sampling frequencies')
             if self.full!=other.full:
@@ -1549,7 +1552,7 @@ class Spectral:
                 )
             )
         else:
-            raise Exception('Incompatible type when multipling something with a Signal')
+            raise Exception('Incompatible type when dividing something with a Signal')
 
     def __rtruediv__(self,other):
         return self.__invert__().__mul__(other)
