@@ -10,7 +10,7 @@
 
 # Examples of signal manipulation
 
-# Note : this Python scrip uses cell mode of the Vscode extension
+# Note : this Python script uses cell mode of the Vscode extension
 # (cells begin with #%%)
 
 #%% Import Packages
@@ -20,11 +20,11 @@ import sys
 sys.path.insert(0, "..")
 
 from unyt import Unit
-import measpy.signal as mp
+import measpy as mp
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib
-%matplotlib auto
+%matplotlib tk
 
 #%% Create testing signals
 
@@ -95,3 +95,5 @@ sdiv = s1/s2
 print(sdiv)
 c=sdiv.plot()
 
+
+# %%
