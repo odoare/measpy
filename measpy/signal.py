@@ -1557,7 +1557,7 @@ class Spectral:
     def __rtruediv__(self,other):
         return self.__invert__().__mul__(other)
 
-    def abs(self):
+    def _abs(self):
         """ Absolute value
             Returns a Spectral class object
         """
@@ -1568,7 +1568,7 @@ class Spectral:
 
     def __abs__(self):
         """Absolute value """
-        return self.abs()
+        return self._abs()
 
     @classmethod
     def tfe(cls,x,y,**kwargs):
