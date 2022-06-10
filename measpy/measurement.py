@@ -382,12 +382,14 @@ class Measurement:
             self.data[key].cal = self.in_cal[pos]
             self.data[key].dbfs = self.in_dbfs[pos]
             self.data[key].desc = self.in_desc[pos]
+            self.data[key].fs = self.fs
         if self.out_sig!=None:
             for key in self.out_name:
                 pos = self.out_name.index(key)
                 self.data[key].unit = Unit('V')
                 self.data[key].dbfs = self.out_dbfs[pos]
                 self.data[key].desc = self.out_desc[pos]
+                self.data[key].fs = self.fs
 
     def _params_to_csv(self,filename):
         """ Writes all the Measurement object parameters to a csv file """
