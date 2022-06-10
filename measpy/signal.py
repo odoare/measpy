@@ -488,24 +488,26 @@ class Signal:
             full=False
         )
     
-    def fft(self):
+    def fft(self,norm="backward"):
         """ FFT of the signal.
             Returns a Spectral object. Unit is preserved during the process.
         """
-        return Spectral(values=np.fft.fft(self.values),
+        return Spectral(values=np.fft.fft(self.values,norm=norm),
                                 fs=self.fs,
                                 unit=self.unit,
                                 full=True,
+                                norm=norm,
                                 desc=add_step(self.desc,'FFT'))
     
-    def rfft(self):
+    def rfft(self,norm="backward"):
         """ Real FFT of the signal.
             Returns a Spectral object. Unit is preserved during the process.
         """
-        return Spectral(values=np.fft.rfft(self.values),
+        return Spectral(values=np.fft.rfft(self.values,norm=norm),
                                 fs=self.fs,
                                 unit=self.unit,
                                 full=False,
+                                norm=norm,
                                 desc=add_step(self.desc,'RFFT'))
     
     def to_csvwav_old(self,filename):
@@ -1064,7 +1066,8 @@ class Spectral:
         :type values: numpy.array, optional
         :param full: If true, the full spectrum is given, from 0 to fs, if false, only up to fs/2
         :type full: bool, optionnal
-        
+        :param norm: Type of normalization "backward", "ortho" or "full". See numpy.fft doc.
+        :type norm: string, optionnal        
         values and dur cannot be both specified.
         If dur is given, values are initialised at 0 
     """
@@ -1076,6 +1079,7 @@ class Spectral:
         desc = kwargs.setdefault("desc",'Spectral data')
         unit = kwargs.setdefault("unit",'1')
         full = kwargs.setdefault("full",False)
+        norm = kwargs.setdefault("norm","backward")
         if 'dur' in kwargs:
             if full:
                 self._values=np.zeros(int(round(fs*kwargs['dur'])),dtype=complex)
@@ -1087,6 +1091,7 @@ class Spectral:
         self.unit = Unit(unit)
         self.fs = fs
         self.full = full
+        self.norm = norm
 
     def similar(self,**kwargs):
         """ Returns a copy of the Spectral object
@@ -1115,7 +1120,8 @@ class Spectral:
         desc = kwargs.setdefault("desc",self.desc)
         unit = kwargs.setdefault("unit",str(self.unit.units))
         full = kwargs.setdefault("full",self.full)
-        out = Spectral(values=values,fs=fs,desc=desc,unit=unit,full=full)
+        norm = kwargs.setdefault("norm",self.norm)
+        out = Spectral(values=values,fs=fs,desc=desc,unit=unit,full=full,norm=norm)
         if 'w' in kwargs:
             w = kwargs['w']
             spa = csaps(w.freqs, w.amp, smooth=0.9)
@@ -1244,7 +1250,7 @@ class Spectral:
         """
         if self.full:
             raise Exception('Error: the spectrum is full, use ifft instead')
-        return Signal(raw=np.fft.irfft(self.values),
+        return Signal(raw=np.fft.irfft(self.values,norm=self.norm),
                             desc=add_step(self.desc,'IFFT'),
                             fs=self.fs,
                             unit=self.unit)
@@ -1255,7 +1261,7 @@ class Spectral:
         """
         if not(self.full):
             raise Exception('Error: the spectrum is not full, use irfft instead')
-        return Signal(raw=np.fft.ifft(self.values),
+        return Signal(raw=np.fft.ifft(self.values,norm=self.norm),
                             desc=add_step(self.desc,'IFFT'),
                             fs=self.fs,
                             unit=self.unit)

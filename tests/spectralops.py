@@ -44,4 +44,15 @@ Atest.plot(ax=a)
 
 print(A.unit)
 print(Atest.unit)
+# %% Test of fft normalization
+S1=mp.Signal.noise(fs=48000,unit='m')
+Sf1 = S1.fft(norm="ortho")
+Ef = sum(abs(Sf1.values)**2)
+E = sum(abs(S1.values)**2)
+print(E)
+print(Ef)
+S2 = Sf1.ifft()
+
+S2.plot()
+S1.plot()
 # %%
