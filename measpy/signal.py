@@ -268,9 +268,12 @@ class Signal:
             Returns:
             - ax : an axes object
         """
+
+        kwargs.setdefault("label",self.desc+' ['+str(self.unit.units)+']')
+
         if ax==None:
             _,ax = plt.subplots(1)
-        ax.plot(self.time,self.values,**kwargs,label=self.desc+' ['+str(self.unit.units)+']')
+        ax.plot(self.time,self.values,**kwargs)
         ax.set_xlabel('Time (s)')
         ax.set_position([0.1,0.25,0.85,0.7])
         ax.legend(loc=(0.05,-0.32),ncol=2)
@@ -1341,7 +1344,7 @@ class Spectral:
         :rtype: axes, or list of axes
         """
 
-        plotlabel = kwargs.setdefault("label",self.desc+' ['+str(self.unit.units)+']')
+        kwargs.setdefault("label",self.desc+' ['+str(self.unit.units)+']')
 
         if type(ax)==type(None):
             if plotphase:
@@ -1363,15 +1366,15 @@ class Spectral:
             values_to_plot = self.values
             label = 'H'
 
-        ax_0.plot(self.freqs,values_to_plot,label=plotlabel)
+        ax_0.plot(self.freqs,values_to_plot,**kwargs)
         ax_0.set_xlabel('Freq (Hz)')
         ax_0.set_ylabel(label)       
         if logx:
             ax_0.set_xscale('log')
         if plotphase:
-            ax[1].plot(self.freqs,np.unwrap(np.angle(self.values)),label=plotlabel)
+            ax[1].plot(self.freqs,np.unwrap(np.angle(self.values)),**kwargs)
             ax[1].set_ylabel('Phase')
-            ax[1].set_xlabel('Freq (Hz')
+            ax[1].set_xlabel('Freq (Hz)')
             if logx:
                 ax[1].set_xscale('log')
         return ax
