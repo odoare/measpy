@@ -353,6 +353,13 @@ class Signal:
         """
         return self.dB(PREF)
 
+    
+    def dB_SVL(self):
+        """ Computes 20*log10(self.values/VREF).
+            VREF is the reference particle velocity (5e-8 m/s)
+        """
+        return self.dB(VREF)
+
 
     def resample(self,fs):
         """ Changes sampling rate of the signal
@@ -1305,19 +1312,25 @@ class Spectral:
 
     def dB_SPL(self):
         return self.unit_to(Unit(PREF)).similar(
-            values=20*np.log10(self._values/PREF.v),
+            values=20*np.log10(np.abs(self._values)/PREF.v),
             desc=add_step(self.desc,'dB SPL')
+        )
+
+    def dB_SVL(self):
+        return self.unit_to(Unit(VREF)).similar(
+            values=20*np.log10(np.abs(self._values)/VREF.v),
+            desc=add_step(self.desc,'dB SVL')
         )
 
     def dBV(self):
         return self.unit_to(Unit(PREF)).similar(
-            values=20*np.log10(self._values/DBVREF.v),
+            values=20*np.log10(np.abs(self._values)/DBVREF.v),
             desc=add_step(self.desc,'dBV')
         )
     
     def dBu(self):
         return self.unit_to(Unit(PREF)).similar(
-            values=20*np.log10(self._values/DBUREF.v),
+            values=20*np.log10(np.abs(self._values)/DBUREF.v),
             desc=add_step(self.desc,'dBu')
         )
 
@@ -1360,8 +1373,16 @@ class Spectral:
                 ax_0 = ax
 
         if dby:
-            values_to_plot = 20*np.log10(np.abs(self.values))
-            label = '20 Log |H|'
+            if(self.unit == Unit("Pa")):
+                values_to_plot = self.dB_SPL().values
+                label = '20 Log |P|/P0'
+            elif(self.unit == Unit("m/s")):
+                values_to_plot = self.dB_SVL().values
+                label = '20 Log |V|/V0'
+            else:
+                values_to_plot = 20*np.log10(np.abs(self.values))
+                label = '20 Log |H|'
+            
         else:
             values_to_plot = self.values
             label = 'H'
@@ -1698,6 +1719,7 @@ class Weighting:
 # Constants
 
 PREF = 20e-6*Unit('Pa') # Acoustic pressure reference level
+VREF = 5e-8*Unit('m/s') # Reference particle velocity
 DBUREF = 1*Unit('V')
 DBVREF = np.sqrt(2)*Unit('V')
 
