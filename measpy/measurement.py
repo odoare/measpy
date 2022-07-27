@@ -302,6 +302,8 @@ class Measurement:
         self.in_desc=convl(str,meas['in_desc'])
         self.extrat=convl(float,meas['extrat'])
         self.out_sig=convl1(str,meas['out_sig'])
+        if self.out_sig=='None':
+            self.out_sig=None
         try:
             self.data=meas['data']
         except:
@@ -320,6 +322,7 @@ class Measurement:
             self.out_sig_fades=convl(float,meas['out_sig_fades'])
             self.io_sync=convl1(int,meas['io_sync'])
             self.out_dbfs=convl(float,meas['out_dbfs'])
+            self.out_device=convl1(str,meas['out_device'])            
         self.in_device=convl1(str,meas['in_device'])
         self.out_device=convl1(str,meas['out_device'])
         self.device_type=convl1(str,meas['device_type'])
