@@ -375,10 +375,13 @@ class Measurement:
     def _data_from_wav(self,filename):
         _, dat = wav.read(filename)
         n = 0
-        #print(self.data)
-        for key in self.data_keys:
-            self.data[key].raw = dat[:,n]
-            n += 1
+        if len(self.data_keys)==1:
+            for key in self.data_keys:
+                self.data[key].raw = dat
+        else:
+            for key in self.data_keys:
+                self.data[key].raw = dat[:,n]
+                n += 1        #print(self.data)
         for key in self.in_name:
             pos = self.in_name.index(key)
             self.data[key].unit = Unit(self.in_unit[pos])
