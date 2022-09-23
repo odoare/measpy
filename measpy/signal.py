@@ -435,7 +435,7 @@ class Signal:
 
             :param pos: Start and stop positions of the new signal, given as indices, defaults to (0,-1)
             :type pos: tuple of int, optionnal
-            :param dur: Start and stop positions of the new signal, given as indices
+            :param dur: Start and stop positions of the new signal, given as time values
             :type dur: tuple of float, optionnal
 
             pos and dur cannot be both specified
@@ -1374,26 +1374,35 @@ class Spectral:
 
         if dby:
             if(self.unit == Unit("Pa")):
-                values_to_plot = self.dB_SPL().values
+                modulus_to_plot = self.dB_SPL().values
                 label = '20 Log |P|/P0'
             elif(self.unit == Unit("m/s")):
-                values_to_plot = self.dB_SVL().values
+                modulus_to_plot = self.dB_SVL().values
                 label = '20 Log |V|/V0'
             else:
-                values_to_plot = 20*np.log10(np.abs(self.values))
+                modulus_to_plot = 20*np.log10(np.abs(self.values))
                 label = '20 Log |H|'
+
+            #Only keep finite values
+            valid_indices = np.isfinite(modulus_to_plot)
+
+            frequencies_to_plot = self.freqs[valid_indices]
+            modulus_to_plot = modulus_to_plot[valid_indices]
+            phase_to_plot = np.unwrap(np.angle(self.values))[valid_indices]
             
         else:
-            values_to_plot = self.values
+            frequencies_to_plot = self.freqs
+            modulus_to_plot = np.abs(self.values)
+            phase_to_plot = np.unwrap(np.angle(self.values))
             label = 'H'
 
-        ax_0.plot(self.freqs,values_to_plot,**kwargs)
+        ax_0.plot(frequencies_to_plot,modulus_to_plot,**kwargs)
         ax_0.set_xlabel('Freq (Hz)')
         ax_0.set_ylabel(label)       
         if logx:
             ax_0.set_xscale('log')
         if plotphase:
-            ax[1].plot(self.freqs,np.unwrap(np.angle(self.values)),**kwargs)
+            ax[1].plot(frequencies_to_plot,phase_to_plot,**kwargs)
             ax[1].set_ylabel('Phase')
             ax[1].set_xlabel('Freq (Hz)')
             if logx:
