@@ -435,7 +435,7 @@ class Signal:
 
             :param pos: Start and stop positions of the new signal, given as indices, defaults to (0,-1)
             :type pos: tuple of int, optionnal
-            :param dur: Start and stop positions of the new signal, given as indices
+            :param dur: Start and stop positions of the new signal, given as time values
             :type dur: tuple of float, optionnal
 
             pos and dur cannot be both specified
