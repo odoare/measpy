@@ -37,8 +37,8 @@ def ni_run_measurement(M):
             M.out_device=system.devices[0].name
             
     now = datetime.now()
-    M.date = now.strftime("%Y%m%d")
-    M.time = now.strftime("%H%M%S")
+    M.date = now.strftime("%Y-%m-%d")
+    M.time = now.strftime("%H:%M:%S")
 
     # Insert a synchronization peak at the begining of the output signals
     if M.out_sig==None:
