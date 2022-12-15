@@ -353,6 +353,30 @@ class Measurement:
             M.data[key].unit=Unit(str(M.data[key].unit))
         return M
 
+    def _data_to_array(self,includetime=False,datatype='raw'):
+        n = 0
+        if includetime:
+            out = self.data[list(self.data.keys())[0]].time[:,None]
+            n += 1
+        for key in self.data.keys():
+            if n==0:
+                if datatype=='raw':
+                    out = self.data[key].raw[:,None]
+                elif datatype=='volts':
+                    out = self.data[key].volts[:,None]
+                elif datatype=='values':
+                    out = self.data[key].values[:,None]
+                n += 1
+            else:
+                if datatype=='raw':
+                    out = np.block([out,self.data[key].raw[:,None]])
+                elif datatype=='volts':
+                    out = np.block([out,self.data[key].volts[:,None]])
+                elif datatype=='values':
+                    out = np.block([out,self.data[key].values[:,None]])
+                n += 1
+        return out
+
     def _data_to_wav(self,filename):
         """ Save all data in the measurement as a unique wav file
             It is not the recommended usage to use this method, but
@@ -362,15 +386,21 @@ class Measurement:
             :param filename: WAV file name
             :type filename: str
         """
-        n = 0
-        for key in self.data.keys():
-            if n==0:
-                out = self.data[key].raw[:,None]
-                n += 1
-            else:
-                out = np.block([out,self.data[key].raw[:,None]])
-                n += 1
-        wav.write(filename,int(round(self.fs)),out)
+        wav.write(filename,int(round(self.fs)),self._data_to_array())
+
+    def _data_to_txt(self,filename,includetime=True,datatype='raw'):
+        """ Save all data in the measurement as a unique txt file
+            It is not the recommended usage to use this method, but
+            use to_csvtxt or to_jsontxt to save the data, and its
+            descriptions.
+
+            :param filename: TXT file name
+            :type filename: str
+            :param datatype: Type of data ('raw', 'volts' or 'values')
+            :type datatype: str 
+        """
+        np.savetxt(filename,self._data_to_array(includetime=includetime,datatype=datatype))
+
 
     def _data_from_wav(self,filename):
         _, dat = wav.read(filename)
@@ -492,6 +522,19 @@ class Measurement:
         # except:
         # print('data_from_wav failed (file not present?)')
         return M
+
+    def to_csvtxt(self,filebase,includetime=True,datatype='values'):
+        """ Saves a Measurement object to a set of files
+
+            * filebase : string from which two file names are created
+            * filebase+'.csv' : All measurement parameters
+            * filebase+'.txt' : all input and out channels + time (as readable textfile)
+        """
+        self._params_to_csv(filebase+'.csv')
+        # try:
+        self._data_to_txt(filebase+'.txt',includetime=includetime,datatype=datatype)
+        # except:
+        #     print('data_to_wav failed (no data?)')
 
     def plot(self,ytype='units',limit=None):
 
