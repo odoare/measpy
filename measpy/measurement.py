@@ -353,7 +353,7 @@ class Measurement:
             M.data[key].unit=Unit(str(M.data[key].unit))
         return M
 
-    def _data_to_array(self,includetime=False,datatype='raw'):
+    def _data_to_array_old(self,includetime=False,datatype='raw'):
         n = 0
         if includetime:
             out = self.data[list(self.data.keys())[0]].time[:,None]
@@ -376,6 +376,17 @@ class Measurement:
                     out = np.block([out,self.data[key].values[:,None]])
                 n += 1
         return out
+
+    def _data_to_array(self,includetime=False,datatype='raw'):
+        if datatype=='raw':
+            outdata = np.concatenate((self.x_raw,self.y_raw),1)
+        elif datatype=='volts':
+            outdata = np.concatenate((self.x_volts,self.y_volts),1)
+        elif datatype=='values':
+            outdata = np.concatenate((self.x,self.y),1)
+        if includetime:
+            outdata = np.concatenate((self.t[:,None],outdata),1)
+        return outdata
 
     def _data_to_wav(self,filename):
         """ Save all data in the measurement as a unique wav file
@@ -536,10 +547,10 @@ class Measurement:
         # except:
         #     print('data_to_wav failed (no data?)')
 
-    def plot(self,ytype='units',limit=None):
+    def plot(self,ytype='values',limit=None):
 
         for ii in range(self.y.shape[1]):
-            if ytype=='units':
+            if ytype=='values':
                 plt.plot(self.t,self.y[:,ii])
             if ytype=='volts':
                 plt.plot(self.t,self.y_volts[:,ii])
@@ -551,7 +562,7 @@ class Measurement:
         plt.xlabel('Time(s)')
         legende = []
         for ii in range(self.y.shape[1]):
-            if ytype=='units':
+            if ytype=='values':
                 legende+=[self.in_name[ii]+'('+self.in_unit[ii]+')']
             if ytype=='volts':
                 legende+=[self.in_name[ii]+'(volts)']
@@ -636,7 +647,6 @@ class Measurement:
     def t(self):
         """ Time array """
         return ms.create_time(self.fs,dur=self.dur+self.extrat[0]+self.extrat[1])
-
 
     # Old tfe function (deprecated)
     def tfeb(self,nperseg=2**16,noverlap=None,plotH=False):
