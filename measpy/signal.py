@@ -558,6 +558,39 @@ class Signal:
                     writer.writerow([arg,self.__dict__[arg]])
         wav.write(filename+'.wav',int(round(self.fs)),self.raw)
 
+    def to_csvtxt(self,filename,datatype='raw',includetime=False):
+        """Saves the signal into a pair of files:
+
+        * A CSV file with the signal parameters
+        * A TXT file with the data
+
+        If the str parameter filename='file', the created files are file.csv and file.wav
+
+        :param filename: string for the base file name
+        :type filename: str
+        :param datatype: string for the optionnal data format (defaults to 'raw')
+        :type datatype: str
+        :param includetime: does the txt contains a time column ?
+        :type includetime: bool
+        
+        """
+        with open(filename+'.csv', 'w', newline='') as file:
+            writer = csv.writer(file)
+            for arg in self.__dict__.keys():
+                if arg!='_rawvalues':
+                    writer.writerow([arg,self.__dict__[arg]])
+        if datatype=='raw':
+            outdata = self.raw[:,None]
+        elif datatype=='volts':
+            outdata = self.volts[:,None]
+        elif datatype=='values':
+            outdata = self.values[:,None]
+        else:
+            raise Exception("'"+str(datatype)+"' is not a possible choice for datatype option")
+        if includetime:
+            outdata = np.concatenate((self.time[:,None],outdata),1)
+        np.savetxt(filename+'.txt',outdata)
+
     def harmonic_disto(self,nh=4,freqs=(20,20000),delay=None):
         """Compute the harmonic distorsion of an in/out system
         using the method proposed by Farina (2000).
