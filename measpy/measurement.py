@@ -4,9 +4,6 @@
 #
 # OD - 2021
 
-# TODO :
-# - synchronisation
-# - Improve plotting
 
 import measpy.signal as ms
 from measpy.signal import Signal
@@ -82,8 +79,9 @@ class Measurement:
             logsweep=params['out_sig']!='logsweep'
             wa=not str(params['out_sig']).upper().endswith('.WAV')
             non=params['out_sig']!=None
-            if noise&logsweep&wa&non:
-                raise Exception("out_sig must but be 'noise', 'sweep', '*.wav' or None")
+            ar=type(params['out_sig'])!=np.ndarray
+            if noise&logsweep&wa&non&ar:
+                raise Exception("out_sig must but be a numpy.ndarray, 'noise', 'sweep', '*.wav' or None")
 
         self.fs = params.setdefault("fs",44100)
         self.dur = params.setdefault("dur",2.0)
@@ -199,6 +197,8 @@ class Measurement:
                 self.data[self.out_name[ii]]=self.data[self.out_name[ii]].similar(
                     volts=np.array(x[:,ii],dtype=float)/vmax
                 ).fade(self.out_sig_fades).add_silence(self.extrat)
+        elif type(self.outsig)==np.ndarray:
+            pass
 
     def show(self):
         """ Pretty prints the measurement properties """
