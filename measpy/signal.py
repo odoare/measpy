@@ -1382,7 +1382,7 @@ class Spectral:
             desc='Group delay of '+self.desc
         )
 
-    def plot(self,ax=None,logx=True,dby=True,plotphase=True,**kwargs):
+    def plot(self,ax=None,logx=True,dby=True,plot_phase=True,unwrap_phase=True,**kwargs):
         """Plot spectral data
 
         :param ax: Axis where to plot the data, defaults to None
@@ -1391,8 +1391,10 @@ class Spectral:
         :type logx: bool, optional
         :param dby: If true dB are plotted (20 log10 of absolute value), defaults to True
         :type dby: bool, optional
-        :param plotphase: If True, also plots the phase , defaults to True
-        :type plotphase: bool, optional
+        :param plot_phase: If True, also plots the phase , defaults to True
+        :type plot_phase: bool, optional
+        :param unwrap_phase: If True, phase is unwrapped, defaults to True
+        :type unwrap_phase: bool, optional
         :return: An axes type object if plotphase is False, a list of two axes objects if plotphase is True
         :rtype: axes, or list of axes
         """
@@ -1400,14 +1402,14 @@ class Spectral:
         kwargs.setdefault("label",self.desc+' ['+str(self.unit.units)+']')
 
         if type(ax)==type(None):
-            if plotphase:
+            if plot_phase:
                 _,ax = plt.subplots(2)
                 ax_0 = ax[0]
             else:
                 _,ax = plt.subplots(1)
                 ax_0 = ax
         else:
-            if plotphase:
+            if plot_phase:
                 ax_0 = ax[0]
             else:
                 ax_0 = ax
@@ -1428,12 +1430,16 @@ class Spectral:
 
             frequencies_to_plot = self.freqs[valid_indices]
             modulus_to_plot = modulus_to_plot[valid_indices]
-            phase_to_plot = np.unwrap(np.angle(self.values))[valid_indices]
+            phase_to_plot = np.angle(self.values)[valid_indices]
+            if unwrap_phase:
+                phase_to_plot = np.unwrap(phase_to_plot)
             
         else:
             frequencies_to_plot = self.freqs
             modulus_to_plot = np.abs(self.values)
-            phase_to_plot = np.unwrap(np.angle(self.values))
+            phase_to_plot = np.angle(self.values)
+            if unwrap_phase:
+                phase_to_plot = np.unwrap(phase_to_plot)
             label = 'H'
 
         ax_0.plot(frequencies_to_plot,modulus_to_plot,**kwargs)
@@ -1441,7 +1447,7 @@ class Spectral:
         ax_0.set_ylabel(label)       
         if logx:
             ax_0.set_xscale('log')
-        if plotphase:
+        if plot_phase:
             ax[1].plot(frequencies_to_plot,phase_to_plot,**kwargs)
             ax[1].set_ylabel('Phase')
             ax[1].set_xlabel('Freq (Hz)')
