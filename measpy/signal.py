@@ -860,9 +860,11 @@ class Signal:
             unit=Unit(unit)
         if not self.unit.same_dimensions_as(unit):
             raise Exception('Incompatible units')
-        a=self.unit.get_conversion_factor(unit)[0]
+        a=list(self.unit.get_conversion_factor(unit))
+        if a[1]==None:
+            a[1]=0
         return self.similar(
-            raw=a*self.values,
+            values=a[0]*self.values-a[1],
             cal=1.0,
             dbfs=1.0,
             unit=unit,
@@ -893,8 +895,10 @@ class Signal:
         if self.length!=other.length:
             raise Exception('Incompatible signal lengths')
 
+        print("test")
+        print(other.unit_to(self.unit))
         return self.similar(
-            raw=self.values+other.unit_to(self.unit).values,
+            values=self.values+other.unit_to(self.unit).values,
             cal=1.0,
             dbfs=1.0,
             desc=self.desc+'\n + '+other.desc           
@@ -913,7 +917,7 @@ class Signal:
             print('Add with a number without unit, it is considered to be of same unit')
             return self._add(
                 self.similar(
-                    raw=np.ones_like(self.raw)*other/self.dbfs*self.cal,
+                    values=np.ones_like(self.values)*other,
                     desc=str(other)
                 )
             )
