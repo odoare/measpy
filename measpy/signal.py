@@ -9,7 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from numpy.core.fromnumeric import argmax
 from numpy.core.numeric import ones_like
-from scipy.signal import welch, csd, coherence, resample, iirfilter, sosfilt, correlate, correlation_lags
+from scipy.signal import welch, csd, coherence, resample, iirfilter, sosfilt, correlate, correlation_lags, hilbert
 #from scipy.interpolate import InterpolatedUnivariateSpline
 from csaps import csaps
 import scipy.io.wavfile as wav
@@ -596,7 +596,7 @@ class Signal:
         using the method proposed by Farina (2000).
 
         The signal object (```self```) has to be the response of a
-        system to a logaithmic sweep created with the
+        system to a logarithmic sweep created with the
         ```Signal.log_sweep``` method.
 
         :param nh: number pf harmonics, including harmonic 0, which is the linear part of the response, defaults to 4
@@ -605,7 +605,7 @@ class Signal:
         :type freqs: tuple, optional
         :param delay: the mean delay between output and input, defaults to None. If None, the delay is estimated by calculating the mean values of the group delay between the freauencies of the sweep
         :type delay: float, optional
-        :return: A dictionnary of Spectral objects representing the different harmonics as function of the frequencyu 
+        :return: A dictionary of Spectral objects representing the different harmonics as function of the frequencyu 
         :rtype: dict of measpy.Spectral
         """
 
@@ -618,7 +618,7 @@ class Signal:
         # Compute transfer function using Farina's method
         sp = self.tfe_farina(freqs)
 
-        # This is anothed method based on group delay (less robust)
+        # This is another method based on group delay (less robust)
         # if type(delay)==type(None):
         #     # Estimate the delay by calculating the mean value of
         #     # the group delay
@@ -700,6 +700,13 @@ class Signal:
         return self.similar(
             values=sosfilt(sos, self.values),
             desc=add_step(self.desc,'filtered'))
+
+    def hilbert(self):
+        """
+        Computes the hilbert transform of a signal
+        Warning: This method the imaginary part of the hilbert function of the scipy module.
+        """
+        return self.similar(values=np.imag(hilbert(self.values)),desc=add_step(self.desc,'hilbert'))
 
     @classmethod
     def noise(cls,fs=44100,dur=2.0,amp=1.0,freqs=[20.0,20000.0],unit='1',cal=1.0,dbfs=1.0):
