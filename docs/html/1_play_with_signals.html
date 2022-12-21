@@ -1,44 +1,23 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
   <title>Tutorial 1: Play with the measpy.Signal class &mdash; measpy  documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-
-  
-  
-
-  
-  
-
-  
-
-  
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-
-    
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="copyright" title="Copyright" href="copyright.html" />
@@ -46,29 +25,13 @@
     <link rel="prev" title="GNU LESSER GENERAL PUBLIC LICENSE" href="copyright.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="index.html" class="icon icon-home"> measpy
-          
-
-          
           </a>
-
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -76,19 +39,8 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Contents:</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="README.html">Readme</a></li>
 <li class="toctree-l1"><a class="reference internal" href="copyright.html">Copyright</a></li>
@@ -101,75 +53,36 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="2_spectral_data.html">Spectral tutorial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="3_measurements.html">Measurement tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="4_spectrum_smoothing_and_weighting.html">Weighting and smoothing tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="measpy.html">measpy package</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="index.html">measpy</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-        
-      <li>Tutorial 1: Play with the measpy.Signal class</li>
-    
-    
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">Tutorial 1: Play with the measpy.Signal class</li>
       <li class="wy-breadcrumbs-aside">
-        
-          
             <a href="_sources/1_play_with_signals.md.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="tutorial-1-play-with-the-measpy-signal-class">
-<h1>Tutorial 1: Play with the measpy.Signal class<a class="headerlink" href="#tutorial-1-play-with-the-measpy-signal-class" title="Permalink to this headline">¶</a></h1>
+             
+  <section id="tutorial-1-play-with-the-measpy-signal-class">
+<h1>Tutorial 1: Play with the measpy.Signal class<a class="headerlink" href="#tutorial-1-play-with-the-measpy-signal-class" title="Permalink to this heading"></a></h1>
 <p>The <code class="docutils literal notranslate"><span class="pre">measpy.signal.Signal</span></code> class describes a sampled temporal signal. It is at the core of the <code class="docutils literal notranslate"><span class="pre">measpy.Measurement</span></code> class, which helps in performing data acquisition. It is hence important to understand its inner workings.</p>
 <p>An object of the class <code class="docutils literal notranslate"><span class="pre">Signal</span></code> is described by the following properties:</p>
 <ul class="simple">
@@ -188,8 +101,8 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 </pre></div>
 </div>
-<div class="section" id="basics">
-<h2>1. Basics<a class="headerlink" href="#basics" title="Permalink to this headline">¶</a></h2>
+<section id="basics">
+<h2>1. Basics<a class="headerlink" href="#basics" title="Permalink to this heading"></a></h2>
 <p>Let us create a signal <code class="docutils literal notranslate"><span class="pre">S</span></code> with a sampling frequency of 44100 Hz.</p>
 <p>If <code class="docutils literal notranslate"><span class="pre">unit</span></code>, <code class="docutils literal notranslate"><span class="pre">calibration</span></code> and <code class="docutils literal notranslate"><span class="pre">dbfs</span></code> are not specified they are defaulted to dimensionless, 1.0 and 1.0 respectively. And if no content is given the samples doesn’t exist and <code class="docutils literal notranslate"><span class="pre">_rawvalues</span></code> equals <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">S</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="mi">44100</span><span class="p">)</span>
@@ -235,9 +148,9 @@
 <span class="mf">1.0</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="units">
-<h2>2. Units<a class="headerlink" href="#units" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="units">
+<h2>2. Units<a class="headerlink" href="#units" title="Permalink to this heading"></a></h2>
 <p>Let us now give a physical unit to this signal. Consider for instance that it is a velocity, in meter per second. In order to create such signal we have to additionnally specify the <code class="docutils literal notranslate"><span class="pre">unit</span></code> optionnal argument:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">velsig</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">samplingfreq</span><span class="p">,</span><span class="n">desc</span><span class="o">=</span><span class="s1">&#39;100Hz sinusoidal velocity&#39;</span><span class="p">,</span><span class="n">raw</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="mi">100</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="o">/</span><span class="n">samplingfreq</span><span class="p">)),</span><span class="n">unit</span><span class="o">=</span><span class="s1">&#39;m/s&#39;</span><span class="p">)</span>
 </pre></div>
@@ -285,7 +198,7 @@
 <span class="o">----&gt;</span> <span class="mi">1</span> <span class="n">forcesig</span><span class="o">+</span><span class="n">velsig</span>
 
 
-<span class="o">~/.</span><span class="n">venv</span><span class="o">/</span><span class="n">numerics</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">python3</span><span class="o">.</span><span class="mi">8</span><span class="o">/</span><span class="n">site</span><span class="o">-</span><span class="n">packages</span><span class="o">/</span><span class="n">measpy</span><span class="o">/</span><span class="n">signal</span><span class="o">.</span><span class="n">py</span> <span class="ow">in</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+<span class="o">~/.</span><span class="n">venv</span><span class="o">/</span><span class="n">numerics</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">python3</span><span class="mf">.8</span><span class="o">/</span><span class="n">site</span><span class="o">-</span><span class="n">packages</span><span class="o">/</span><span class="n">measpy</span><span class="o">/</span><span class="n">signal</span><span class="o">.</span><span class="n">py</span> <span class="ow">in</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
     <span class="mi">553</span>         <span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">    554         if type(other)==Signal:</span>
 <span class="s2">--&gt; 555             return self._add(other)</span>
@@ -348,7 +261,7 @@
 <span class="o">----&gt;</span> <span class="mi">3</span> <span class="n">forcesig</span><span class="o">+</span><span class="n">forcesig2</span>
 
 
-<span class="o">~/.</span><span class="n">venv</span><span class="o">/</span><span class="n">numerics</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">python3</span><span class="o">.</span><span class="mi">8</span><span class="o">/</span><span class="n">site</span><span class="o">-</span><span class="n">packages</span><span class="o">/</span><span class="n">measpy</span><span class="o">/</span><span class="n">signal</span><span class="o">.</span><span class="n">py</span> <span class="ow">in</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+<span class="o">~/.</span><span class="n">venv</span><span class="o">/</span><span class="n">numerics</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">python3</span><span class="mf">.8</span><span class="o">/</span><span class="n">site</span><span class="o">-</span><span class="n">packages</span><span class="o">/</span><span class="n">measpy</span><span class="o">/</span><span class="n">signal</span><span class="o">.</span><span class="n">py</span> <span class="ow">in</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
     <span class="mi">553</span>         <span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">    554         if type(other)==Signal:</span>
 <span class="s2">--&gt; 555             return self._add(other)</span>
@@ -376,9 +289,9 @@
 </pre></div>
 </div>
 <p><img alt="svg" src="_images/1_play_with_signals_33_1.svg" /></p>
-</div>
-<div class="section" id="calibrations">
-<h2>3. Calibrations<a class="headerlink" href="#calibrations" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="calibrations">
+<h2>3. Calibrations<a class="headerlink" href="#calibrations" title="Permalink to this heading"></a></h2>
 <p>Up to now, we didn’t care about calibration. In fact, if we worked only with such synthesized signal, there wouldn’t be any reason to.</p>
 <p>Most of the time, these signals come from data acquisition process, where an accelerometer, a force/torque sensor, a microphone or an optical velocity measurement device is involved.</p>
 <p>Conditionners generally produce a voltage signal that is proportionnal to the measured quantity. The calibration <code class="docutils literal notranslate"><span class="pre">cal</span></code> is hence a float number which in expressed in Volts/units.</p>
@@ -426,9 +339,9 @@
 </pre></div>
 </div>
 <p><img alt="svg" src="_images/1_play_with_signals_42_2.svg" /></p>
-</div>
-<div class="section" id="file-i-o">
-<h2>4. File I/O<a class="headerlink" href="#file-i-o" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="file-i-o">
+<h2>4. File I/O<a class="headerlink" href="#file-i-o" title="Permalink to this heading"></a></h2>
 <p>The preferred format for saving a <code class="docutils literal notranslate"><span class="pre">Signal</span></code> object is a combination of a CSV file for the properties and a WAV file for the data. Simply use the method <code class="docutils literal notranslate"><span class="pre">to_csvwav</span></code>, which takes a string as argument.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">velsig</span><span class="o">.</span><span class="n">to_csvwav</span><span class="p">(</span><span class="s1">&#39;velocity&#39;</span><span class="p">)</span>
 </pre></div>
@@ -443,55 +356,38 @@
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">vel</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="o">.</span><span class="n">from_wav</span><span class="p">(</span><span class="s1">&#39;velocity.wav&#39;</span><span class="p">,</span><span class="n">unit</span><span class="o">=</span><span class="s1">&#39;m/s&#39;</span><span class="p">,</span><span class="n">desc</span><span class="o">=</span><span class="s1">&#39;This is a velocity&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-</div>
-</div>
+</section>
+</section>
 
 
            </div>
-           
           </div>
-          <footer>
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="2_spectral_data.html" class="btn btn-neutral float-right" title="Tutorial 2: measpy.Spectral class" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="copyright.html" class="btn btn-neutral float-left" title="GNU LESSER GENERAL PUBLIC LICENSE" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="2_spectral_data.html" class="btn btn-neutral float-right" title="Tutorial 2: measpy.Spectral class" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; <a href="copyright.html">Copyright</a> 2021, Olivier Doaré.
-
-    </p>
+    <p>&#169; <a href="copyright.html">Copyright</a> 2021, Olivier Doaré.</p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>
