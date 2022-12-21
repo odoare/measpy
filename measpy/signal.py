@@ -708,6 +708,13 @@ class Signal:
         """
         return self.similar(values=np.imag(hilbert(self.values)),desc=add_step(self.desc,'hilbert'))
 
+    def hilbert_ana(self):
+        """
+        Computes the analytical signal through hilbert transform of a signal
+        Note: This method is exactly the hilbert function of the scipy module.
+        """
+        return self.similar(values=hilbert(self.values)),desc=add_step(self.desc,'hilbert_ana')
+
     @classmethod
     def noise(cls,fs=44100,dur=2.0,amp=1.0,freqs=[20.0,20000.0],unit='1',cal=1.0,dbfs=1.0):
         return cls(
