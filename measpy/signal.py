@@ -936,7 +936,7 @@ class Signal:
             a=other.units.get_conversion_factor(self.unit)[0]
             return self._add(
                 self.similar(
-                    raw=np.ones_like(self.raw)*a*self.dbfs/self.cal,
+                    raw=np.ones_like(self.raw)*a,
                     desc=str(other)
                 )
             )
@@ -1004,7 +1004,7 @@ class Signal:
         if type(other)==unyt.array.unyt_quantity:
             return self._mul(
                 self.similar(
-                    raw=np.ones_like(self.raw)*other.v*self.dbfs/self.cal,
+                    raw=np.ones_like(self.raw)*other.v,
                     unit=other.units,
                     cal=1.0,
                     dbfs=1.0,
@@ -1068,7 +1068,7 @@ class Signal:
         if type(other)==unyt.array.unyt_quantity:
             return self._div(
                 self.similar(
-                    raw=np.ones_like(self.raw)*other.v*self.dbfs/self.cal,
+                    raw=np.ones_like(self.raw)*other.v,
                     unit=other.units,
                     cal=1.0,
                     dbfs=1.0,
