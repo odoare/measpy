@@ -887,6 +887,34 @@ class Signal:
         """
         return self.unit_to(self.unit.get_base_equivalent())
 
+    def max(self):
+        """Max value of a signal
+
+        :return: Max value
+        :rtype: unyt.array.unyt_quantity
+        """
+
+        return max(self.values)*unyt.Unit(self.unit)
+
+    def min(self):
+        """Min value of a signal
+
+        :return: Min value
+        :rtype: unyt.array.unyt_quantity
+        """
+        
+        return max(self.values)*unyt.Unit(self.unit)
+
+    def normalize(self):
+        """Normalize a signal
+
+        :return: Dimensionless normalized signal
+        :rtype: measpy.Signal
+        """
+        
+        return (self/self.max()).similar(desc=add_step(self.desc,"Normalize"))
+
+
     def _add(self,other):
         """Add two signals
 
