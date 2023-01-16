@@ -15,6 +15,7 @@ from csaps import csaps
 import scipy.io.wavfile as wav
 import csv
 import copy
+import numbers
 
 import unyt
 from unyt import Unit
@@ -920,7 +921,7 @@ class Signal:
         if type(other)==Signal:
             return self._add(other)
     
-        if (type(other)==float) or (type(other)==int) or (type(other)==complex):
+        if (type(other)==float) or (type(other)==int) or (type(other)==complex) or isinstance(other,numbers.Number):
             print('Add with a number without unit, it is considered to be of same unit')
             return self._add(
                 self.similar(
@@ -997,7 +998,7 @@ class Signal:
         if type(other)==Signal:
             return self._mul(other)
 
-        if (type(other)==float) or (type(other)==int) or (type(other)==complex):
+        if (type(other)==float) or (type(other)==int) or (type(other)==complex) or isinstance(other,numbers.Number):
             return self.similar(raw=other*self.raw,desc=str(other)+'*'+self.desc)
 
         if type(other)==unyt.array.unyt_quantity:
@@ -1061,7 +1062,7 @@ class Signal:
                 raise Exception('Incompatible sampling frequencies in division of signals')
             return self._div(other)
 
-        if (type(other)==float) or (type(other)==int) or (type(other)==complex):
+        if (type(other)==float) or (type(other)==int) or (type(other)==complex) or isinstance(other,numbers.Number):
             return self.similar(raw=self.raw/other,desc=self.desc+'/'+str(other))
 
         if type(other)==unyt.array.unyt_quantity:
@@ -1499,7 +1500,7 @@ class Spectral:
         if type(other)==Spectral:
             return self._add(other)
     
-        if (type(other)==float) or (type(other)==int) or (type(other)==complex):
+        if (type(other)==float) or (type(other)==int) or (type(other)==complex) or isinstance(other,numbers.Number):
             print('Add with a number without unit, it is considered to be of same unit')
             return self._add(
                 self.similar(
@@ -1576,7 +1577,7 @@ class Spectral:
         if type(other)==Spectral:
             return self._mul(other)
 
-        if (type(other)==float) or (type(other)==int) or (type(other)==complex):
+        if (type(other)==float) or (type(other)==int) or (type(other)==complex) or isinstance(other,numbers.Number):
             return self.similar(values=other*self.values,desc=str(other)+'*'+self.desc)
 
         if type(other)==unyt.array.unyt_quantity:
@@ -1636,7 +1637,7 @@ class Spectral:
                 raise Exception('Incompatible spectral types (full)')                
             return self._div(other)
 
-        if (type(other)==float) or (type(other)==int) or (type(other)==complex):
+        if (type(other)==float) or (type(other)==int) or (type(other)==complex) or isinstance(other,numbers.Number):
             return self.similar(values=self.values/other,desc=self.desc+'/'+str(other))
 
         if type(other)==unyt.array.unyt_quantity:
