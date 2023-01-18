@@ -39,20 +39,20 @@ def audio_run_measurement(M,progress=True):
         effsync=False
     elif M.io_sync>0:
         if M.io_sync in M.in_map:
-            nout = M.x.shape[1]
+            nout = M.x_raw.shape[1]
             peaks = repmat(ms.picv(M.fs),nout,1).T
             zers = repmat(np.zeros(int(M.fs)),nout,1).T
-            outx = np.block([[peaks],[M.x],[zers]])
+            outx = np.block([[peaks],[M.x_raw],[zers]])
             effsync = True
             dursync=4
             indsearch=M.in_map.index(M.io_sync)
         else:
             print('io_sync channel not present in in_map, no sync is done')
-            outx=M.x
+            outx=M.x_raw
             dursync=0
             effsync=False
     else:
-        outx=M.x
+        outx=M.x_raw
         dursync=0
         effsync=False
         
