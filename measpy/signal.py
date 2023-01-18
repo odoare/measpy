@@ -1325,7 +1325,7 @@ class Spectral:
         return self.similar(
             w=self.nth_oct_smooth_to_weight(n,fmin=fmin,fmax=fmax),
             desc=add_step(self.desc,'1/'+str(n)+'th oct. smooth')
-        )
+        ).filterout((fmin,fmax))
 
     def nth_oct_smooth_complex(self,n,fmin=5,fmax=20000):
         """ Nth octave smoothing
@@ -1343,7 +1343,7 @@ class Spectral:
         return self.similar(
             w=self.nth_oct_smooth_to_weight_complex(n,fmin=fmin,fmax=fmax),
             desc=add_step(self.desc,'1/'+str(n)+'th oct. smooth')
-        )
+        ).filterout((fmin,fmax))
 
     def irfft(self):
         """ Compute the real inverse Fourier transform
