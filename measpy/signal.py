@@ -739,6 +739,17 @@ class Signal:
         )
 
     @classmethod
+    def sine(cls,fs=44100,dur=2.0,amp=1.0,freq=1000.0,unit='1',cal=1.0,dbfs=1.0):
+        return cls(
+            raw=_sine(fs,dur,amp,freq),
+            fs=fs,
+            unit=unit,
+            cal=cal,
+            dbfs=dbfs,
+            desc='Sine '+str(freq)+'Hz'
+        )
+
+    @classmethod
     def from_csvwav_old(cls,filename):
         """Load a signal from a pair of csv and wav files
 
@@ -2001,6 +2012,10 @@ def plot_tfe(f, H):
     plt.xlabel('Freq (Hz)')
     plt.ylabel('Arg(H)')
 
+def _sine(fs, dur, out_amp, freq):
+    leng=int(dur*fs)    
+    s = out_amp*np.sin(2*np.pi*np.linspace(0,dur,leng)*freq)
+    return(s)
 
 def smooth(in_array,l=20):
     ker = np.ones(l)/l
