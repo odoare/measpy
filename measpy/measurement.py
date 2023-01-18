@@ -137,7 +137,7 @@ class Measurement:
         """
         if self.out_sig=='noise': # White noise output signal
             self.data[self.out_name[0]] = self.data[self.out_name[0]].similar(
-                volts=ms.noise(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
+                volts=ms._noise(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
             ).fade(self.out_sig_fades).add_silence(self.extrat)
 
             if self.out_map==0:

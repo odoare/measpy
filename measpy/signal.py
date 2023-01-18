@@ -719,7 +719,7 @@ class Signal:
     @classmethod
     def noise(cls,fs=44100,dur=2.0,amp=1.0,freqs=[20.0,20000.0],unit='1',cal=1.0,dbfs=1.0):
         return cls(
-            raw=noise(fs,dur,amp,freqs),
+            raw=_noise(fs,dur,amp,freqs),
             fs=fs,
             unit=unit,
             cal=cal,
@@ -1943,7 +1943,7 @@ def _apply_fades(s,fades):
     return s
 
 
-def noise(fs, dur, out_amp, freqs):
+def _noise(fs, dur, out_amp, freqs):
     """ Create band-limited noise """
     leng = int(dur*fs)
     lengs2 = int(leng/2)
@@ -1984,7 +1984,7 @@ def tfe_welch(x, y, fs=None, nperseg=2**12,noverlap=None):
 
 
 def _log_sweep(fs, dur, out_amp, freqs):
-    """ Create log swwep """
+    """ Create log sweep """
     L = dur/np.log(freqs[1]/freqs[0])
     t = create_time(fs, dur=dur)
     s = np.sin(2*np.pi*freqs[0]*L*np.exp(t/L))
