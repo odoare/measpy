@@ -64,7 +64,7 @@ class Measurement:
         :param io_sync: (not implemented yet) Specifies if in/out synchronization is done, and which type, defaults to 0 (no synchronization).
         :type io_sync: int
 
-        :param device_type: Type of defice 'audio', 'ni', or '', or None, defaults to ''. It can be eventually reacualized when running the measurement.
+        :param device_type: Type of device 'audio', 'ni', or '', or None, defaults to ''. It can be eventually reactualized when running the measurement.
         :type device_type: str or None
         :param in_device: Input device, defaults to ''
         :type in_device: str
@@ -85,6 +85,7 @@ class Measurement:
 
         self.fs = params.setdefault("fs",44100)
         self.dur = params.setdefault("dur",2.0)
+        self.device_type = params.setdefault("device_type",'')
 
         if 'in_name' in params:
             self.in_map = params.setdefault("in_map",list(range(1,len(params['in_name'])+1)))
@@ -100,6 +101,7 @@ class Measurement:
         self.in_desc = params.setdefault("in_desc",list('This is input '+str(b) for b in self.in_map))
         self.out_sig = params.setdefault("out_sig",'noise')                
         self.extrat = params.setdefault("extrat",[0.0,0.0])
+        self.in_device = params.setdefault("in_device",'')
         if self.out_sig!=None:
             self.out_map = params.setdefault("out_map",[1])
             self.out_amp =  params.setdefault("out_amp",1.0)
@@ -110,8 +112,6 @@ class Measurement:
             self.io_sync = params.setdefault("io_sync",0)
             self.out_sig_fades = params.setdefault("out_sig_fades",[0,0])
             self.out_device = params.setdefault("out_device",'')
-        self.device_type = params.setdefault("device_type",'')
-        self.in_device = params.setdefault("in_device",'')
         self.data = {}
         if self.out_sig!=None:
             for n in range(len(self.out_name)):
@@ -128,6 +128,8 @@ class Measurement:
                                                 cal=self.in_cal[n],
                                                 dbfs=self.in_dbfs[n])
         self.data_keys = list(self.data.keys())
+        if self.device_type=='pico':
+            self.in_range = params.setdefault("in_range",list('10V' for b in self.in_map))
         
     def create_output(self):
         """ Creates the output signals, if out_sig is 'noise',
