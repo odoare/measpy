@@ -1,21 +1,18 @@
 import measpy.signal as ms
 
 import numpy as np
-from numpy.matlib import repmat
 
 from datetime import datetime
+from scipy.signal import decimate
 
 import ctypes
 import numpy as np
-from picosdk.ps4000 import ps4000 as ps
-import matplotlib.pyplot as plt
+from picosdk.ps4000 import ps4000
 from picosdk.functions import adc2mV, assert_pico_ok
-from scipy.signal import decimate
 
 from picosdk.ps2000 import ps2000
 from picosdk.functions import assert_pico2000_ok
 from picosdk.ctypes_wrapper import C_CALLBACK_FUNCTION_FACTORY
-from ctypes import POINTER, c_int16, c_uint32
 from picosdk.PicoDeviceEnums import picoEnum
 
 def findindex(l,e):
@@ -38,12 +35,12 @@ def ps2000_run_measurement(M):
 
     CALLBACK = C_CALLBACK_FUNCTION_FACTORY(
         None,
-        POINTER(POINTER(c_int16)),
-        c_int16,
-        c_uint32,
-        c_int16,
-        c_int16,
-        c_uint32
+        ctypes.POINTER(ctypes.POINTER(ctypes.c_int16)),
+        ctypes.c_int16,
+        ctypes.c_uint32,
+        ctypes.c_int16,
+        ctypes.c_int16,
+        ctypes.c_uint32
     )
 
     # Effective sampling frequency (if upsampling is made)
@@ -92,7 +89,6 @@ def ps2000_run_measurement(M):
         else:
             if enabledB:
                 adc_valuesB.extend(buffers[2][0:n_values])
-        # print("callback")
 
     callback = CALLBACK(get_overview_buffers)
 
@@ -134,6 +130,7 @@ def ps2000_run_measurement(M):
         M.date = now.strftime("%Y-%m-%d")
         M.time = now.strftime("%H:%M:%S")
 
+        print('Start')
         start_time = time.time_ns()
 
         while time.time_ns() - start_time < duree_ns*1.1:
@@ -142,7 +139,7 @@ def ps2000_run_measurement(M):
                 callback
             )
 
-        end_time = time.time_ns()
+        print('Done')
 
         if M.fs!=effective_fs/M.upsampling_factor:
             M.fs = effective_fs/M.upsampling_factor
@@ -168,8 +165,6 @@ def ps4000_run_measurement(M):
 
     import time
     global nextSample, autoStopOuter, wasCalledBack
-        
-
 
     # Buffer size fixed to 20k samples
     sizeOfOneBuffer = 100_000
@@ -194,27 +189,27 @@ def ps4000_run_measurement(M):
 
     # Open PicoScope 4000 Series device
     # Returns handle to chandle for use in future API functions
-    status["openunit"] = ps.ps4000OpenUnit(ctypes.byref(chandle))
+    status["openunit"] = ps4000.ps4000OpenUnit(ctypes.byref(chandle))
     assert_pico_ok(status["openunit"])
 
     # Setup channel A
     indA = findindex(M.in_map,1)
     if indA!=None:
         enabledA = True
-        rangeA = ps.PS4000_RANGE['PS4000_'+M.in_range[indA]]
+        rangeA = ps4000.PS4000_RANGE['PS4000_'+M.in_range[indA]]
         # Create buffers ready for assigning pointers for data collection
         bufferAMax = np.zeros(shape=sizeOfOneBuffer, dtype=np.int16)
         bufferCompleteA = np.zeros(shape=totalSamples, dtype=np.int16)
         print('Channel A: enabled with range '+'PS4000_'+M.in_range[indA]+' ('+str(rangeA)+')')
     else:
         enabledA = False
-        rangeA = ps.PS4000_RANGE['PS4000_10V']
+        rangeA = ps4000.PS4000_RANGE['PS4000_10V']
         print('Channel A: disabled')
 
     # Set up channel A
-    channel_range = ps.PS4000_RANGE['PS4000_50MV']
-    status["setChA"] = ps.ps4000SetChannel(chandle,
-                                            ps.PS4000_CHANNEL['PS4000_CHANNEL_A'],
+    channel_range = ps4000.PS4000_RANGE['PS4000_50MV']
+    status["setChA"] = ps4000.ps4000SetChannel(chandle,
+                                            ps4000.PS4000_CHANNEL['PS4000_CHANNEL_A'],
                                             int(enabledA),
                                             1,
                                             rangeA)
@@ -224,19 +219,19 @@ def ps4000_run_measurement(M):
     indB = findindex(M.in_map,2)
     if indB!=None:
         enabledB = True
-        rangeB = ps.PS4000_RANGE['PS4000_'+M.in_range[indB]]
+        rangeB = ps4000.PS4000_RANGE['PS4000_'+M.in_range[indB]]
         # Create buffers ready for assigning pointers for data collection
         bufferBMax = np.zeros(shape=sizeOfOneBuffer, dtype=np.int16)
         bufferCompleteB = np.zeros(shape=totalSamples, dtype=np.int16)
         print('Channel B: enabled with range '+'PS4000_'+M.in_range[indB]+' ('+str(rangeB)+')')
     else:
         enabledB = False
-        rangeB = ps.PS4000_RANGE['PS4000_10V']
+        rangeB = ps4000.PS4000_RANGE['PS4000_10V']
         print('Channel B: disabled')
 
     # Set up channel B
-    status["setChB"] = ps.ps4000SetChannel(chandle,
-                                            ps.PS4000_CHANNEL['PS4000_CHANNEL_B'],
+    status["setChB"] = ps4000.ps4000SetChannel(chandle,
+                                            ps4000.PS4000_CHANNEL['PS4000_CHANNEL_B'],
                                             int(enabledB),
                                             1,
                                             rangeB)
@@ -251,8 +246,8 @@ def ps4000_run_measurement(M):
     # segment index = 0
     # ratio mode = PS4000_RATIO_MODE_NONE = 0
     if enabledA:
-        status["setDataBuffersA"] = ps.ps4000SetDataBuffers(chandle,
-                                                        ps.PS4000_CHANNEL['PS4000_CHANNEL_A'],
+        status["setDataBuffersA"] = ps4000.ps4000SetDataBuffers(chandle,
+                                                        ps4000.PS4000_CHANNEL['PS4000_CHANNEL_A'],
                                                         bufferAMax.ctypes.data_as(ctypes.POINTER(ctypes.c_int16)),
                                                         None,
                                                         sizeOfOneBuffer)
@@ -267,8 +262,8 @@ def ps4000_run_measurement(M):
     # segment index = 0
     # ratio mode = PS4000_RATIO_MODE_NONE = 0
     if enabledB:
-        status["setDataBuffersB"] = ps.ps4000SetDataBuffers(chandle,
-                                                        ps.PS4000_CHANNEL['PS4000_CHANNEL_B'],
+        status["setDataBuffersB"] = ps4000.ps4000SetDataBuffers(chandle,
+                                                        ps4000.PS4000_CHANNEL['PS4000_CHANNEL_B'],
                                                         bufferBMax.ctypes.data_as(ctypes.POINTER(ctypes.c_int16)),
                                                         None,
                                                         sizeOfOneBuffer)
@@ -279,13 +274,13 @@ def ps4000_run_measurement(M):
     M.time = now.strftime("%H:%M:%S")
 
     # Begin streaming mode:
-    sampleUnits = ps.PS4000_TIME_UNITS['PS4000_NS']
+    sampleUnits = ps4000.PS4000_TIME_UNITS['PS4000_NS']
     # We are not triggering:
     maxPreTriggerSamples = 0
     autoStopOn = 1
     # No downsampling:
     downsampleRatio = 1
-    status["runStreaming"] = ps.ps4000RunStreaming(chandle,
+    status["runStreaming"] = ps4000.ps4000RunStreaming(chandle,
                                                     ctypes.byref(sampleInterval),
                                                     sampleUnits,
                                                     maxPreTriggerSamples,
@@ -323,12 +318,12 @@ def ps4000_run_measurement(M):
 
 
     # Convert the python function into a C function pointer.
-    cFuncPtr = ps.StreamingReadyType(streaming_callback)
+    cFuncPtr = ps4000.StreamingReadyType(streaming_callback)
 
     # Fetch data from the driver in a loop, copying it out of the registered buffers and into our complete one.
     while nextSample < totalSamples and not autoStopOuter:
         wasCalledBack = False
-        status["getStreamingLastestValues"] = ps.ps4000GetStreamingLatestValues(chandle, cFuncPtr, None)
+        status["getStreamingLastestValues"] = ps4000.ps4000GetStreamingLatestValues(chandle, cFuncPtr, None)
         if not wasCalledBack:
             # If we weren't called back by the driver, this means no data is ready. Sleep for a short while before trying
             # again.
@@ -352,12 +347,12 @@ def ps4000_run_measurement(M):
 
     # Stop the scope
     # handle = chandle
-    status["stop"] = ps.ps4000Stop(chandle)
+    status["stop"] = ps4000.ps4000Stop(chandle)
     assert_pico_ok(status["stop"])
 
     # Disconnect the scope
     # handle = chandle
-    status["close"] = ps.ps4000CloseUnit(chandle)
+    status["close"] = ps4000.ps4000CloseUnit(chandle)
     assert_pico_ok(status["close"])
 
     for i in range(len(M.in_map)):
