@@ -4,7 +4,6 @@
 #
 # OD - 2021
 
-
 import measpy.signal as ms
 from measpy.signal import Signal
 
@@ -130,6 +129,7 @@ class Measurement:
         self.data_keys = list(self.data.keys())
         if self.device_type=='pico':
             self.in_range = params.setdefault("in_range",list('10V' for b in self.in_map))
+            self.upsampling_factor = params.setdefault("upsampling_factor",1)
         
     def create_output(self):
         """ Creates the output signals, if out_sig is 'noise',
@@ -207,7 +207,6 @@ class Measurement:
         print("Measurement with the following properties:")
         print("| Type of device: device_type="+self.device_type)
         print("| Input device: device="+str(self.in_device))
-        print("| Output device: device="+str(self.out_device))
         print("| Sampling frequency (Hz): fs="+str(self.fs))
         print("| Duration (s): dur="+str(self.dur))
         st = str(self.in_map)
@@ -224,6 +223,7 @@ class Measurement:
         print('| Input descriptions: in_desc='+"['"+st+"']")        
         print('| Extra time before and after: extrat='+str(self.extrat))
         if self.out_sig!=None:
+            print("| Output device: device="+str(self.out_device))
             st = str(self.out_map)
             print('| Output map: out_map='+st)
             st = "', '".join(self.out_name)
@@ -239,6 +239,10 @@ class Measurement:
             print("| Measurement time: time='"+self.time+"'")
         except:
             print("| No measurement date or time, the measurement hasn't been performed")
+
+        if self.device_type=='pico':
+            print('| Input ranges: in_range='+str(self.in_range))
+            print("| Upsampling factor: upsampling_factor='"+str(self.upsampling_factor)+"'")
         print("[ Contents of the dictionnary data (keys):")
         for key in self.data:
             print("| "+key)
@@ -271,7 +275,12 @@ class Measurement:
             out += ', out_sig_freqs='+str(self.out_sig_freqs)
             out += ', out_sig_fades='+str(self.out_sig_fades)
             out += ", out_amp="+str(self.out_amp)
-            out += ", io_sync="+str(self.io_sync)+")"
+            out += ", io_sync="+str(self.io_sync)
+        if self.device_type=='pico':
+            out += ", in_range="+str(self.in_range)
+            out += ", upsampling_factor="+str(self.upsampling_factor)
+        out +=")"
+        
         return out
 
     def _to_dict(self,withdata=True):
@@ -325,10 +334,14 @@ class Measurement:
             self.io_sync=convl1(int,meas['io_sync'])
             self.out_dbfs=convl(float,meas['out_dbfs'])
             self.out_device=convl1(str,meas['out_device'])            
+            self.out_device=convl1(str,meas['out_device'])
         self.in_device=convl1(str,meas['in_device'])
-        self.out_device=convl1(str,meas['out_device'])
         self.device_type=convl1(str,meas['device_type'])
         self.data_keys=convl(str,meas['data_keys'])
+        if self.device_type=='pico':
+            self.in_range=convl(str,meas['in_range'])
+            self.upsampling_factor=convl1(int,meas['upsampling_factor'])            
+        
         # print('In _from_dict')
         # print(self.data)
 
@@ -380,12 +393,20 @@ class Measurement:
         return out
 
     def _data_to_array(self,includetime=False,datatype='raw'):
-        if datatype=='raw':
-            outdata = np.concatenate((self.x_raw,self.y_raw),1)
-        elif datatype=='volts':
-            outdata = np.concatenate((self.x_volts,self.y_volts),1)
-        elif datatype=='values':
-            outdata = np.concatenate((self.x,self.y),1)
+        if self.out_sig!=None:
+            if datatype=='raw':
+                outdata = np.concatenate((self.x_raw,self.y_raw),1)
+            elif datatype=='volts':
+                outdata = np.concatenate((self.x_volts,self.y_volts),1)
+            elif datatype=='values':
+                outdata = np.concatenate((self.x,self.y),1)
+        else:
+            if datatype=='raw':
+                outdata = self.y_raw
+            elif datatype=='volts':
+                outdata = self.y_volts
+            elif datatype=='values':
+                outdata = self.y
         if includetime:
             outdata = np.concatenate((self.t[:,None],outdata),1)
         return outdata
