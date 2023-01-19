@@ -10,25 +10,15 @@ import numpy as np
 from picosdk.ps4000 import ps4000 as ps
 import matplotlib.pyplot as plt
 from picosdk.functions import adc2mV, assert_pico_ok
+from scipy.signal import decimate
 
 def ps4000_run_measurement(M):
     """
-    This function needs M to contain the property in_range,
-    a list of strings specifying the voltage range.
-    Possible voltage ranges are :
-        "10MV",
-        "20MV",
-        "50MV",
-        "100MV",
-        "200MV",
-        "500MV",
-        "1V",
-        "2V",
-        "5V",
-        "10V",
-        "20V",
-        "50V",
-        "100V"
+    This function needs M to contain the following properties:
+        - in_range : a list of strings specifying the voltage range.
+            Possible voltage ranges are "10MV", "20MV", "50MV", "100MV",
+            "200MV", "500MV", "1V", "2V", "5V", "10V", "20V", "50V", "100V"
+        - upsampling_factor : upsampling factor
     """
 
     import time
@@ -42,15 +32,20 @@ def ps4000_run_measurement(M):
         return a
 
     # Buffer size fixed to 20k samples
-    sizeOfOneBuffer = 10_000
+    sizeOfOneBuffer = 100_000
+
+    # Effective sampling frequency (if upsampling is made)
+    effective_fs = M.fs * M.upsampling_factor
 
     # Sample interval
-    si = round(1e9/M.fs)
-    if M.fs != (1e9/si):
-        M.fs = (1e9/si)
-        print("Warning : Sampling frequency fs changed to nearest possible value of "+str(M.fs)+" Hz")
+    si = round(1e9/effective_fs)
+    if effective_fs != (1e9/si):
+        effective_fs = (1e9/si)
+        print("Warning : Sampling frequency fs changed to nearest possible value of "+str(effective_fs)+" Hz")
     
-    numdesiredsamples = int(round(M.fs*M.dur))
+    print("Effective sampling frequency: "+str(effective_fs))
+
+    numdesiredsamples = int(round(effective_fs*M.dur))
     numBuffersToCapture = int(np.ceil(numdesiredsamples/sizeOfOneBuffer))
     sampleInterval = ctypes.c_int32(si)
     totalSamples = sizeOfOneBuffer * numBuffersToCapture
@@ -81,11 +76,6 @@ def ps4000_run_measurement(M):
         print('Channel A: disabled')
 
     # Set up channel A
-    # handle = chandle
-    # channel = PS4000_CHANNEL_A = 0
-    # enabled = 1
-    # coupling type = PS4000_DC = 1
-    # range = PS4000_2V = 7
     channel_range = ps.PS4000_RANGE['PS4000_50MV']
     status["setChA"] = ps.ps4000SetChannel(chandle,
                                             ps.PS4000_CHANNEL['PS4000_CHANNEL_A'],
@@ -107,12 +97,8 @@ def ps4000_run_measurement(M):
         enabledB = False
         rangeB = ps.PS4000_RANGE['PS4000_10V']
         print('Channel B: disabled')
+
     # Set up channel B
-    # handle = chandle
-    # channel = PS4000_CHANNEL_B = 1
-    # enabled = 1
-    # coupling type = PS4000_DC = 1
-    # range = PS4000_2V = 7
     status["setChB"] = ps.ps4000SetChannel(chandle,
                                             ps.PS4000_CHANNEL['PS4000_CHANNEL_B'],
                                             int(enabledB),
@@ -230,13 +216,6 @@ def ps4000_run_measurement(M):
     # Create time data
     time = np.linspace(0, (totalSamples - 1) * actualSampleIntervalNs, totalSamples)
 
-    # Plot data from channel A and B
-    # plt.plot(time, adc2mVChAMax[:])
-    # plt.plot(time, adc2mVChBMax[:])
-    # plt.xlabel('Time (ns)')
-    # plt.ylabel('Voltage (mV)')
-    # plt.show()
-
     # Stop the scope
     # handle = chandle
     status["stop"] = ps.ps4000Stop(chandle)
@@ -247,20 +226,15 @@ def ps4000_run_measurement(M):
     status["close"] = ps.ps4000CloseUnit(chandle)
     assert_pico_ok(status["close"])
 
-    # Display status returns
-    # print(status)
-
-    # if len(M.in_map)==1:
-    #     if M.in_map[0] == 1:
-    #         M.data[M.in_name[0]].raw = np.double(adc2mVChAMax[:])/1000
-    #     elif M.in_map[0] == 2:
-    #         M.data[M.in_name[0]].raw = np.double(adc2mVChBMax[:])/1000
-    # elif len(M.in_map)==2:
-    #     M.data[M.in_name[0]].raw = np.double(adc2mVChAMax[:])/1000
-    #     M.data[M.in_name[1]].raw = np.double(adc2mVChBMax[:])/1000
-
     for i in range(len(M.in_map)):
         if M.in_map[i] == 1:
-            M.data[M.in_name[i]].raw = np.double(adc2mVChAMax[0:round(M.dur*M.fs)])/1000
+            M.data[M.in_name[i]].raw = decimate(np.double(adc2mVChAMax[0:round(M.dur*effective_fs)])/1000,M.upsampling_factor)
         elif M.in_map[i] == 2:
-            M.data[M.in_name[i]].raw = np.double(adc2mVChBMax[0:round(M.dur*M.fs)])/1000
+            M.data[M.in_name[i]].raw = decimate(np.double(adc2mVChBMax[0:round(M.dur*effective_fs)])/1000,M.upsampling_factor)
+
+    if M.fs!=effective_fs/M.upsampling_factor:
+        M.fs = effective_fs/M.upsampling_factor
+        print('Warning : Sampling frequency fs changed to nearest possible value of '+str(M.fs)+' Hz')
+        for i in range(len(M.in_map)):
+            M.data[M.in_name[i]].fs = M.fs
+    
