@@ -38,11 +38,9 @@ def ps2000_run_measurement(M):
         c_uint32
     )
 
-    # Buffer size fixed to 20k samples
-    sizeOfOneBuffer = 8000
-
     # Effective sampling frequency (if upsampling is made)
     effective_fs = M.fs * M.upsampling_factor
+    duree_ns = M.dur*1e9
 
     # Sample interval
     si = round(1e9/effective_fs)
@@ -52,11 +50,8 @@ def ps2000_run_measurement(M):
     
     print("Effective sampling frequency: "+str(effective_fs))
 
-    numdesiredsamples = int(round(effective_fs*M.dur))
-    numBuffersToCapture = int(np.ceil(numdesiredsamples/sizeOfOneBuffer))
     sampleInterval = int(si)
-    print(sampleInterval)
-    
+
     # Setup channel A
     indA = findindex(M.in_map,1)
     if indA!=None:
@@ -80,8 +75,6 @@ def ps2000_run_measurement(M):
         enabledB = False
         rangeB = ps2000.PS2000_VOLTAGE_RANGE['PS2000_10V']
         print('Channel B: disabled')
-
-    dureens = M.dur*1e9
 
     def get_overview_buffers(buffers, _overflow, _triggered_at, _triggered, _auto_stop, n_values):
         if enabledA:
@@ -122,13 +115,17 @@ def ps2000_run_measurement(M):
             100_000,
             False,
             1,
-            50_000
+            20_000
         )
         assert_pico2000_ok(res)
 
+        now = datetime.now()
+        M.date = now.strftime("%Y-%m-%d")
+        M.time = now.strftime("%H:%M:%S")
+
         start_time = time.time_ns()
 
-        while time.time_ns() - start_time < dureens:
+        while time.time_ns() - start_time < duree_ns*1.1:
             ps2000.ps2000_get_streaming_last_values(
                 device.handle,
                 callback
@@ -142,18 +139,19 @@ def ps2000_run_measurement(M):
         # A=np.double(adc_to_mv(adc_valuesA, rangeA)[0:round(M.dur*effective_fs)])/1000
         # print(A)
 
-        for i in range(len(M.in_map)):
-            if M.in_map[i] == 1:
-                M.data[M.in_name[i]].raw = decimate(np.double(adc_to_mv(adc_valuesA, rangeA)[0:round(M.dur*effective_fs)])/1000,M.upsampling_factor)
-            elif M.in_map[i] == 2:
-                M.data[M.in_name[i]].raw = decimate(np.double(adc_to_mv(adc_valuesB, rangeB)[0:round(M.dur*effective_fs)])/1000,M.upsampling_factor)
 
         if M.fs!=effective_fs/M.upsampling_factor:
             M.fs = effective_fs/M.upsampling_factor
             print('Warning : Sampling frequency fs changed to nearest possible value of '+str(M.fs)+' Hz')
             for i in range(len(M.in_map)):
                 M.data[M.in_name[i]].fs = M.fs
-    
+
+        for i in range(len(M.in_map)):
+            if M.in_map[i] == 1:
+                M.data[M.in_name[i]].raw = decimate(np.double(adc_to_mv(adc_valuesA, rangeA)[:])/1000,M.upsampling_factor)[0:int(round(M.dur*M.fs))]
+            elif M.in_map[i] == 2:
+                M.data[M.in_name[i]].raw = decimate(np.double(adc_to_mv(adc_valuesB, rangeB)[:])/1000,M.upsampling_factor)[0:int(round(M.dur*M.fs))]
+
         # if enabledA:
         #     mv_valuesA = adc_to_mv(adc_valuesA, rangeA)/1000
         # if enabledB:
@@ -213,10 +211,6 @@ def ps4000_run_measurement(M):
     status["openunit"] = ps.ps4000OpenUnit(ctypes.byref(chandle))
     assert_pico_ok(status["openunit"])
 
-    enabled = 1
-    disabled = 0
-    analogue_offset = 0.0
-
     # Setup channel A
     indA = findindex(M.in_map,1)
     if indA!=None:
@@ -261,8 +255,6 @@ def ps4000_run_measurement(M):
                                             1,
                                             rangeB)
     assert_pico_ok(status["setChB"])
-
-    memory_segment = 0
 
     # Set data buffer location for data collection from channel A
     # handle = chandle
