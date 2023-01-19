@@ -12,6 +12,167 @@ import matplotlib.pyplot as plt
 from picosdk.functions import adc2mV, assert_pico_ok
 from scipy.signal import decimate
 
+from picosdk.ps2000 import ps2000
+from picosdk.functions import assert_pico2000_ok
+from picosdk.ctypes_wrapper import C_CALLBACK_FUNCTION_FACTORY
+from ctypes import POINTER, c_int16, c_uint32
+from picosdk.PicoDeviceEnums import picoEnum
+
+def findindex(l,e):
+    try:
+        a=l.index(e)
+    except:
+        a=None
+    return a
+
+def ps2000_run_measurement(M):
+    import time
+
+    CALLBACK = C_CALLBACK_FUNCTION_FACTORY(
+        None,
+        POINTER(POINTER(c_int16)),
+        c_int16,
+        c_uint32,
+        c_int16,
+        c_int16,
+        c_uint32
+    )
+
+    # Buffer size fixed to 20k samples
+    sizeOfOneBuffer = 8000
+
+    # Effective sampling frequency (if upsampling is made)
+    effective_fs = M.fs * M.upsampling_factor
+
+    # Sample interval
+    si = round(1e9/effective_fs)
+    if effective_fs != (1e9/si):
+        effective_fs = (1e9/si)
+        print("Warning : Sampling frequency fs changed to nearest possible value of "+str(effective_fs)+" Hz")
+    
+    print("Effective sampling frequency: "+str(effective_fs))
+
+    numdesiredsamples = int(round(effective_fs*M.dur))
+    numBuffersToCapture = int(np.ceil(numdesiredsamples/sizeOfOneBuffer))
+    sampleInterval = int(si)
+    print(sampleInterval)
+    
+    # Setup channel A
+    indA = findindex(M.in_map,1)
+    if indA!=None:
+        enabledA = True
+        rangeA = ps2000.PS2000_VOLTAGE_RANGE['PS2000_'+M.in_range[indA]]
+        adc_valuesA = []
+        print('Channel A: enabled with range '+'PS2000_'+M.in_range[indA]+' ('+str(rangeA)+')')
+    else:
+        enabledA = False
+        rangeA = ps2000.PS2000_VOLTAGE_RANGE['PS2000_10V']
+        print('Channel A: disabled')
+
+    # Setup channel B
+    indB = findindex(M.in_map,2)
+    if indB!=None:
+        enabledB = True
+        rangeB = ps2000.PS2000_VOLTAGE_RANGE['PS2000_'+M.in_range[indB]]
+        adc_valuesB = []
+        print('Channel B: enabled with range '+'PS2000_'+M.in_range[indB]+' ('+str(rangeB)+')')
+    else:
+        enabledB = False
+        rangeB = ps2000.PS2000_VOLTAGE_RANGE['PS2000_10V']
+        print('Channel B: disabled')
+
+    dureens = M.dur*1e9
+
+    def get_overview_buffers(buffers, _overflow, _triggered_at, _triggered, _auto_stop, n_values):
+        if enabledA:
+            adc_valuesA.extend(buffers[0][0:n_values])
+        if enabledB:
+            adc_valuesB.extend(buffers[2][0:n_values])
+        # print("callback")
+
+    callback = CALLBACK(get_overview_buffers)
+
+    def adc_to_mv(values, range_, bitness=16):
+        v_ranges = [10, 20, 50, 100, 200, 500, 1_000, 2_000, 5_000, 10_000, 20_000]
+        return [(x * v_ranges[range_]) / (2**(bitness - 1) - 1) for x in values]
+
+    with ps2000.open_unit() as device:
+        print('Device info: {}'.format(device.info))
+
+        res = ps2000.ps2000_set_channel(
+            device.handle,
+            picoEnum.PICO_CHANNEL['PICO_CHANNEL_A'],
+            enabledA,
+            picoEnum.PICO_COUPLING['PICO_DC'],
+            rangeA,
+        )
+        res = ps2000.ps2000_set_channel(
+            device.handle,
+            picoEnum.PICO_CHANNEL['PICO_CHANNEL_B'],
+            enabledB,
+            picoEnum.PICO_COUPLING['PICO_DC'],
+            rangeB,
+        )
+        assert_pico2000_ok(res)
+
+        res = ps2000.ps2000_run_streaming_ns(
+            device.handle,
+            sampleInterval,
+            2,
+            100_000,
+            False,
+            1,
+            50_000
+        )
+        assert_pico2000_ok(res)
+
+        start_time = time.time_ns()
+
+        while time.time_ns() - start_time < dureens:
+            ps2000.ps2000_get_streaming_last_values(
+                device.handle,
+                callback
+            )
+
+        end_time = time.time_ns()
+
+        # print(adc_valuesA)
+        # ps2000.ps2000_stop(device.handle)
+        # print(adc_to_mv(adc_valuesA, rangeA))
+        # A=np.double(adc_to_mv(adc_valuesA, rangeA)[0:round(M.dur*effective_fs)])/1000
+        # print(A)
+
+        for i in range(len(M.in_map)):
+            if M.in_map[i] == 1:
+                M.data[M.in_name[i]].raw = decimate(np.double(adc_to_mv(adc_valuesA, rangeA)[0:round(M.dur*effective_fs)])/1000,M.upsampling_factor)
+            elif M.in_map[i] == 2:
+                M.data[M.in_name[i]].raw = decimate(np.double(adc_to_mv(adc_valuesB, rangeB)[0:round(M.dur*effective_fs)])/1000,M.upsampling_factor)
+
+        if M.fs!=effective_fs/M.upsampling_factor:
+            M.fs = effective_fs/M.upsampling_factor
+            print('Warning : Sampling frequency fs changed to nearest possible value of '+str(M.fs)+' Hz')
+            for i in range(len(M.in_map)):
+                M.data[M.in_name[i]].fs = M.fs
+    
+        # if enabledA:
+        #     mv_valuesA = adc_to_mv(adc_valuesA, rangeA)/1000
+        # if enabledB:
+        #     mv_valuesB = adc_to_mv(adc_valuesB, rangeB)/1000
+
+        # fig, ax = plt.subplots()
+        # t = np.linspace(0,(end_time - start_time) * 1e-9, len(mv_valuesA))
+        # ax.set_xlabel('time/ms')
+        # ax.set_ylabel('voltage/mV')
+        # ax.plot(np.linspace(0, (end_time - start_time) * 1e-6, len(mv_valuesA)), mv_valuesA)
+        # plt.show()
+        
+        # plt.plot(np.linspace(0, (end_time - start_time) * 1e-6, len(mv_valuesB)), mv_valuesB)
+
+        # plt.show()
+        # print(t[1]-t[0])
+
+
+
 def ps4000_run_measurement(M):
     """
     This function needs M to contain the following properties:
@@ -24,12 +185,7 @@ def ps4000_run_measurement(M):
     import time
     global nextSample, autoStopOuter, wasCalledBack
         
-    def findindex(l,e):
-        try:
-            a=l.index(e)
-        except:
-            a=None
-        return a
+
 
     # Buffer size fixed to 20k samples
     sizeOfOneBuffer = 100_000
