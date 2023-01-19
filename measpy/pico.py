@@ -26,6 +26,14 @@ def findindex(l,e):
     return a
 
 def ps2000_run_measurement(M):
+    """
+    This function needs M to contain the following properties:
+        - in_range : a list of strings specifying the voltage range.
+            Possible voltage ranges are "10MV", "20MV", "50MV", "100MV",
+            "200MV", "500MV", "1V", "2V", "5V", "10V", "20V", "50V", "100V"
+        - upsampling_factor : upsampling factor
+    """
+
     import time
 
     CALLBACK = C_CALLBACK_FUNCTION_FACTORY(
@@ -79,8 +87,11 @@ def ps2000_run_measurement(M):
     def get_overview_buffers(buffers, _overflow, _triggered_at, _triggered, _auto_stop, n_values):
         if enabledA:
             adc_valuesA.extend(buffers[0][0:n_values])
-        if enabledB:
-            adc_valuesB.extend(buffers[2][0:n_values])
+            if enabledB:
+                adc_valuesB.extend(buffers[2][0:n_values])
+        else:
+            if enabledB:
+                adc_valuesB.extend(buffers[2][0:n_values])
         # print("callback")
 
     callback = CALLBACK(get_overview_buffers)
@@ -133,13 +144,6 @@ def ps2000_run_measurement(M):
 
         end_time = time.time_ns()
 
-        # print(adc_valuesA)
-        # ps2000.ps2000_stop(device.handle)
-        # print(adc_to_mv(adc_valuesA, rangeA))
-        # A=np.double(adc_to_mv(adc_valuesA, rangeA)[0:round(M.dur*effective_fs)])/1000
-        # print(A)
-
-
         if M.fs!=effective_fs/M.upsampling_factor:
             M.fs = effective_fs/M.upsampling_factor
             print('Warning : Sampling frequency fs changed to nearest possible value of '+str(M.fs)+' Hz')
@@ -151,24 +155,6 @@ def ps2000_run_measurement(M):
                 M.data[M.in_name[i]].raw = decimate(np.double(adc_to_mv(adc_valuesA, rangeA)[:])/1000,M.upsampling_factor)[0:int(round(M.dur*M.fs))]
             elif M.in_map[i] == 2:
                 M.data[M.in_name[i]].raw = decimate(np.double(adc_to_mv(adc_valuesB, rangeB)[:])/1000,M.upsampling_factor)[0:int(round(M.dur*M.fs))]
-
-        # if enabledA:
-        #     mv_valuesA = adc_to_mv(adc_valuesA, rangeA)/1000
-        # if enabledB:
-        #     mv_valuesB = adc_to_mv(adc_valuesB, rangeB)/1000
-
-        # fig, ax = plt.subplots()
-        # t = np.linspace(0,(end_time - start_time) * 1e-9, len(mv_valuesA))
-        # ax.set_xlabel('time/ms')
-        # ax.set_ylabel('voltage/mV')
-        # ax.plot(np.linspace(0, (end_time - start_time) * 1e-6, len(mv_valuesA)), mv_valuesA)
-        # plt.show()
-        
-        # plt.plot(np.linspace(0, (end_time - start_time) * 1e-6, len(mv_valuesB)), mv_valuesB)
-
-        # plt.show()
-        # print(t[1]-t[0])
-
 
 
 def ps4000_run_measurement(M):
