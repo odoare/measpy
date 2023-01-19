@@ -12,6 +12,25 @@ import matplotlib.pyplot as plt
 from picosdk.functions import adc2mV, assert_pico_ok
 
 def ps4000_run_measurement(M):
+    """
+    This function needs M to contain the property in_range,
+    a list of strings specifying the voltage range.
+    Possible voltage ranges are :
+        "10MV",
+        "20MV",
+        "50MV",
+        "100MV",
+        "200MV",
+        "500MV",
+        "1V",
+        "2V",
+        "5V",
+        "10V",
+        "20V",
+        "50V",
+        "100V"
+    """
+
     import time
     global nextSample, autoStopOuter, wasCalledBack
         
@@ -23,7 +42,7 @@ def ps4000_run_measurement(M):
         return a
 
     # Buffer size fixed to 20k samples
-    sizeOfOneBuffer = 20_000
+    sizeOfOneBuffer = 10_000
 
     # Sample interval
     si = round(1e9/M.fs)
@@ -35,7 +54,6 @@ def ps4000_run_measurement(M):
     numBuffersToCapture = int(np.ceil(numdesiredsamples/sizeOfOneBuffer))
     sampleInterval = ctypes.c_int32(si)
     totalSamples = sizeOfOneBuffer * numBuffersToCapture
-    print(type(totalSamples))
     chandle = ctypes.c_int16()
     status = {}
 
@@ -56,9 +74,12 @@ def ps4000_run_measurement(M):
         # Create buffers ready for assigning pointers for data collection
         bufferAMax = np.zeros(shape=sizeOfOneBuffer, dtype=np.int16)
         bufferCompleteA = np.zeros(shape=totalSamples, dtype=np.int16)
+        print('Channel A: enabled with range '+'PS4000_'+M.in_range[indA]+' ('+str(rangeA)+')')
     else:
         enabledA = False
         rangeA = ps.PS4000_RANGE['PS4000_10V']
+        print('Channel A: disabled')
+
     # Set up channel A
     # handle = chandle
     # channel = PS4000_CHANNEL_A = 0
@@ -81,9 +102,11 @@ def ps4000_run_measurement(M):
         # Create buffers ready for assigning pointers for data collection
         bufferBMax = np.zeros(shape=sizeOfOneBuffer, dtype=np.int16)
         bufferCompleteB = np.zeros(shape=totalSamples, dtype=np.int16)
+        print('Channel B: enabled with range '+'PS4000_'+M.in_range[indB]+' ('+str(rangeB)+')')
     else:
         enabledB = False
         rangeB = ps.PS4000_RANGE['PS4000_10V']
+        print('Channel B: disabled')
     # Set up channel B
     # handle = chandle
     # channel = PS4000_CHANNEL_B = 1
@@ -225,7 +248,7 @@ def ps4000_run_measurement(M):
     assert_pico_ok(status["close"])
 
     # Display status returns
-    print(status)
+    # print(status)
 
     # if len(M.in_map)==1:
     #     if M.in_map[0] == 1:
@@ -238,6 +261,6 @@ def ps4000_run_measurement(M):
 
     for i in range(len(M.in_map)):
         if M.in_map[i] == 1:
-            M.data[M.in_name[i]].raw = np.double(adc2mVChAMax[:])/1000
+            M.data[M.in_name[i]].raw = np.double(adc2mVChAMax[0:round(M.dur*M.fs)])/1000
         elif M.in_map[i] == 2:
-            M.data[M.in_name[i]].raw = np.double(adc2mVChBMax[:])/1000
+            M.data[M.in_name[i]].raw = np.double(adc2mVChBMax[0:round(M.dur*M.fs)])/1000
