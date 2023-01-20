@@ -64,6 +64,14 @@ def ps2000_run_measurement(M):
         rangeA = ps2000.PS2000_VOLTAGE_RANGE['PS2000_'+M.in_range[indA]]
         adc_valuesA = []
         print('Channel A: enabled with range '+'PS2000_'+M.in_range[indA]+' ('+str(rangeA)+')')
+        if M.in_coupling[indA]=='dc':
+           couplingA = 'PICO_DC'
+        elif M.in_coupling[indA]=='ac':
+            couplingA = 'PICO_AC'
+        else:
+            print("Input A coupling not recognized, set to 'dc'")
+            couplingA = 'PICO_DC'
+            M.in_coupling[indA]=='dc'
     else:
         enabledA = False
         rangeA = ps2000.PS2000_VOLTAGE_RANGE['PS2000_10V']
@@ -75,6 +83,14 @@ def ps2000_run_measurement(M):
         enabledB = True
         rangeB = ps2000.PS2000_VOLTAGE_RANGE['PS2000_'+M.in_range[indB]]
         adc_valuesB = []
+        if M.in_coupling[indA]=='dc':
+           couplingB = 'PICO_DC'
+        elif M.in_coupling[indA]=='ac':
+            couplingB = 'PICO_AC'
+        else:
+            print("Input A coupling not recognized, set to 'dc'")
+            M.in_coupling[indA]=='dc'
+            couplingB = 'PICO_DC'
         print('Channel B: enabled with range '+'PS2000_'+M.in_range[indB]+' ('+str(rangeB)+')')
     else:
         enabledB = False
@@ -103,14 +119,14 @@ def ps2000_run_measurement(M):
             device.handle,
             picoEnum.PICO_CHANNEL['PICO_CHANNEL_A'],
             enabledA,
-            picoEnum.PICO_COUPLING['PICO_DC'],
+            picoEnum.PICO_COUPLING[couplingA],
             rangeA,
         )
         res = ps2000.ps2000_set_channel(
             device.handle,
             picoEnum.PICO_CHANNEL['PICO_CHANNEL_B'],
             enabledB,
-            picoEnum.PICO_COUPLING['PICO_DC'],
+            picoEnum.PICO_COUPLING[couplingB],
             rangeB,
         )
         assert_pico2000_ok(res)
@@ -197,6 +213,14 @@ def ps4000_run_measurement(M):
     if indA!=None:
         enabledA = True
         rangeA = ps4000.PS4000_RANGE['PS4000_'+M.in_range[indA]]
+        if M.in_coupling[indA]=='dc':
+           couplingA = 1
+        elif M.in_coupling[indA]=='ac':
+            couplingA = 0
+        else:
+            print("Input A coupling not recognized, set to 'dc'")
+            couplingA = 1
+            M.in_coupling[indA]=='dc'
         # Create buffers ready for assigning pointers for data collection
         bufferAMax = np.zeros(shape=sizeOfOneBuffer, dtype=np.int16)
         bufferCompleteA = np.zeros(shape=totalSamples, dtype=np.int16)
@@ -211,7 +235,7 @@ def ps4000_run_measurement(M):
     status["setChA"] = ps4000.ps4000SetChannel(chandle,
                                             ps4000.PS4000_CHANNEL['PS4000_CHANNEL_A'],
                                             int(enabledA),
-                                            1,
+                                            couplingA,
                                             rangeA)
     assert_pico_ok(status["setChA"])
 
@@ -224,6 +248,14 @@ def ps4000_run_measurement(M):
         bufferBMax = np.zeros(shape=sizeOfOneBuffer, dtype=np.int16)
         bufferCompleteB = np.zeros(shape=totalSamples, dtype=np.int16)
         print('Channel B: enabled with range '+'PS4000_'+M.in_range[indB]+' ('+str(rangeB)+')')
+        if M.in_coupling[indB]=='dc':
+           couplingB = 1
+        elif M.in_coupling[indA]=='ac':
+            couplingB = 0
+        else:
+            print("Input A coupling not recognized, set to 'dc'")
+            couplingB = 1
+            M.in_coupling[indB]=='dc'
     else:
         enabledB = False
         rangeB = ps4000.PS4000_RANGE['PS4000_10V']
@@ -233,7 +265,7 @@ def ps4000_run_measurement(M):
     status["setChB"] = ps4000.ps4000SetChannel(chandle,
                                             ps4000.PS4000_CHANNEL['PS4000_CHANNEL_B'],
                                             int(enabledB),
-                                            1,
+                                            couplingB,
                                             rangeB)
     assert_pico_ok(status["setChB"])
 
