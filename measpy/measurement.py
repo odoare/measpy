@@ -130,7 +130,8 @@ class Measurement:
         if self.device_type=='pico':
             self.in_range = params.setdefault("in_range",list('10V' for b in self.in_map))
             self.upsampling_factor = params.setdefault("upsampling_factor",1)
-        
+            self.in_coupling = params.setdefault("in_coupling",list('dc' for b in self.in_map))
+                    
     def create_output(self):
         """ Creates the output signals, if out_sig is 'noise',
             'logsweep' or a string ending with 'wav'.
@@ -243,6 +244,7 @@ class Measurement:
         if self.device_type=='pico':
             print('| Input ranges: in_range='+str(self.in_range))
             print("| Upsampling factor: upsampling_factor='"+str(self.upsampling_factor)+"'")
+            print("| Input coupling: in_coupling="+str(self.in_coupling))
         print("[ Contents of the dictionnary data (keys):")
         for key in self.data:
             print("| "+key)
@@ -279,6 +281,7 @@ class Measurement:
         if self.device_type=='pico':
             out += ", in_range="+str(self.in_range)
             out += ", upsampling_factor="+str(self.upsampling_factor)
+            out += ", in_coupling="+str(self.in_coupling)
         out +=")"
         
         return out
@@ -341,6 +344,7 @@ class Measurement:
         if self.device_type=='pico':
             self.in_range=convl(str,meas['in_range'])
             self.upsampling_factor=convl1(int,meas['upsampling_factor'])            
+            self.in_range=convl(str,meas['in_coupling'])
         
         # print('In _from_dict')
         # print(self.data)
