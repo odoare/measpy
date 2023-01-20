@@ -71,7 +71,7 @@ def ps2000_run_measurement(M):
         else:
             print("Input A coupling not recognized, set to 'dc'")
             couplingA = 'PICO_DC'
-            M.in_coupling[indA]=='dc'
+            M.in_coupling[indA]='dc'
     else:
         enabledA = False
         rangeA = ps2000.PS2000_VOLTAGE_RANGE['PS2000_10V']
@@ -83,13 +83,13 @@ def ps2000_run_measurement(M):
         enabledB = True
         rangeB = ps2000.PS2000_VOLTAGE_RANGE['PS2000_'+M.in_range[indB]]
         adc_valuesB = []
-        if M.in_coupling[indA]=='dc':
+        if M.in_coupling[indB]=='dc':
            couplingB = 'PICO_DC'
-        elif M.in_coupling[indA]=='ac':
+        elif M.in_coupling[indB]=='ac':
             couplingB = 'PICO_AC'
         else:
-            print("Input A coupling not recognized, set to 'dc'")
-            M.in_coupling[indA]=='dc'
+            print("Input B coupling not recognized, set to 'dc'")
+            M.in_coupling[indB]='dc'
             couplingB = 'PICO_DC'
         print('Channel B: enabled with range '+'PS2000_'+M.in_range[indB]+' ('+str(rangeB)+')')
     else:
@@ -220,7 +220,7 @@ def ps4000_run_measurement(M):
         else:
             print("Input A coupling not recognized, set to 'dc'")
             couplingA = 1
-            M.in_coupling[indA]=='dc'
+            M.in_coupling[indA]='dc'
         # Create buffers ready for assigning pointers for data collection
         bufferAMax = np.zeros(shape=sizeOfOneBuffer, dtype=np.int16)
         bufferCompleteA = np.zeros(shape=totalSamples, dtype=np.int16)
@@ -250,12 +250,12 @@ def ps4000_run_measurement(M):
         print('Channel B: enabled with range '+'PS4000_'+M.in_range[indB]+' ('+str(rangeB)+')')
         if M.in_coupling[indB]=='dc':
            couplingB = 1
-        elif M.in_coupling[indA]=='ac':
+        elif M.in_coupling[indB]=='ac':
             couplingB = 0
         else:
-            print("Input A coupling not recognized, set to 'dc'")
+            print("Input B coupling not recognized, set to 'dc'")
             couplingB = 1
-            M.in_coupling[indB]=='dc'
+            M.in_coupling[indB]='dc'
     else:
         enabledB = False
         rangeB = ps4000.PS4000_RANGE['PS4000_10V']
