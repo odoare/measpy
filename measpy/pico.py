@@ -45,7 +45,11 @@ def ps2000_run_measurement(M):
         ctypes.c_uint32
     )
 
-    # Effective sampling frequency (if upsampling is made)
+    # Effective sampling frequency
+    # If upsampling_factor is > 1, the actual data acquisition is
+    # performed at fs*upsampling_factor, and then decimated to
+    # the desired frequency
+
     effective_fs = M.fs * M.upsampling_factor
     duree_ns = M.dur*1e9
 
@@ -53,7 +57,7 @@ def ps2000_run_measurement(M):
     # As it is the sampling frequency that is specified,
     # and the sampling interval can only take integer increments
     # of 1 nanoseconds, the actual sampling frequency might
-    # necessessitate adjustments
+    # necessitate adjustments
 
     si = round(1e9/effective_fs)
     if effective_fs != (1e9/si):
@@ -113,7 +117,7 @@ def ps2000_run_measurement(M):
             if enabledB:
                 adc_valuesB.extend(buffers[2][0:n_values])
 
-    callback = CALLBACK(get_overview_buffers)
+    callback = CALLBACK(extra)
 
     def adc_to_mv(values, range_, bitness=16):
         v_ranges = [10, 20, 50, 100, 200, 500, 1_000, 2_000, 5_000, 10_000, 20_000]
@@ -184,6 +188,8 @@ def ps4000_run_measurement(M):
             Possible voltage ranges are "10MV", "20MV", "50MV", "100MV",
             "200MV", "500MV", "1V", "2V", "5V", "10V", "20V", "50V", "100V"
         - upsampling_factor : upsampling factor
+        - in_coupling : Coupling configuration of the channels.
+            Can be "ac" or "dc"
     """
 
     import time
@@ -192,14 +198,17 @@ def ps4000_run_measurement(M):
     # Buffer size fixed to 20k samples
     sizeOfOneBuffer = 100_000
 
-    # Effective sampling frequency (if upsampling is made)
+    # Effective sampling frequency
+    # If upsampling is > 1, the actual data acquisition is
+    # performed at fs*upsampling, and then decimated to
+    # the desired frequency
     effective_fs = M.fs * M.upsampling_factor
 
     # Sample interval is the duration between two consecutive samples
     # As it is the sampling frequency that is specified,
     # and the sampling interval can only take integer increments
     # of 1 nanoseconds, the actual sampling frequency might
-    # necessessitate adjustments
+    # necessitate adjustments
     si = round(1e9/effective_fs)
     if effective_fs != (1e9/si):
         effective_fs = (1e9/si)
@@ -234,6 +243,7 @@ def ps4000_run_measurement(M):
             M.in_coupling[indA]='dc'
         # Create buffers ready for assigning pointers for data collection
         bufferAMax = np.zeros(shape=sizeOfOneBuffer, dtype=np.int16)
+        # Total buffer
         bufferCompleteA = np.zeros(shape=totalSamples, dtype=np.int16)
         print('Channel A: enabled with range '+'PS4000_'+M.in_range[indA]+' ('+str(rangeA)+')')
     else:
@@ -257,6 +267,7 @@ def ps4000_run_measurement(M):
         rangeB = ps4000.PS4000_RANGE['PS4000_'+M.in_range[indB]]
         # Create buffers ready for assigning pointers for data collection
         bufferBMax = np.zeros(shape=sizeOfOneBuffer, dtype=np.int16)
+        # Total buffer
         bufferCompleteB = np.zeros(shape=totalSamples, dtype=np.int16)
         print('Channel B: enabled with range '+'PS4000_'+M.in_range[indB]+' ('+str(rangeB)+')')
         if M.in_coupling[indB].capitalize()=='DC':
@@ -281,13 +292,13 @@ def ps4000_run_measurement(M):
     assert_pico_ok(status["setChB"])
 
     # Set data buffer location for data collection from channel A
-    # handle = chandle
-    # source = PS4000_CHANNEL_A = 0
-    # pointer to buffer max = ctypes.byref(bufferAMax)
-    # pointer to buffer min = ctypes.byref(bufferAMin)
-    # buffer length = maxSamples
-    # segment index = 0
-    # ratio mode = PS4000_RATIO_MODE_NONE = 0
+    # Parameters :  handle = chandle
+    #               source = PS4000_CHANNEL_A = 0
+    #               pointer to buffer max = ctypes.byref(bufferAMax)
+    #               pointer to buffer min = ctypes.byref(bufferAMin)
+    #               buffer length = maxSamples
+    #               segment index = 0
+    #               ratio mode = PS4000_RATIO_MODE_NONE = 0
     if enabledA:
         status["setDataBuffersA"] = ps4000.ps4000SetDataBuffers(chandle,
                                                         ps4000.PS4000_CHANNEL['PS4000_CHANNEL_A'],
@@ -297,13 +308,13 @@ def ps4000_run_measurement(M):
         assert_pico_ok(status["setDataBuffersA"])
 
     # Set data buffer location for data collection from channel B
-    # handle = chandle
-    # source = PS4000_CHANNEL_B = 1
-    # pointer to buffer max = ctypes.byref(bufferBMax)
-    # pointer to buffer min = ctypes.byref(bufferBMin)
-    # buffer length = maxSamples
-    # segment index = 0
-    # ratio mode = PS4000_RATIO_MODE_NONE = 0
+    # Parameters :  handle = chandle
+    #               source = PS4000_CHANNEL_B = 0
+    #               pointer to buffer max = ctypes.byref(bufferAMax)
+    #               pointer to buffer min = ctypes.byref(bufferAMin)
+    #               buffer length = maxSamples
+    #               segment index = 0
+    #               ratio mode = PS4000_RATIO_MODE_NONE = 0
     if enabledB:
         status["setDataBuffersB"] = ps4000.ps4000SetDataBuffers(chandle,
                                                         ps4000.PS4000_CHANNEL['PS4000_CHANNEL_B'],
@@ -338,13 +349,9 @@ def ps4000_run_measurement(M):
 
     print("Capturing at sample interval %s ns" % actualSampleIntervalNs)
 
-    # We need a big buffer, not registered with the driver, to keep our complete capture in.
-    #bufferCompleteA = np.zeros(shape=totalSamples, dtype=np.int16)
-    #bufferCompleteB = np.zeros(shape=totalSamples, dtype=np.int16)
     nextSample = 0
     autoStopOuter = False
     wasCalledBack = False
-
 
     def streaming_callback(handle, noOfSamples, startIndex, overflow, triggerAt, triggered, autoStop, param):
         global nextSample, autoStopOuter, wasCalledBack
