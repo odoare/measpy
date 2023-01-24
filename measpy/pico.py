@@ -29,6 +29,8 @@ def ps2000_run_measurement(M):
             Possible voltage ranges are "10MV", "20MV", "50MV", "100MV",
             "200MV", "500MV", "1V", "2V", "5V", "10V", "20V", "50V", "100V"
         - upsampling_factor : upsampling factor
+        - in_coupling : Coupling configuration of the channels.
+            Can be "ac" or "dc"
     """
 
     import time
@@ -47,7 +49,12 @@ def ps2000_run_measurement(M):
     effective_fs = M.fs * M.upsampling_factor
     duree_ns = M.dur*1e9
 
-    # Sample interval
+    # Sample interval is the duration between two consecutive samples
+    # As it is the sampling frequency that is specified,
+    # and the sampling interval can only take integer increments
+    # of 1 nanoseconds, the actual sampling frequency might
+    # necessessitate adjustments
+
     si = round(1e9/effective_fs)
     if effective_fs != (1e9/si):
         effective_fs = (1e9/si)
@@ -64,9 +71,9 @@ def ps2000_run_measurement(M):
         rangeA = ps2000.PS2000_VOLTAGE_RANGE['PS2000_'+M.in_range[indA]]
         adc_valuesA = []
         print('Channel A: enabled with range '+'PS2000_'+M.in_range[indA]+' ('+str(rangeA)+')')
-        if M.in_coupling[indA]=='dc':
+        if M.in_coupling[indA].capitalize()=='DC':
            couplingA = 'PICO_DC'
-        elif M.in_coupling[indA]=='ac':
+        elif M.in_coupling[indA].capitalize()=='AC':
             couplingA = 'PICO_AC'
         else:
             print("Input A coupling not recognized, set to 'dc'")
@@ -83,9 +90,9 @@ def ps2000_run_measurement(M):
         enabledB = True
         rangeB = ps2000.PS2000_VOLTAGE_RANGE['PS2000_'+M.in_range[indB]]
         adc_valuesB = []
-        if M.in_coupling[indB]=='dc':
+        if M.in_coupling[indB].capitalize()=='DC':
            couplingB = 'PICO_DC'
-        elif M.in_coupling[indB]=='ac':
+        elif M.in_coupling[indB].capitalize()=='AC':
             couplingB = 'PICO_AC'
         else:
             print("Input B coupling not recognized, set to 'dc'")
@@ -165,9 +172,9 @@ def ps2000_run_measurement(M):
 
         for i in range(len(M.in_map)):
             if M.in_map[i] == 1:
-                M.data[M.in_name[i]].raw = decimate(np.double(adc_to_mv(adc_valuesA, rangeA)[:])/1000,M.upsampling_factor)[0:int(round(M.dur*M.fs))]
+                M.data[M.in_name[i]].raw = decimate(np.double(adc_to_mv(adc_valuesA, rangeA)[:])/1000,M.upsampling_factor,ftype='fir')[0:int(round(M.dur*M.fs))]
             elif M.in_map[i] == 2:
-                M.data[M.in_name[i]].raw = decimate(np.double(adc_to_mv(adc_valuesB, rangeB)[:])/1000,M.upsampling_factor)[0:int(round(M.dur*M.fs))]
+                M.data[M.in_name[i]].raw = decimate(np.double(adc_to_mv(adc_valuesB, rangeB)[:])/1000,M.upsampling_factor,ftype='fir')[0:int(round(M.dur*M.fs))]
 
 
 def ps4000_run_measurement(M):
@@ -188,7 +195,11 @@ def ps4000_run_measurement(M):
     # Effective sampling frequency (if upsampling is made)
     effective_fs = M.fs * M.upsampling_factor
 
-    # Sample interval
+    # Sample interval is the duration between two consecutive samples
+    # As it is the sampling frequency that is specified,
+    # and the sampling interval can only take integer increments
+    # of 1 nanoseconds, the actual sampling frequency might
+    # necessessitate adjustments
     si = round(1e9/effective_fs)
     if effective_fs != (1e9/si):
         effective_fs = (1e9/si)
@@ -213,9 +224,9 @@ def ps4000_run_measurement(M):
     if indA!=None:
         enabledA = True
         rangeA = ps4000.PS4000_RANGE['PS4000_'+M.in_range[indA]]
-        if M.in_coupling[indA]=='dc':
+        if M.in_coupling[indA].capitalize()=='DC':
            couplingA = 1
-        elif M.in_coupling[indA]=='ac':
+        elif M.in_coupling[indA].capitalize()=='AC':
             couplingA = 0
         else:
             print("Input A coupling not recognized, set to 'dc'")
@@ -248,9 +259,9 @@ def ps4000_run_measurement(M):
         bufferBMax = np.zeros(shape=sizeOfOneBuffer, dtype=np.int16)
         bufferCompleteB = np.zeros(shape=totalSamples, dtype=np.int16)
         print('Channel B: enabled with range '+'PS4000_'+M.in_range[indB]+' ('+str(rangeB)+')')
-        if M.in_coupling[indB]=='dc':
+        if M.in_coupling[indB].capitalize()=='DC':
            couplingB = 1
-        elif M.in_coupling[indB]=='ac':
+        elif M.in_coupling[indB].capitalize()=='AC':
             couplingB = 0
         else:
             print("Input B coupling not recognized, set to 'dc'")
