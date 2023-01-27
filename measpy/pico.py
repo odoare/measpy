@@ -75,9 +75,9 @@ def ps2000_run_measurement(M):
         rangeA = ps2000.PS2000_VOLTAGE_RANGE['PS2000_'+M.in_range[indA]]
         adc_valuesA = []
         print('Channel A: enabled with range '+'PS2000_'+M.in_range[indA]+' ('+str(rangeA)+')')
-        if M.in_coupling[indA].capitalize()=='DC':
+        if M.in_coupling[indA].capitalize()=='Dc':
            couplingA = 'PICO_DC'
-        elif M.in_coupling[indA].capitalize()=='AC':
+        elif M.in_coupling[indA].capitalize()=='Ac':
             couplingA = 'PICO_AC'
         else:
             print("Input A coupling not recognized, set to 'dc'")
@@ -94,9 +94,9 @@ def ps2000_run_measurement(M):
         enabledB = True
         rangeB = ps2000.PS2000_VOLTAGE_RANGE['PS2000_'+M.in_range[indB]]
         adc_valuesB = []
-        if M.in_coupling[indB].capitalize()=='DC':
+        if M.in_coupling[indB].capitalize()=='Dc':
            couplingB = 'PICO_DC'
-        elif M.in_coupling[indB].capitalize()=='AC':
+        elif M.in_coupling[indB].capitalize()=='Ac':
             couplingB = 'PICO_AC'
         else:
             print("Input B coupling not recognized, set to 'dc'")
@@ -117,7 +117,7 @@ def ps2000_run_measurement(M):
             if enabledB:
                 adc_valuesB.extend(buffers[2][0:n_values])
 
-    callback = CALLBACK(extra)
+    callback = CALLBACK(get_overview_buffers)
 
     def adc_to_mv(values, range_, bitness=16):
         v_ranges = [10, 20, 50, 100, 200, 500, 1_000, 2_000, 5_000, 10_000, 20_000]
@@ -233,9 +233,9 @@ def ps4000_run_measurement(M):
     if indA!=None:
         enabledA = True
         rangeA = ps4000.PS4000_RANGE['PS4000_'+M.in_range[indA]]
-        if M.in_coupling[indA].capitalize()=='DC':
+        if M.in_coupling[indA].capitalize()=='Dc':
            couplingA = 1
-        elif M.in_coupling[indA].capitalize()=='AC':
+        elif M.in_coupling[indA].capitalize()=='Ac':
             couplingA = 0
         else:
             print("Input A coupling not recognized, set to 'dc'")
@@ -270,9 +270,9 @@ def ps4000_run_measurement(M):
         # Total buffer
         bufferCompleteB = np.zeros(shape=totalSamples, dtype=np.int16)
         print('Channel B: enabled with range '+'PS4000_'+M.in_range[indB]+' ('+str(rangeB)+')')
-        if M.in_coupling[indB].capitalize()=='DC':
+        if M.in_coupling[indB].capitalize()=='Dc':
            couplingB = 1
-        elif M.in_coupling[indB].capitalize()=='AC':
+        elif M.in_coupling[indB].capitalize()=='Ac':
             couplingB = 0
         else:
             print("Input B coupling not recognized, set to 'dc'")
