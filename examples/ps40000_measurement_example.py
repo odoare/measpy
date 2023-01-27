@@ -9,7 +9,8 @@ import measpy as mp
 from measpy.pico import ps4000_run_measurement
 
 # Define the measurement
-M = mp.Measurement( out_sig=None,   # We don't send any output, only recording
+M = mp.Measurement( device_type='pico',
+                    out_sig=None,   # We don't send any output, only recording
                     in_map=[1,2],   # Channel A is first input, channel B 2nd
                     in_desc=['Voltage input A','Voltage input B'], # Input descriptions
                     in_cal=[1.0,1.0], # Input calibrations
