@@ -3,13 +3,15 @@
 # Create and run a measurement with a ps2000 device
 
 import sys
-sys.path.insert(0, "./measpy")
+sys.path.insert(0, "..")
 
 import measpy as mp
 from measpy.pico import ps2000_run_measurement
+#from measpy.audio import audio_run_measurement
 
 # Define the measurement
 M = mp.Measurement( device_type='pico',
+                    fs = 10000, # Sampling frequency
                     out_sig=None,   # We don't send any output, only recording
                     in_map=[1,2],   # Channel A is first input, channel B 2nd
                     in_desc=['Voltage input A','Voltage input B'], # Input descriptions
@@ -42,3 +44,5 @@ M1.data['In1'].plot()
 # Plot the Power spectral density of channel 2 signal 
 # (Welch's method with windows of 2**14 points)
 M1.data['In2'].psd(nperseg=2**14).plot()
+
+# %%
