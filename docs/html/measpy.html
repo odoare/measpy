@@ -49,7 +49,11 @@
 <li class="toctree-l1"><a class="reference internal" href="4_spectrum_smoothing_and_weighting.html">Weighting and smoothing tutorial</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">measpy package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#measpy-audio-module">measpy.audio module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-measpy.audio">measpy.audio module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#measpy.audio.audio_get_devices"><code class="docutils literal notranslate"><span class="pre">audio_get_devices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#measpy.audio.audio_run_measurement"><code class="docutils literal notranslate"><span class="pre">audio_run_measurement()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#module-measpy.measurement">measpy.measurement module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#measpy.measurement.Measurement"><code class="docutils literal notranslate"><span class="pre">Measurement</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.measurement.Measurement.create_output"><code class="docutils literal notranslate"><span class="pre">Measurement.create_output()</span></code></a></li>
@@ -99,7 +103,10 @@
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.iir"><code class="docutils literal notranslate"><span class="pre">Signal.iir()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.length"><code class="docutils literal notranslate"><span class="pre">Signal.length</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.log_sweep"><code class="docutils literal notranslate"><span class="pre">Signal.log_sweep()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.max"><code class="docutils literal notranslate"><span class="pre">Signal.max()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.min"><code class="docutils literal notranslate"><span class="pre">Signal.min()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.noise"><code class="docutils literal notranslate"><span class="pre">Signal.noise()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.normalize"><code class="docutils literal notranslate"><span class="pre">Signal.normalize()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.plot"><code class="docutils literal notranslate"><span class="pre">Signal.plot()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.psd"><code class="docutils literal notranslate"><span class="pre">Signal.psd()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.raw"><code class="docutils literal notranslate"><span class="pre">Signal.raw</span></code></a></li>
@@ -199,8 +206,18 @@
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading"></a></h2>
 </section>
-<section id="measpy-audio-module">
-<h2>measpy.audio module<a class="headerlink" href="#measpy-audio-module" title="Permalink to this heading"></a></h2>
+<section id="module-measpy.audio">
+<span id="measpy-audio-module"></span><h2>measpy.audio module<a class="headerlink" href="#module-measpy.audio" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="measpy.audio.audio_get_devices">
+<span class="sig-prename descclassname"><span class="pre">measpy.audio.</span></span><span class="sig-name descname"><span class="pre">audio_get_devices</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#measpy.audio.audio_get_devices" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="measpy.audio.audio_run_measurement">
+<span class="sig-prename descclassname"><span class="pre">measpy.audio.</span></span><span class="sig-name descname"><span class="pre">audio_run_measurement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.audio.audio_run_measurement" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
 </section>
 <section id="module-measpy.measurement">
 <span id="measpy-measurement-module"></span><h2>measpy.measurement module<a class="headerlink" href="#module-measpy.measurement" title="Permalink to this heading"></a></h2>
@@ -231,7 +248,7 @@ a measurement.</p>
 <li><p><strong>out_sig_freqs</strong> (<em>tuple</em><em>(</em><em>float</em><em>,</em><em>float</em><em>)</em>) – Minimum and maximum frequencies for the generated output signals (used if out_sig is ‘noise’ or ‘logsweep’)</p></li>
 <li><p><strong>fades</strong> (<em>tuple</em><em>(</em><em>int</em><em>,</em><em>int</em><em>)</em>) – Fades in/out at the begining and end of the output signal, defaults to (0,0)</p></li>
 <li><p><strong>io_sync</strong> (<em>int</em>) – (not implemented yet) Specifies if in/out synchronization is done, and which type, defaults to 0 (no synchronization).</p></li>
-<li><p><strong>device_type</strong> (<em>str</em><em> or </em><em>None</em>) – Type of defice ‘audio’, ‘ni’, or ‘’, or None, defaults to ‘’. It can be eventually reacualized when running the measurement.</p></li>
+<li><p><strong>device_type</strong> (<em>str</em><em> or </em><em>None</em>) – Type of device ‘audio’, ‘ni’, ‘pico’ or ‘’, or None, defaults to ‘’. It can be eventually reactualized when running the measurement.</p></li>
 <li><p><strong>in_device</strong> (<em>str</em>) – Input device, defaults to ‘’</p></li>
 <li><p><strong>out_device</strong> (<em>str</em>) – Output device, defaults to ‘’</p></li>
 </ul>
@@ -709,9 +726,51 @@ Note: This method is exactly the hilbert function of the scipy module.</p>
 <dd></dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="measpy.signal.Signal.max">
+<span class="sig-name descname"><span class="pre">max</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.max" title="Permalink to this definition"></a></dt>
+<dd><p>Max value of a signal</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Max value</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>unyt.array.unyt_quantity</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="measpy.signal.Signal.min">
+<span class="sig-name descname"><span class="pre">min</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.min" title="Permalink to this definition"></a></dt>
+<dd><p>Min value of a signal</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Min value</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>unyt.array.unyt_quantity</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Signal.noise">
 <em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">noise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">44100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dur</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freqs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[20.0,</span> <span class="pre">20000.0]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dbfs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.noise" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="measpy.signal.Signal.normalize">
+<span class="sig-name descname"><span class="pre">normalize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.normalize" title="Permalink to this definition"></a></dt>
+<dd><p>Normalize a signal</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Dimensionless normalized signal</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>measpy.Signal</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Signal.plot">
