@@ -428,6 +428,13 @@ class Signal:
             t0 = (correlation_lags(self.length,x.length)[0]-0.5)/self.fs)
     
     def timelag(self,x):
+        """ Estimate the time delay between two correlated signals,
+            by computing the time at maximum cross-correlation between
+            the two signals.
+
+            :param x: Other signal to compute the timelag with
+            :type x: measpy.signal.Signal
+        """
         c = self.corr(x)
         return c.time[np.argmax(c.values)]
 
@@ -806,6 +813,12 @@ class Signal:
         out=cls(desc=desc,unit=unit,cal=cal,dbfs=dbfs)
         out.fs, out._rawvalues = wav.read(filename)
         return out
+
+    def as_volts(self):
+        return self.similar(unit='V',cal=1.0,dbfs=1.0,raw=self.volts,desc=add_step(self.desc,'Voltage'))
+
+    def as_raw(self):
+        return self.similar(unit='1',cal=1.0,dbfs=1.0,raw=self.raw,desc=add_step(self.desc,'Raw data'))
 
     @property
     def raw(self):
