@@ -927,6 +927,13 @@ class Signal:
         
         return (self/self.max()).similar(desc=add_step(self.desc,"Normalize"))
 
+    def diff(self):
+        """ Compute time derivative
+
+        :return: Time derivative of signal (unit/s)
+        :rtype: measpy.signal
+        """
+        return self.similar(values=np.diff(self.values)*self.fs,unit=self.unit/Unit('s'),desc=add_step(self.desc,'diff'),cal=1.0,dbfs=1.0)
 
     def _add(self,other):
         """Add two signals
@@ -1140,6 +1147,51 @@ class Signal:
 
         return self.abs()
 
+    def real(self):
+        """ Real part of the signal, calibrations applied
+
+        :return: The real part of the signal
+        :rtype: measpy.signal        
+        """
+        return self.similar(
+            values=np.real(self.values),
+            desc=add_step(self.desc,"Real part")
+        )
+
+    def imag(self):
+        """ Imaginary part of the signal, calibrations applied
+
+        :return: The imaginary part of the signal
+        :rtype: measpy.signal        
+        """
+        return self.similar(
+            values=np.real(self.values),
+            desc=add_step(self.desc,"Imaginary part")
+        )
+
+    def angle(self,unwrap=True):
+        """ Compute the angle of the signal, if complex
+
+        :param unwrap: If True, the angle data is unwrapped
+        :type unwrap: bool
+
+        :return: The angle part of the signal, unit=rad
+        :rtype: measpy.signal  
+
+        """
+        vals = np.angle(self.values)
+        if unwrap:
+            vals = np.unwrap(vals)
+            desc = add_step(self.desc,"Angle (unwraped)")
+        else:
+            desc = add_step(self.desc,"Angle")
+        return self.similar(
+            values=vals,
+            desc=desc,
+            unit = 'rad',
+            cal=1.0,
+            dbfs=1.0
+        )
 
     # END of Signal
 
@@ -1427,10 +1479,17 @@ class Spectral:
             desc=add_step(self.desc,'dBu')
         )
 
+    def diff(self):
+        """ Compute frequency derivative
+
+        :return: Frequency derivative of spectral (unit/Hz)
+        :rtype: measpy.signal
+        """
+        return self.similar(values=np.diff(self.values)*self.dur,unit=self.unit/Unit('Hz'),desc=add_step(self.desc,'diff'))
+
     def group_delay(self):
-        phase = np.unwrap(np.angle(self.values))
         return self.similar(
-            values=-self.dur*np.diff(phase)/2/np.pi,
+            values=(self.angle().diff()/(-2)/np.pi).values,
             unit='s',
             desc='Group delay of '+self.desc
         )
@@ -1735,6 +1794,39 @@ class Spectral:
         else:
             return 2*len(self._values)/self.fs
 
+    def real(self):
+        return self.similar(
+            values=np.real(self.values),
+            desc=add_step(self.desc,"Real part")
+        )
+
+    def imag(self):
+        return self.similar(
+            values=np.real(self.values),
+            desc=add_step(self.desc,"Imaginary part")
+        )
+
+    def angle(self,unwrap=True):
+        """ Compute the angle of the spectrum
+
+        :param unwrap: If True, the angle data is unwrapped
+        :type unwrap: bool
+
+        :return: The angle part of the signal, unit=rad
+        :rtype: measpy.signal  
+
+        """
+        vals = np.angle(self.values)
+        if unwrap:
+            vals = np.unwrap(vals)
+            desc = add_step(self.desc,"Angle (unwraped)")
+        else:
+            desc = add_step(self.desc,"Angle")
+        return self.similar(
+            values=vals,
+            desc=desc,
+            unit = 'rad'
+        )
     # END of Spectral
 
 #####################
