@@ -63,7 +63,7 @@ class Measurement:
         :param io_sync: (not implemented yet) Specifies if in/out synchronization is done, and which type, defaults to 0 (no synchronization).
         :type io_sync: int
 
-        :param device_type: Type of device 'audio', 'ni', or '', or None, defaults to ''. It can be eventually reactualized when running the measurement.
+        :param device_type: Type of device 'audio', 'ni', 'pico' or '', or None, defaults to ''. It can be eventually reactualized when running the measurement.
         :type device_type: str or None
         :param in_device: Input device, defaults to ''
         :type in_device: str
