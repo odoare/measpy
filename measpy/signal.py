@@ -726,7 +726,7 @@ class Signal:
     @classmethod
     def noise(cls,fs=44100,dur=2.0,amp=1.0,freqs=[20.0,20000.0],unit='1',cal=1.0,dbfs=1.0):
         return cls(
-            raw=noise(fs,dur,amp,freqs),
+            raw=_noise(fs,dur,amp,freqs),
             fs=fs,
             unit=unit,
             cal=cal,
@@ -743,6 +743,17 @@ class Signal:
             cal=cal,
             dbfs=dbfs,
             desc='Logsweep '+str(freqs[0])+'-'+str(freqs[1])+'Hz'
+        )
+
+    @classmethod
+    def sine(cls,fs=44100,dur=2.0,amp=1.0,freq=1000.0,unit='1',cal=1.0,dbfs=1.0):
+        return cls(
+            raw=_sine(fs,dur,amp,freq),
+            fs=fs,
+            unit=unit,
+            cal=cal,
+            dbfs=dbfs,
+            desc='Sine '+str(freq)+'Hz'
         )
 
     @classmethod
@@ -1379,7 +1390,7 @@ class Spectral:
         return self.similar(
             w=self.nth_oct_smooth_to_weight(n,fmin=fmin,fmax=fmax),
             desc=add_step(self.desc,'1/'+str(n)+'th oct. smooth')
-        )
+        ).filterout((fmin,fmax))
 
     def nth_oct_smooth_complex(self,n,fmin=5,fmax=20000):
         """ Nth octave smoothing
@@ -1397,7 +1408,7 @@ class Spectral:
         return self.similar(
             w=self.nth_oct_smooth_to_weight_complex(n,fmin=fmin,fmax=fmax),
             desc=add_step(self.desc,'1/'+str(n)+'th oct. smooth')
-        )
+        ).filterout((fmin,fmax))
 
     def irfft(self):
         """ Compute the real inverse Fourier transform
@@ -1547,12 +1558,17 @@ class Spectral:
                 phase_to_plot = np.unwrap(phase_to_plot)
             
         else:
-            frequencies_to_plot = self.freqs
             modulus_to_plot = np.abs(self.values)
-            phase_to_plot = np.angle(self.values)
+
+            #Only keep positive values
+            valid_indices = np.where(modulus_to_plot > 0)
+
+            frequencies_to_plot = self.freqs[valid_indices]
+            modulus_to_plot = modulus_to_plot[valid_indices]
+            phase_to_plot = np.angle(self.values)[valid_indices]
             if unwrap_phase:
                 phase_to_plot = np.unwrap(phase_to_plot)
-            label = 'H'
+            label = '|H|'
 
         ax_0.plot(frequencies_to_plot,modulus_to_plot,**kwargs)
         ax_0.set_xlabel('Freq (Hz)')
@@ -2037,7 +2053,7 @@ def _apply_fades(s,fades):
     return s
 
 
-def noise(fs, dur, out_amp, freqs):
+def _noise(fs, dur, out_amp, freqs):
     """ Create band-limited noise """
     leng = int(dur*fs)
     lengs2 = int(leng/2)
@@ -2078,7 +2094,7 @@ def tfe_welch(x, y, fs=None, nperseg=2**12,noverlap=None):
 
 
 def _log_sweep(fs, dur, out_amp, freqs):
-    """ Create log swwep """
+    """ Create log sweep """
     L = dur/np.log(freqs[1]/freqs[0])
     t = create_time(fs, dur=dur)
     s = np.sin(2*np.pi*freqs[0]*L*np.exp(t/L))
@@ -2106,6 +2122,10 @@ def plot_tfe(f, H):
     plt.xlabel('Freq (Hz)')
     plt.ylabel('Arg(H)')
 
+def _sine(fs, dur, out_amp, freq):
+    leng=int(dur*fs)    
+    s = out_amp*np.sin(2*np.pi*np.linspace(0,dur,leng)*freq)
+    return(s)
 
 def smooth(in_array,l=20):
     ker = np.ones(l)/l

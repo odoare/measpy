@@ -76,11 +76,12 @@ class Measurement:
         if 'out_sig' in params:
             noise=params['out_sig']!='noise'
             logsweep=params['out_sig']!='logsweep'
+            sine=params['out_sig']!='sine'
             wa=not str(params['out_sig']).upper().endswith('.WAV')
             non=params['out_sig']!=None
             ar=type(params['out_sig'])!=np.ndarray
-            if noise&logsweep&wa&non&ar:
-                raise Exception("out_sig must but be a numpy.ndarray, 'noise', 'sweep', '*.wav' or None")
+            if noise&logsweep&sine&wa&non&ar:
+                raise Exception("out_sig must but be numpy.ndarray, 'noise', 'sweep', 'sine', '*.wav' or None")
 
         self.fs = params.setdefault("fs",44100)
         self.dur = params.setdefault("dur",2.0)
@@ -139,7 +140,7 @@ class Measurement:
         """
         if self.out_sig=='noise': # White noise output signal
             self.data[self.out_name[0]] = self.data[self.out_name[0]].similar(
-                volts=ms.noise(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
+                volts=ms._noise(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
             ).fade(self.out_sig_fades).add_silence(self.extrat)
 
             if self.out_map==0:
@@ -150,6 +151,14 @@ class Measurement:
                 volts=ms._log_sweep(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
             ).fade(self.out_sig_fades).add_silence(self.extrat)
 
+            if self.out_map==0:
+                self.out_map=[1]
+
+        elif self.out_sig=='sine':  # Sinusoidal output signal
+            self.data[self.out_name[0]] = self.data[self.out_name[0]].similar(
+                volts=ms._sine(self.fs,self.dur,self.out_amp,self.out_sig_freqs[0])
+            ).fade(self.out_sig_fades).add_silence(self.extrat)
+        
             if self.out_map==0:
                 self.out_map=[1]
 
