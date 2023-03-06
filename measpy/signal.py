@@ -1486,12 +1486,17 @@ class Spectral:
                 phase_to_plot = np.unwrap(phase_to_plot)
             
         else:
-            frequencies_to_plot = self.freqs
             modulus_to_plot = np.abs(self.values)
-            phase_to_plot = np.angle(self.values)
+
+            #Only keep positive values
+            valid_indices = np.where(modulus_to_plot > 0)
+
+            frequencies_to_plot = self.freqs[valid_indices]
+            modulus_to_plot = modulus_to_plot[valid_indices]
+            phase_to_plot = np.angle(self.values)[valid_indices]
             if unwrap_phase:
                 phase_to_plot = np.unwrap(phase_to_plot)
-            label = 'H'
+            label = '|H|'
 
         ax_0.plot(frequencies_to_plot,modulus_to_plot,**kwargs)
         ax_0.set_xlabel('Freq (Hz)')
