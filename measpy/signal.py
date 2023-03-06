@@ -1733,9 +1733,11 @@ class Spectral:
         """
         # if self.fs!=other.fs:
         #     raise Exception('Incompatible sampling frequencies in addition of signals')
+
+        safe_division = np.divide(self.values, other.values, out=np.zeros_like(self.values), where=np.abs(other.values)!=0)
       
         return self.similar(
-            values=self.values/other.values,
+            values=safe_division,
             unit=self.unit/other.unit,
             desc=self.desc+' / '+other.desc
         )
@@ -1754,7 +1756,8 @@ class Spectral:
             return self._div(other)
 
         if (type(other)==float) or (type(other)==int) or (type(other)==complex) or isinstance(other,numbers.Number):
-            return self.similar(values=self.values/other,desc=self.desc+'/'+str(other))
+            safe_division = np.divide(self.values, other, out=np.zeros_like(self.values), where=np.abs(other)!=0)
+            return self.similar(values=safe_division,desc=self.desc+'/'+str(other))
 
         if type(other)==unyt.array.unyt_quantity:
             return self._div(
