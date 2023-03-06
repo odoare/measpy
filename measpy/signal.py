@@ -1070,11 +1070,9 @@ class Signal:
         """
         # if self.fs!=other.fs:
         #     raise Exception('Incompatible sampling frequencies in addition of signals')
-
-        safe_division = np.divide(self.values, other.values, out=np.zeros_like(self.values), where=np.abs(other.values)!=0)
       
         return self.similar(
-            raw=safe_division,
+            raw=self.values/other.values,
             unit=self.unit/other.unit,
             cal=1.0,
             dbfs=1.0,
@@ -1093,8 +1091,7 @@ class Signal:
             return self._div(other)
 
         if (type(other)==float) or (type(other)==int) or (type(other)==complex) or isinstance(other,numbers.Number):
-            safe_division = np.divide(self.raw, other, out=np.zeros_like(self.raw), where=np.abs(other)!=0)
-            return self.similar(raw=safe_division,desc=self.desc+'/'+str(other))
+            return self.similar(raw=self.raw/other,desc=self.desc+'/'+str(other))
 
         if type(other)==unyt.array.unyt_quantity:
             return self._div(
