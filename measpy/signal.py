@@ -289,6 +289,13 @@ class Signal:
 
             Returns : A Spectral object containing the psd
         """ 
+
+        # Set default values for welch's kwargs
+        if not "fs" in kwargs:
+            kwargs["fs"] = self.fs
+        if not "nperseg" in kwargs:
+            kwargs["nperseg"] = 2**(np.ceil(np.log2(self.fs)))
+
         return Spectral(
             values=welch(self.values, **kwargs)[1],
             desc=add_step(self.desc,'PSD'),
@@ -387,6 +394,12 @@ class Signal:
             raise Exception('Sampling frequencies have to be the same')
         if self.length!=x.length:
             raise Exception('Lengths have to be the same')
+
+        # Set default values for welch's kwargs
+        if not "fs" in kwargs:
+            kwargs["fs"] = self.fs
+        if not "nperseg" in kwargs:
+            kwargs["nperseg"] = 2**(np.ceil(np.log2(self.fs)))
 
         return Spectral(
             values=csd(x.values, self.values, **kwargs)[1]/welch(x.values, **kwargs)[1],
@@ -2068,7 +2081,7 @@ def _noise(fs, dur, out_amp, freqs):
     return s
 
 
-def tfe_welch(x, y, fs=None, nperseg=2**12,noverlap=None):
+def tfe_welch(x, y, **kwargs):
     """ Transfer function estimate (Welch's method)       
         Arguments and defaults :
         NFFT=None,
@@ -2082,17 +2095,24 @@ def tfe_welch(x, y, fs=None, nperseg=2**12,noverlap=None):
     """
     if type(x) != type(y):
         raise Exception('x and y must have the same type (numpy array or Signal object).')
+
+    # Set default values for welch's kwargs
+    if not "fs" in kwargs:
+        kwargs["fs"] = x.fs
+    if not "nperseg" in kwargs:
+        kwargs["nperseg"] = 2**(np.ceil(np.log2(x.fs)))
+
     if type(x) == Signal:
-        f, p = welch(x.values_in_unit , fs=x.fs, nperseg=nperseg, noverlap=noverlap )
-        f, c = csd(y.values_in_unit ,x.values_in_unit, fs=x.fs, nperseg=nperseg, noverlap=noverlap)
+        f, p = welch(x.values_in_unit,**kwargs)
+        f, c = csd(y.values_in_unit,x.values_in_unit,**kwargs)
         out = Spectral(desc='Transfer function between '+x.desc+' and '+y.desc,
                                 fs=x.fs,
                                 unit = y.unit+'/'+x.unit)
         out.values = c/p
         return out
     else:
-        f, p = welch(x, fs=fs, nperseg=nperseg, noverlap=noverlap)
-        f, c = csd(y, x, fs=fs, nperseg=nperseg, noverlap=noverlap)
+        f, p = welch(x,**kwargs)
+        f, c = csd(y,x,**kwargs)
     return f, c/p
 
 
