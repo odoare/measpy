@@ -132,7 +132,10 @@ class Measurement:
             self.in_range = params.setdefault("in_range",list('10V' for b in self.in_map))
             self.upsampling_factor = params.setdefault("upsampling_factor",1)
             self.in_coupling = params.setdefault("in_coupling",list('dc' for b in self.in_map))
-                    
+        if self.device_type=='ni':
+            self.in_range = params.setdefault("in_range",None)
+            self.out_range = params.setdefault("out_range",None)
+
     def create_output(self):
         """ Creates the output signals, if out_sig is 'noise',
             'logsweep' or a string ending with 'wav'.

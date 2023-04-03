@@ -31,10 +31,34 @@ def ni_run_measurement(M):
     if M.in_device=='':
         print("Warning: no output device specified, changing to "+system.devices[0].name)
         M.in_device=system.devices[0].name
+
+    if hasattr(M, 'in_range'):
+        if M.in_range == None:
+            inr = False
+        else :
+            inr = True
+    else:
+        inr = False
+    if not(inr):
+        val = nidaqmx.system.device.Device(M.in_device).ai_voltage_rngs[-1]
+        print("Warning: no input range specified, changing to the max value of "+M.in_device+" -> "+str(val))
+        M.in_range = list(val for b in M.in_map)
+
     if M.out_sig!=None:
         if M.out_device=='':
             print("Warning: no output device specified, changing to "+system.devices[0].name)
             M.out_device=system.devices[0].name
+        if hasattr(M, 'out_range'):
+            if M.out_range == None:
+                outr = False
+            else :
+                outr = True
+        else:
+            outr = False
+        if not(outr):
+            val = nidaqmx.system.device.Device(M.out_device).ao_voltage_rngs[-1]
+            print("Warning: no output range specified, changing to the max value of "+M.out_device+" -> "+str(val))
+            M.out_range = list(val for b in M.out_map)
             
     now = datetime.now()
     M.date = now.strftime("%Y-%m-%d")
@@ -71,12 +95,12 @@ def ni_run_measurement(M):
         outtask = nidaqmx.Task(new_task_name="out") # write task
 
     # Set up the read tasks
-    for n in M.in_map:
+    for i,n in enumerate(M.in_map):
         print(n_to_ain(n))
         intask.ai_channels.add_ai_voltage_chan(
             physical_channel=M.in_device + "/" + n_to_ain(n),
             terminal_config=niconst.TerminalConfiguration.DEFAULT,
-            min_val=-10, max_val=10,
+            min_val=-M.in_range[i], max_val=M.in_range[i],
             units=niconst.VoltageUnits.VOLTS)
 
     intask.timing.cfg_samp_clk_timing(
@@ -84,13 +108,12 @@ def ni_run_measurement(M):
         sample_mode=niconst.AcquisitionType.CONTINUOUS,
         samps_per_chan=nsamps)
 
-
     if M.out_sig!=None:
         # Set up the write tasks, use the sample clock of the Analog input if possible
-        for n in M.out_map:   
+        for i,n in enumerate(M.out_map):   
             outtask.ao_channels.add_ao_voltage_chan(
                 physical_channel=M.out_device + "/" + n_to_aon(n), 
-                min_val=-10, max_val=10,
+                min_val=-M.out_range[i], max_val=M.out_range[i],
                 units=niconst.VoltageUnits.VOLTS)
       
         if M.in_device.startswith('myDAQ'):
