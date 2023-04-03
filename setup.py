@@ -6,7 +6,7 @@ from datetime import datetime
 
 now = datetime.now()
 VERSION = 'git'+now.strftime("%Y%m%d")
-VERSION = '0.0.11'
+VERSION = '0.0.12'
 DESCRIPTION = 'Measurements with Python'
 LONG_DESCRIPTION = """
     measpy is a set of classes and methods to help the data acquisition and analysis of signals. It is mainly acoustics and vibrations oriented. This package is very recent, it is still incomplete and many bugs may appear.
