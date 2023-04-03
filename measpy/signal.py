@@ -9,7 +9,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 from numpy.core.fromnumeric import argmax
 from numpy.core.numeric import ones_like
-from scipy.signal import welch, csd, coherence, resample, iirfilter, sosfilt, correlate, correlation_lags, hilbert
+from scipy.signal import (welch,
+                          csd,
+                          coherence,
+                          resample,
+                          iirfilter,
+                          sosfilt,
+                          correlate,
+                          correlation_lags,
+                          hilbert,
+                          spectrogram)
 #from scipy.interpolate import InterpolatedUnivariateSpline
 from csaps import csaps
 import scipy.io.wavfile as wav
@@ -21,11 +30,6 @@ import unyt
 from unyt import Unit
 
 from measpy._tools import add_step
-
-# TODO :
-# - Calibrations
-# - Test dBu, dBV
-# - Improve plotting functions
 
 ##################
 ##              ##
@@ -278,6 +282,32 @@ class Signal:
         ax.set_xlabel('Time (s)')
         ax.set_position([0.1,0.25,0.85,0.7])
         ax.legend(loc=(0.05,-0.32),ncol=2)
+        return ax
+
+    def spectrogram(self,ax=None,logy=False,dbvalue=False,**kwargs):
+        """ Spectrogram plot of a signal
+            :param logy: Logarithmic y (frequency) scale
+            :type logy: bool, optional, default to False
+            :param dbvalue: Amplitude in db
+            :type dbvalue: bool, optional, default to False
+            :param ax: an axes object to plot on
+            :type ax: axis type
+            
+            Additionnal **kwargs arguments are all passed scipy.signal.spectrogram function
+
+            Returns:
+            - ax : an axes object
+        """
+        f, t, Sxx = spectrogram(self.values, self.fs, **kwargs)
+        if ax==None:
+            _,ax = plt.subplots(1)
+        if dbvalue:
+            ax.pcolormesh(t, f, 20*np.log10(Sxx), shading='gouraud')
+        else:
+            ax.pcolormesh(t, f, Sxx, shading='gouraud')
+        ax.set_xlabel('Time (s)')
+        if logy:
+            ax.set_yscale('log')
         return ax
 
     def psd(self,**kwargs):
