@@ -1898,6 +1898,18 @@ class Spectral:
             desc=desc,
             unit = 'rad'
         )
+    
+    def values_at_freqs(self,freqlist):
+        """ Get a series of values of the spectral object at
+            given frequencies, using interpolation
+            :param freqlist: A list of frequencies
+            :type freqlist:  Number or list or Numpy array
+            :return: A complex number or an array of complex numbers
+        """
+        spamp = csaps(self.freqs, abs(self.values), smooth=0.9)
+        spangle = csaps(self.freqs, self.angle().values, smooth=0.9)
+        return spamp(freqlist)*np.exp(1j*spangle(freqlist))
+
     # END of Spectral
 
 #####################
