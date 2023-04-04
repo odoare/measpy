@@ -1861,9 +1861,9 @@ class Spectral:
     @property
     def dur(self):
         if self.full:
-            return len(self._values)/self.fs
+            return self.length/self.fs
         else:
-            return 2*len(self._values)/self.fs
+            return 2*(self.length-1)/self.fs
 
     def real(self):
         return self.similar(
