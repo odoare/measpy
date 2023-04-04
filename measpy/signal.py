@@ -1033,7 +1033,7 @@ class Signal:
             return self._add(other)
     
         if (type(other)==float) or (type(other)==int) or (type(other)==complex) or isinstance(other,numbers.Number):
-            print('Add with a number without unit, it is considered to be of same unit')
+            #print('Add with a number without unit, it is considered to be of same unit')
             return self._add(
                 self.similar(
                     values=np.ones_like(self.values)*other,
