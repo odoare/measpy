@@ -963,6 +963,15 @@ class Signal:
 
         return max(self.values)*unyt.Unit(self.unit)
 
+    def tmax(self):
+        """Time at max value of a signal
+
+        :return: Time of maximum
+        :rtype: unyt.array.unyt_quantity
+        """
+
+        return self.time[argmax(self.values)]*unyt.Unit('s')
+
     def min(self):
         """Min value of a signal
 
