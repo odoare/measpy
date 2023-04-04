@@ -1014,8 +1014,8 @@ class Signal:
         if self.length!=other.length:
             raise Exception('Incompatible signal lengths')
 
-        print("test")
-        print(other.unit_to(self.unit))
+        # print("test")
+        # print(other.unit_to(self.unit))
         return self.similar(
             values=self.values+other.unit_to(self.unit).values,
             cal=1.0,
