@@ -135,6 +135,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.tfe_welch"><code class="docutils literal notranslate"><span class="pre">Signal.tfe_welch()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.time"><code class="docutils literal notranslate"><span class="pre">Signal.time</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.timelag"><code class="docutils literal notranslate"><span class="pre">Signal.timelag()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.tmax"><code class="docutils literal notranslate"><span class="pre">Signal.tmax()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.to_csvtxt"><code class="docutils literal notranslate"><span class="pre">Signal.to_csvtxt()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.to_csvwav"><code class="docutils literal notranslate"><span class="pre">Signal.to_csvwav()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.to_csvwav_old"><code class="docutils literal notranslate"><span class="pre">Signal.to_csvwav_old()</span></code></a></li>
@@ -172,6 +173,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Spectral.tfe"><code class="docutils literal notranslate"><span class="pre">Spectral.tfe()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Spectral.unit_to"><code class="docutils literal notranslate"><span class="pre">Spectral.unit_to()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Spectral.values"><code class="docutils literal notranslate"><span class="pre">Spectral.values</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Spectral.values_at_freqs"><code class="docutils literal notranslate"><span class="pre">Spectral.values_at_freqs()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#measpy.signal.Weighting"><code class="docutils literal notranslate"><span class="pre">Weighting</span></code></a><ul>
@@ -1097,6 +1099,20 @@ the two signals.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="measpy.signal.Signal.tmax">
+<span class="sig-name descname"><span class="pre">tmax</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.tmax" title="Permalink to this definition"></a></dt>
+<dd><p>Time at max value of a signal</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Time of maximum</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>unyt.array.unyt_quantity</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Signal.to_csvtxt">
 <span class="sig-name descname"><span class="pre">to_csvtxt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">datatype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'raw'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includetime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.to_csvtxt" title="Permalink to this definition"></a></dt>
 <dd><p>Saves the signal into a pair of files:</p>
@@ -1486,6 +1502,16 @@ by interpolating a Weighting object (parameter w)</p>
 <dt class="sig sig-object py" id="measpy.signal.Spectral.values">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">values</span></span><a class="headerlink" href="#measpy.signal.Spectral.values" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="measpy.signal.Spectral.values_at_freqs">
+<span class="sig-name descname"><span class="pre">values_at_freqs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">freqlist</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Spectral.values_at_freqs" title="Permalink to this definition"></a></dt>
+<dd><p>Get a series of values of the spectral object at
+given frequencies, using interpolation
+:param freqlist: A list of frequencies
+:type freqlist:  Number or list or Numpy array
+:return: A complex number or an array of complex numbers</p>
+</dd></dl>
 
 </dd></dl>
 
