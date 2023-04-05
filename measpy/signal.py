@@ -661,10 +661,10 @@ class Signal:
         """
 
         # Length of the window for spectra calculations
-        l = 2**12
+        l = 2**15
 
         # Time shift (in samples)
-        dl = l/8
+        dl = l/4
 
         # Compute transfer function using Farina's method
         sp = self.tfe_farina(freqs)
@@ -705,20 +705,20 @@ class Signal:
             
         Gnl = {}
         Hnl = {}
-        a1 = sp.plot(plotphase=False)
+        a1 = sp.plot(plot_phase=False)
         for ii in range(nh):
             Gnl[ii]=G.similar(
                 values=np.take(G.values,list(range(int(ns[ii]),int(ns[ii]+l))),mode='wrap')
                 )
 
-            Hnl[ii]=Gnl[ii].rfft().filterout(freqs).nth_oct_smooth_complex(6)
-            Hnl[ii].plot(ax=a1,plotphase=False,label='Harmonic '+str(ii))
+            Hnl[ii]=Gnl[ii].rfft().filterout(freqs).nth_oct_smooth_complex(12)
+            Hnl[ii].plot(ax=a1,plot_phase=False,label='Harmonic '+str(ii))
             if ii==1:
-                thd = Hnl[ii].abs()
+                thd = abs(Hnl[ii])
             elif ii>1:
-                thd += Hnl[ii].abs()
+                thd += abs(Hnl[ii])
         # thd = thd.similar(desc='THD')
-        thd.plot(ax=a1,plotphase=False,label='THD')
+        thd.plot(ax=a1,plot_phase=False,label='THD')
         a1.set_xlim([20,20000])
         a1.legend()
 
