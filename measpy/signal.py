@@ -963,6 +963,15 @@ class Signal:
 
         return max(self.values)*unyt.Unit(self.unit)
 
+    def tmax(self):
+        """Time at max value of a signal
+
+        :return: Time of maximum
+        :rtype: unyt.array.unyt_quantity
+        """
+
+        return self.time[argmax(self.values)]*unyt.Unit('s')
+
     def min(self):
         """Min value of a signal
 
@@ -1005,8 +1014,8 @@ class Signal:
         if self.length!=other.length:
             raise Exception('Incompatible signal lengths')
 
-        print("test")
-        print(other.unit_to(self.unit))
+        # print("test")
+        # print(other.unit_to(self.unit))
         return self.similar(
             values=self.values+other.unit_to(self.unit).values,
             cal=1.0,
@@ -1024,7 +1033,7 @@ class Signal:
             return self._add(other)
     
         if (type(other)==float) or (type(other)==int) or (type(other)==complex) or isinstance(other,numbers.Number):
-            print('Add with a number without unit, it is considered to be of same unit')
+            #print('Add with a number without unit, it is considered to be of same unit')
             return self._add(
                 self.similar(
                     values=np.ones_like(self.values)*other,
@@ -1852,9 +1861,9 @@ class Spectral:
     @property
     def dur(self):
         if self.full:
-            return len(self._values)/self.fs
+            return self.length/self.fs
         else:
-            return 2*len(self._values)/self.fs
+            return 2*(self.length-1)/self.fs
 
     def real(self):
         return self.similar(
@@ -1889,6 +1898,18 @@ class Spectral:
             desc=desc,
             unit = 'rad'
         )
+    
+    def values_at_freqs(self,freqlist):
+        """ Get a series of values of the spectral object at
+            given frequencies, using interpolation
+            :param freqlist: A list of frequencies
+            :type freqlist:  Number or list or Numpy array
+            :return: A complex number or an array of complex numbers
+        """
+        spamp = csaps(self.freqs, abs(self.values), smooth=0.9)
+        spangle = csaps(self.freqs, self.angle().values, smooth=0.9)
+        return spamp(freqlist)*np.exp(1j*spangle(freqlist))
+
     # END of Spectral
 
 #####################
