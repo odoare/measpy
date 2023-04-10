@@ -2097,10 +2097,10 @@ def picv(long):
     return np.hstack((np.zeros(long),1,np.zeros(long-1)))
 
 def _create_time1(fs,dur):
-    return np.linspace(0,dur,int(round(dur*fs)))  # time axis
+    return np.linspace(0,dur-1/fs,int(round(dur*fs)))  # time axis
 
 def _create_time2(fs,length):
-    return np.linspace(0,length/fs,length)  # time axis
+    return np.linspace(0,(length-1)/fs,length)  # time axis
 
 def create_time(fs,dur=None,length=None):
     if dur==None and length==None:
