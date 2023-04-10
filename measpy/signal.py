@@ -1852,7 +1852,7 @@ class Spectral:
     @property
     def freqs(self):
         if self.full:
-            return np.linspace(0, self.fs, num=len(self._values))
+            return np.linspace(0, self.fs-1/self.dur, num=len(self._values))
         else:
             return np.linspace(0, self.fs/2, num=len(self._values))
     @property
