@@ -1885,16 +1885,9 @@ class Spectral:
     @property
     def freqs(self):
         if self.full:
-            #return np.linspace(0, self.fs-1/self.dur, num=self.length)
             return np.fft.fftfreq(self.sample_number,1/self.fs)
         else:
             return np.fft.rfftfreq(self.sample_number,1/self.fs)
-            if self.odd:
-                n = self.sample_number
-                #return np.arange(0,self.length,1/self.fs)
-                return np.linspace(0, self.fs/2*(n-1)/n, num=self.length)
-            else:
-                return np.linspace(0, self.fs/2, num=self.length)
     @property
     def length(self):
         return len(self._values)
