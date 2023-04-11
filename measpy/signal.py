@@ -1898,10 +1898,11 @@ class Spectral:
             return 2*self.length-1 if self.odd else 2*self.length-2
     @property
     def dur(self):
-        if self.full:
-            return self.length/self.fs
-        else:
-            return 2*(self.length-1)/self.fs
+        return self.sample_number/self.fs
+        # if self.full:
+        #     return self.length/self.fs
+        # else:
+        #     return 2*(self.length-1)/self.fs
 
     def real(self):
         return self.similar(
