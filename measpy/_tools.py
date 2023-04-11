@@ -45,4 +45,4 @@ def wrap(phase):
 def unwrap_around_index(phase,n):
     """ Opposite of np.unwrap   
     """
-    return np.hstack((np.unwrap(phase[n-1::-1][::-1]),np.unwrap(phase[n:])))
+    return np.hstack((np.unwrap(phase[n-1::-1])[::-1],np.unwrap(phase[n:])))
