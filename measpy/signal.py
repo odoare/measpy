@@ -2212,8 +2212,7 @@ def plot_tfe(f, H):
     plt.ylabel('Arg(H)')
 
 def _sine(fs, dur, out_amp, freq):
-    leng=int(dur*fs)    
-    s = out_amp*np.sin(2*np.pi*np.linspace(0,dur,leng)*freq)
+    s = out_amp*np.sin(2*np.pi*create_time(fs=fs,dur=dur)*freq)
     return(s)
 
 def smooth(in_array,l=20):
