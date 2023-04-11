@@ -564,12 +564,14 @@ class Signal:
         """ Real FFT of the signal.
             Returns a Spectral object. Unit is preserved during the process.
         """
+        odd = np.mod(self.length,2)==1
         return Spectral(values=np.fft.rfft(self.values,norm=norm),
                                 fs=self.fs,
                                 unit=self.unit,
                                 full=False,
                                 norm=norm,
-                                desc=add_step(self.desc,'RFFT'))
+                                desc=add_step(self.desc,'RFFT'),
+                                odd=odd)
     
     def to_csvwav_old(self,filename):
         """Saves the signal into a pair of files:
@@ -919,8 +921,8 @@ class Signal:
     def length(self):
         return len(self._rawvalues)
     @property
-    def dur(self):
-        return len(self._rawvalues)/self.fs
+    def dur(oeuf):
+        return len(oeuf._rawvalues)/oeuf.fs
 
     def unit_to(self,unit):
         """Change Signal unit
@@ -1298,6 +1300,7 @@ class Spectral:
         unit = kwargs.setdefault("unit",'1')
         full = kwargs.setdefault("full",False)
         norm = kwargs.setdefault("norm","backward")
+        odd = kwargs.setdefault("odd",False)
         if 'dur' in kwargs:
             if full:
                 self._values=np.zeros(int(round(fs*kwargs['dur'])),dtype=complex)
@@ -1310,6 +1313,7 @@ class Spectral:
         self.fs = fs
         self.full = full
         self.norm = norm
+        self.odd = odd
 
     def similar(self,**kwargs):
         """ Returns a copy of the Spectral object
@@ -1339,7 +1343,8 @@ class Spectral:
         unit = kwargs.setdefault("unit",str(self.unit.units))
         full = kwargs.setdefault("full",self.full)
         norm = kwargs.setdefault("norm",self.norm)
-        out = Spectral(values=values,fs=fs,desc=desc,unit=unit,full=full,norm=norm)
+        odd = kwargs.setdefault("odd",self.odd)
+        out = Spectral(values=values,fs=fs,desc=desc,unit=unit,full=full,norm=norm,odd=odd)
         if 'w' in kwargs:
             w = kwargs['w']
             spa = csaps(w.freqs, w.amp, smooth=0.9)
@@ -1462,13 +1467,13 @@ class Spectral:
             desc=add_step(self.desc,'1/'+str(n)+'th oct. smooth')
         ).filterout((fmin,fmax))
 
-    def irfft(self):
+    def irfft(self,l=None):
         """ Compute the real inverse Fourier transform
             of the spectral data set
         """
         if self.full:
             raise Exception('Error: the spectrum is full, use ifft instead')
-        return Signal(raw=np.fft.irfft(self.values,norm=self.norm),
+        return Signal(raw=np.fft.irfft(self.values,n=self.sample_number,norm=self.norm),
                             desc=add_step(self.desc,'IFFT'),
                             fs=self.fs,
                             unit=self.unit)
@@ -1852,12 +1857,23 @@ class Spectral:
     @property
     def freqs(self):
         if self.full:
-            return np.linspace(0, self.fs-1/self.dur, num=len(self._values))
+            return np.linspace(0, self.fs-1/self.dur, num=self.length)
         else:
-            return np.linspace(0, self.fs/2, num=len(self._values))
+            if self.odd:
+                n = self.sample_number
+                #return np.arange(0,self.length,1/self.fs)
+                return np.linspace(0, self.fs/2*(n-1)/n, num=self.length)
+            else:
+                return np.linspace(0, self.fs/2, num=self.length)
     @property
     def length(self):
         return len(self._values)
+    @property
+    def sample_number(self):
+        if self.full:
+            return self.length 
+        else:
+            return 2*self.length-1 if self.odd else 2*self.length-2
     @property
     def dur(self):
         if self.full:
@@ -2130,7 +2146,6 @@ def _noise(fs, dur, out_amp, freqs):
     fftx = amp*np.exp(1j*phase)
     s = out_amp*np.fft.irfft(fftx,leng)
     return s
-
 
 def tfe_welch(x, y, **kwargs):
     """ Transfer function estimate (Welch's method)       
