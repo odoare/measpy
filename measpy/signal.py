@@ -2123,12 +2123,12 @@ def _apply_fades(s,fades):
 def _noise(fs, dur, out_amp, freqs):
     """ Create band-limited noise """
     leng = int(dur*fs)
-    lengs2 = int(leng/2)
+    lengs2 = int(np.ceil(leng/2))
     f = fs*np.arange(lengs2+1,dtype=float)/leng
     amp = ((f>freqs[0]) & (f<freqs[1]))*np.sqrt(leng)
     phase  = 2*np.pi*(np.random.rand(lengs2+1)-0.5)
     fftx = amp*np.exp(1j*phase)
-    s = out_amp*np.fft.irfft(fftx)
+    s = out_amp*np.fft.irfft(fftx,leng)
     return s
 
 
