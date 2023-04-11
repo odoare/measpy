@@ -644,22 +644,38 @@ class Signal:
             outdata = np.concatenate((self.time[:,None],outdata),1)
         np.savetxt(filename+'.txt',outdata)
 
-    def harmonic_disto(self,nh=4,freqs=(20,20000),delay=None,l=2**15,nsmooth=12,debug_plot=True):
+    def harmonic_disto(self,nh=4,freqs=(20,20000),delay=None,l=2**15,nsmooth=12,debug_plot=False):
         """Compute the harmonic distorsion of an in/out system
-        using the method proposed by Farina (2000).
+        using the method proposed by Farina (2000) and adapted by
+        Novak et al. (2015) to correctly estimate the phase of the
+        higher harmonics.
 
-        The signal object (```self```) has to be the response of a
+        The signal object (```self```) is the response of a
         system to a logarithmic sweep created with the
         ```Signal.log_sweep``` method.
 
-        :param nh: number of harmonics, including harmonic 0, which is the linear part of the response, defaults to 4
+        :param nh: number of harmonics, including harmonic 0 (the linear
+        part of the response), defaults to 4
         :type nh: int, optional
-        :param freqs: frequencies between which the output signal sweeps, defaults to [20,20000]
+        :param freqs: frequencies between which the output signal that
+        was used sweeps, defaults to [20,20000]
         :type freqs: tuple, optional
-        :param delay: the mean delay between output and input, defaults to None. If None, the delay is estimated looking at the max value of the cross correlation of the signal with the input logarithmic sweep.
+        :param delay: the mean delay between output and input, defaults to None.
+        If None, the delay is estimated looking at the max value of the cross correlation of the signal with the input logarithmic sweep.
         :type delay: float, optional
-        :return: A dictionary of Spectral objects representing the different harmonics as function of the frequencyu 
-        :rtype: dict of measpy.Spectral
+        :param l: Window length for each harmonic Fourier analysis in number of samples.
+        Has to be even. Defaults to 2**15
+        :type l: int
+        :param nsmooth: Parameter for 1/nsmooth smoothing, defaults to 12
+        :type nsmooth: int
+        :param debug_plot: Specifies if debugging plots are shown during the process, defaults to False
+        :type debug_plot: bool
+        :return: A four element tuple containing:
+            - A dictionary of Spectral objects representing the different harmonics as function of the frequency
+            - A dictionnary of Spectral.Weights, 1/nsmooth smoothed values
+            - The total harmonic distortion (THD)
+            - The delay between output (sent signal) and input (measure signal)
+        :rtype: tuple
         """
 
         # Compute transfer function using Farina's method
@@ -676,6 +692,9 @@ class Signal:
 
         # print (delay)
 
+        # dl is the window shift for each Fourier transform computation
+        # of the harmonic peaks l/2 is a standard value that center the
+        # windows around each peaks
         dl = l/2
 
         # Compute delay from cross correlation
@@ -689,16 +708,17 @@ class Signal:
         # Green's function from Farina's spectrum
         G=sp.irfft()
 
-
+        # Center positions of harmonics in the time signal G
+        # and time shifting for phase reconstruction
         L = (self.dur-1/self.fs)/np.log(freqs[1]/freqs[0])
         dt = L*np.log(np.arange(nh)+1)
         decal = dt*G.fs-np.ceil(dt*G.fs)
-
         ns = np.round((G.dur-dt+delay)*G.fs)-dl
-        ts = np.take(G.time,list(map(int,list(ns))),mode='wrap')
-        tf = ts+l/sp.fs
-        maxG = np.max(np.abs(G.values))
+
         if debug_plot:
+            ts = np.take(G.time,list(map(int,list(ns))),mode='wrap')
+            tf = ts+l/sp.fs
+            maxG = np.max(np.abs(G.values))
             axG=G.plot(label="IFFT of Farina's spectrum")
             for ii in range(nh):
                 axG.plot([ts[ii],ts[ii]],[-maxG/10,maxG/10],lw=1,c='k')
@@ -728,7 +748,6 @@ class Signal:
                 thd = abs(Hnl[ii])
             elif ii>1:
                 thd += abs(Hnl[ii])
-        # thd = thd.similar(desc='THD')
         if debug_plot:
             thd.plot(ax=a1,plot_phase=False,label='THD')
             a1.set_xlim(freqs)
@@ -744,13 +763,13 @@ class Signal:
         :type N: int, optional
         :param Wn: a cutoff frequency (if low or highpass) or a tuple of frequency (if bandpass/stop), defaults to (20,20000)
         :type Wn: tuple, optional
-        :param rp: [description], defaults to None
-        :type rp: [type], optional
-        :param rs: [description], defaults to None
-        :type rs: [type], optional
+        :param rp: For Chebyshev and elliptic filters, provides the maximum ripple in the passband. (dB)
+        :type rp: float, optional
+        :param rs: For Chebyshev and elliptic filters, provides the minimum attenuation in the stop band. (dB)
+        :type rs: float, optional
         :param btype: Type of filter (band, hp, lp), defaults to 'band'
-        :type btype: str, optional
-        :param ftype: Type of dilter (butter, elliptic, etc.), defaults to 'butter'
+        :type btype: str in {'bandpass', 'lowpass', 'highpass', 'bandstop'}, optional
+        :param ftype: Type of filter (butter, elliptic, etc.), defaults to 'butter'
         :type ftype: str, optional
         :return: A filtered signal
         :rtype: measpy.signal.Signal
