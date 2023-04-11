@@ -644,7 +644,7 @@ class Signal:
             outdata = np.concatenate((self.time[:,None],outdata),1)
         np.savetxt(filename+'.txt',outdata)
 
-    def harmonic_disto(self,nh=4,freqs=(20,20000),delay=None):
+    def harmonic_disto(self,nh=4,freqs=(20,20000),delay=None,l=2**15,nsmooth=12,debug_plot=True):
         """Compute the harmonic distorsion of an in/out system
         using the method proposed by Farina (2000).
 
@@ -652,26 +652,20 @@ class Signal:
         system to a logarithmic sweep created with the
         ```Signal.log_sweep``` method.
 
-        :param nh: number pf harmonics, including harmonic 0, which is the linear part of the response, defaults to 4
+        :param nh: number of harmonics, including harmonic 0, which is the linear part of the response, defaults to 4
         :type nh: int, optional
         :param freqs: frequencies between which the output signal sweeps, defaults to [20,20000]
         :type freqs: tuple, optional
-        :param delay: the mean delay between output and input, defaults to None. If None, the delay is estimated by calculating the mean values of the group delay between the freauencies of the sweep
+        :param delay: the mean delay between output and input, defaults to None. If None, the delay is estimated looking at the max value of the cross correlation of the signal with the input logarithmic sweep.
         :type delay: float, optional
         :return: A dictionary of Spectral objects representing the different harmonics as function of the frequencyu 
         :rtype: dict of measpy.Spectral
         """
 
-        # Length of the window for spectra calculations
-        l = 2**15
-
-        # Time shift (in samples)
-        dl = l/4
-
         # Compute transfer function using Farina's method
         sp = self.tfe_farina(freqs)
 
-        # This is another method based on group delay (less robust)
+        # Delay calculation based on group delay (less robust)
         # if type(delay)==type(None):
         #     # Estimate the delay by calculating the mean value of
         #     # the group delay
@@ -682,6 +676,8 @@ class Signal:
 
         # print (delay)
 
+        dl = l/2
+
         # Compute delay from cross correlation
         # (timelag method)
         if type(delay)==type(None):
@@ -690,41 +686,54 @@ class Signal:
                 dur=self.dur,
                 freqs=freqs))
 
+        # Green's function from Farina's spectrum
         G=sp.irfft()
-        L = self.dur/np.log(freqs[1]/freqs[0])
 
+
+        L = (self.dur-1/self.fs)/np.log(freqs[1]/freqs[0])
         dt = L*np.log(np.arange(nh)+1)
+        decal = dt*G.fs-np.ceil(dt*G.fs)
+
         ns = np.round((G.dur-dt+delay)*G.fs)-dl
         ts = np.take(G.time,list(map(int,list(ns))),mode='wrap')
         tf = ts+l/sp.fs
         maxG = np.max(np.abs(G.values))
-        axG=G.plot()
-        for ii in range(nh):
-            axG.plot([ts[ii],ts[ii]],[-maxG/10,maxG/10],lw=1,c='k')
-            axG.plot([tf[ii],tf[ii]],[-maxG/10,maxG/10],lw=1,c='k')
-            axG.plot([ts[ii],tf[ii]],[maxG/10,maxG/10],lw=1,c='k')
-            axG.plot([ts[ii],tf[ii]],[-maxG/10,-maxG/10],lw=1,c='k')
-            
+        if debug_plot:
+            axG=G.plot(label="IFFT of Farina's spectrum")
+            for ii in range(nh):
+                axG.plot([ts[ii],ts[ii]],[-maxG/10,maxG/10],lw=1,c='k')
+                axG.plot([tf[ii],tf[ii]],[-maxG/10,maxG/10],lw=1,c='k')
+                axG.plot([ts[ii],tf[ii]],[maxG/10,maxG/10],lw=1,c='k')
+                axG.plot([ts[ii],tf[ii]],[-maxG/10,-maxG/10],lw=1,c='k')
+                
         Gnl = {}
         Hnl = {}
-        a1 = sp.plot(plot_phase=False)
+        Wnl = {}
+        if debug_plot:
+            a1 = sp.plot(plot_phase=False,label="Full spectrum")
         for ii in range(nh):
             Gnl[ii]=G.similar(
                 values=np.take(G.values,list(range(int(ns[ii]),int(ns[ii]+l))),mode='wrap')
                 )
-
-            Hnl[ii]=Gnl[ii].rfft().filterout(freqs).nth_oct_smooth_complex(12)
-            Hnl[ii].plot(ax=a1,plot_phase=False,label='Harmonic '+str(ii))
+            if nsmooth==0:
+                Hnl[ii]=Gnl[ii].rfft()
+                Hnl[ii]=Hnl[ii].similar(values=Hnl[ii].values*np.exp(-1j*Hnl[ii].freqs*2*np.pi*(dl+decal[ii])/Hnl[ii].fs))
+            else:
+                Hnl[ii]=Gnl[ii].rfft().nth_oct_smooth_complex(nsmooth)
+                Hnl[ii]=Hnl[ii].similar(values=Hnl[ii].values*np.exp(-1j*Hnl[ii].freqs*2*np.pi*(dl+decal[ii])/Hnl[ii].fs))
+                Wnl[ii]=Hnl[ii].filterout(freqs).nth_oct_smooth_to_weight_complex(nsmooth)
+            if debug_plot:
+                Hnl[ii].plot(ax=a1,plot_phase=False,label='Harmonic '+str(ii))
             if ii==1:
                 thd = abs(Hnl[ii])
             elif ii>1:
                 thd += abs(Hnl[ii])
         # thd = thd.similar(desc='THD')
-        thd.plot(ax=a1,plot_phase=False,label='THD')
-        a1.set_xlim([20,20000])
-        a1.legend()
-
-        return Hnl
+        if debug_plot:
+            thd.plot(ax=a1,plot_phase=False,label='THD')
+            a1.set_xlim(freqs)
+            a1.legend()
+        return (Hnl, Wnl, thd, delay)
 
     def iir(self,N=2, Wn=(20,20000), rp=None, rs=None, btype='band',  ftype='butter'):
         """Infinite impulse response filter of a signal.
@@ -2184,7 +2193,7 @@ def tfe_welch(x, y, **kwargs):
 
 def _log_sweep(fs, dur, out_amp, freqs):
     """ Create log sweep """
-    L = dur/np.log(freqs[1]/freqs[0])
+    L = (dur-1/fs)/np.log(freqs[1]/freqs[0])
     t = create_time(fs, dur=dur)
     s = np.sin(2*np.pi*freqs[0]*L*np.exp(t/L))
     return out_amp*s
