@@ -499,6 +499,10 @@ class Signal:
         else:
             pos = (0,-1)
         return self.similar(
+            raw=np.take(self.raw,list(range(pos[0],pos[1])),mode='wrap'),
+            desc=add_step(self.desc,"Cut between "+str(pos[0])+" and "+str(pos[1]))
+        )
+        return self.similar(
             raw=self.raw[pos[0]:pos[1]],
             desc=add_step(self.desc,"Cut between "+str(pos[0])+" and "+str(pos[1]))
         )
@@ -643,7 +647,7 @@ class Signal:
             outdata = np.concatenate((self.time[:,None],outdata),1)
         np.savetxt(filename+'.txt',outdata)
 
-    def harmonic_disto(self,nh=4,freqs=(20,20000),delay=None,l=2**15,nsmooth=12,debug_plot=False):
+    def harmonic_disto(self,nh=4,freqs=(20,20000),delay=None,l=2**15,nsmooth=24,debug_plot=False):
         """Compute the harmonic distorsion of an in/out system
         using the method proposed by Farina (2000) and adapted by
         Novak et al. (2015) to correctly estimate the phase of the
@@ -665,13 +669,13 @@ class Signal:
         :param l: Window length for each harmonic Fourier analysis in number of samples.
         Has to be even. Defaults to 2**15
         :type l: int
-        :param nsmooth: Parameter for 1/nsmooth smoothing, defaults to 12
+        :param nsmooth: Parameter for 1/nsmooth smoothing before Weighting conversion, defaults to 12
         :type nsmooth: int
         :param debug_plot: Specifies if debugging plots are shown during the process, defaults to False
         :type debug_plot: bool
         :return: A four element tuple containing:
-            - A dictionary of Spectral objects representing the different harmonics as function of the frequency
-            - A dictionnary of Spectral.Weights, 1/nsmooth smoothed values
+            - A dictionary of Spectral objects representing the different harmonics as function of the frequency, not frequency aligned
+            - A dictionnary of Spectral objects, representing the different harmonics, smoothed and frequency aligned
             - The total harmonic distortion (THD)
             - The delay between output (sent signal) and input (measure signal)
         :rtype: tuple
@@ -725,33 +729,29 @@ class Signal:
                 axG.plot([ts[ii],tf[ii]],[maxG/10,maxG/10],lw=1,c='k')
                 axG.plot([ts[ii],tf[ii]],[-maxG/10,-maxG/10],lw=1,c='k')
                 
-        Gnl = {}
         Hnl = {}
         Wnl = {}
+        Hfr = {}
         if debug_plot:
             a1 = sp.plot(plot_phase=False,label="Full spectrum")
         for ii in range(nh):
-            Gnl[ii]=G.similar(
-                values=np.take(G.values,list(range(int(ns[ii]),int(ns[ii]+l))),mode='wrap')
-                )
-            if nsmooth==0:
-                Hnl[ii]=Gnl[ii].rfft()
-                Hnl[ii]=Hnl[ii].similar(values=Hnl[ii].values*np.exp(-1j*Hnl[ii].freqs*2*np.pi*(dl+decal[ii])/Hnl[ii].fs))
-            else:
-                Hnl[ii]=Gnl[ii].rfft().nth_oct_smooth_complex(nsmooth)
-                Hnl[ii]=Hnl[ii].similar(values=Hnl[ii].values*np.exp(-1j*Hnl[ii].freqs*2*np.pi*(dl+decal[ii])/Hnl[ii].fs))
-                Wnl[ii]=Hnl[ii].filterout(freqs).nth_oct_smooth_to_weight_complex(nsmooth)
+            Hnl[ii] = G.cut(pos=(int(ns[ii]),int(ns[ii]+l))).rfft()
+            Hnl[ii] = Hnl[ii].similar(values=Hnl[ii].values*np.exp(-1j*Hnl[ii].freqs*2*np.pi*(dl+decal[ii])/Hnl[ii].fs))
+            Wnl[ii] = Hnl[ii].nth_oct_smooth_to_weight_complex(nsmooth)
+            Wnl[ii].freqs = Wnl[ii].freqs/(ii+1)
+            Hfr[ii] = Spectral(fs=Hnl[ii].fs,dur=Hnl[ii].dur).similar(w=Wnl[ii])
             if debug_plot:
-                Hnl[ii].plot(ax=a1,plot_phase=False,label='Harmonic '+str(ii))
+                Hfr[ii].plot(ax=a1,plot_phase=False,label='Harmonic '+str(ii))
             if ii==1:
-                thd = abs(Hnl[ii])
+                thd = abs(Hfr[ii])
             elif ii>1:
-                thd += abs(Hnl[ii])
+                thd += abs(Hfr[ii])
         if debug_plot:
             thd.plot(ax=a1,plot_phase=False,label='THD')
             a1.set_xlim(freqs)
             a1.legend()
-        return (Hnl, Wnl, thd, delay)
+            
+        return (Hnl, Hfr, thd, delay)
 
     def iir(self,N=2, Wn=(20,20000), rp=None, rs=None, btype='band',  ftype='butter'):
         """Infinite impulse response filter of a signal.
