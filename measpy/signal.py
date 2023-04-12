@@ -8,7 +8,6 @@ from warnings import WarningMessage
 import numpy as np
 import matplotlib.pyplot as plt
 from numpy.core.fromnumeric import argmax
-from numpy.core.numeric import ones_like
 from scipy.signal import (welch,
                           csd,
                           coherence,
@@ -500,6 +499,10 @@ class Signal:
         else:
             pos = (0,-1)
         return self.similar(
+            raw=np.take(self.raw,list(range(pos[0],pos[1])),mode='wrap'),
+            desc=add_step(self.desc,"Cut between "+str(pos[0])+" and "+str(pos[1]))
+        )
+        return self.similar(
             raw=self.raw[pos[0]:pos[1]],
             desc=add_step(self.desc,"Cut between "+str(pos[0])+" and "+str(pos[1]))
         )
@@ -564,12 +567,14 @@ class Signal:
         """ Real FFT of the signal.
             Returns a Spectral object. Unit is preserved during the process.
         """
+        odd = np.mod(self.length,2)==1
         return Spectral(values=np.fft.rfft(self.values,norm=norm),
                                 fs=self.fs,
                                 unit=self.unit,
                                 full=False,
                                 norm=norm,
-                                desc=add_step(self.desc,'RFFT'))
+                                desc=add_step(self.desc,'RFFT'),
+                                odd=odd)
     
     def to_csvwav_old(self,filename):
         """Saves the signal into a pair of files:
@@ -642,34 +647,44 @@ class Signal:
             outdata = np.concatenate((self.time[:,None],outdata),1)
         np.savetxt(filename+'.txt',outdata)
 
-    def harmonic_disto(self,nh=4,freqs=(20,20000),delay=None):
+    def harmonic_disto(self,nh=4,freqs=(20,20000),delay=None,l=2**15,nsmooth=24,debug_plot=False):
         """Compute the harmonic distorsion of an in/out system
-        using the method proposed by Farina (2000).
+        using the method proposed by Farina (2000) and adapted by
+        Novak et al. (2015) to correctly estimate the phase of the
+        higher harmonics.
 
-        The signal object (```self```) has to be the response of a
+        The signal object (```self```) is the response of a
         system to a logarithmic sweep created with the
         ```Signal.log_sweep``` method.
 
-        :param nh: number pf harmonics, including harmonic 0, which is the linear part of the response, defaults to 4
+        :param nh: number of harmonics, including harmonic 0 (the linear
+        part of the response), defaults to 4
         :type nh: int, optional
-        :param freqs: frequencies between which the output signal sweeps, defaults to [20,20000]
+        :param freqs: frequencies between which the output signal that
+        was used sweeps, defaults to [20,20000]
         :type freqs: tuple, optional
-        :param delay: the mean delay between output and input, defaults to None. If None, the delay is estimated by calculating the mean values of the group delay between the freauencies of the sweep
+        :param delay: the mean delay between output and input, defaults to None.
+        If None, the delay is estimated looking at the max value of the cross correlation of the signal with the input logarithmic sweep.
         :type delay: float, optional
-        :return: A dictionary of Spectral objects representing the different harmonics as function of the frequencyu 
-        :rtype: dict of measpy.Spectral
+        :param l: Window length for each harmonic Fourier analysis in number of samples.
+        Has to be even. Defaults to 2**15
+        :type l: int
+        :param nsmooth: Parameter for 1/nsmooth smoothing before Weighting conversion, defaults to 12
+        :type nsmooth: int
+        :param debug_plot: Specifies if debugging plots are shown during the process, defaults to False
+        :type debug_plot: bool
+        :return: A four element tuple containing:
+            - A dictionary of Spectral objects representing the different harmonics as function of the frequency, not frequency aligned
+            - A dictionnary of Spectral objects, representing the different harmonics, smoothed and frequency aligned
+            - The total harmonic distortion (THD)
+            - The delay between output (sent signal) and input (measure signal)
+        :rtype: tuple
         """
-
-        # Length of the window for spectra calculations
-        l = 2**15
-
-        # Time shift (in samples)
-        dl = l/4
 
         # Compute transfer function using Farina's method
         sp = self.tfe_farina(freqs)
 
-        # This is another method based on group delay (less robust)
+        # Delay calculation based on group delay (less robust)
         # if type(delay)==type(None):
         #     # Estimate the delay by calculating the mean value of
         #     # the group delay
@@ -680,6 +695,11 @@ class Signal:
 
         # print (delay)
 
+        # dl is the window shift for each Fourier transform computation
+        # of the harmonic peaks l/2 is a standard value that center the
+        # windows around each peaks
+        dl = l/2
+
         # Compute delay from cross correlation
         # (timelag method)
         if type(delay)==type(None):
@@ -688,41 +708,50 @@ class Signal:
                 dur=self.dur,
                 freqs=freqs))
 
+        # Green's function from Farina's spectrum
         G=sp.irfft()
-        L = self.dur/np.log(freqs[1]/freqs[0])
 
+        # Center positions of harmonics in the time signal G
+        # and time shifting for phase reconstruction
+        L = (self.dur-1/self.fs)/np.log(freqs[1]/freqs[0])
         dt = L*np.log(np.arange(nh)+1)
+        decal = dt*G.fs-np.ceil(dt*G.fs)
         ns = np.round((G.dur-dt+delay)*G.fs)-dl
-        ts = np.take(G.time,list(map(int,list(ns))),mode='wrap')
-        tf = ts+l/sp.fs
-        maxG = np.max(np.abs(G.values))
-        axG=G.plot()
-        for ii in range(nh):
-            axG.plot([ts[ii],ts[ii]],[-maxG/10,maxG/10],lw=1,c='k')
-            axG.plot([tf[ii],tf[ii]],[-maxG/10,maxG/10],lw=1,c='k')
-            axG.plot([ts[ii],tf[ii]],[maxG/10,maxG/10],lw=1,c='k')
-            axG.plot([ts[ii],tf[ii]],[-maxG/10,-maxG/10],lw=1,c='k')
-            
-        Gnl = {}
+
+        if debug_plot:
+            ts = np.take(G.time,list(map(int,list(ns))),mode='wrap')
+            tf = ts+l/sp.fs
+            maxG = np.max(np.abs(G.values))
+            axG=G.plot(label="IFFT of Farina's spectrum")
+            for ii in range(nh):
+                axG.plot([ts[ii],ts[ii]],[-maxG/10,maxG/10],lw=1,c='k')
+                axG.plot([tf[ii],tf[ii]],[-maxG/10,maxG/10],lw=1,c='k')
+                axG.plot([ts[ii],tf[ii]],[maxG/10,maxG/10],lw=1,c='k')
+                axG.plot([ts[ii],tf[ii]],[-maxG/10,-maxG/10],lw=1,c='k')
+                
         Hnl = {}
-        a1 = sp.plot(plot_phase=False)
+        Wnl = {}
+        Hfr = {}
+        if debug_plot:
+            a1 = sp.plot(plot_phase=False,label="Full spectrum")
         for ii in range(nh):
-            Gnl[ii]=G.similar(
-                values=np.take(G.values,list(range(int(ns[ii]),int(ns[ii]+l))),mode='wrap')
-                )
-
-            Hnl[ii]=Gnl[ii].rfft().filterout(freqs).nth_oct_smooth_complex(12)
-            Hnl[ii].plot(ax=a1,plot_phase=False,label='Harmonic '+str(ii))
+            Hnl[ii] = G.cut(pos=(int(ns[ii]),int(ns[ii]+l))).rfft()
+            Hnl[ii] = Hnl[ii].similar(values=Hnl[ii].values*np.exp(-1j*Hnl[ii].freqs*2*np.pi*(dl+decal[ii])/Hnl[ii].fs))
+            Wnl[ii] = Hnl[ii].nth_oct_smooth_to_weight_complex(nsmooth)
+            Wnl[ii].freqs = Wnl[ii].freqs/(ii+1)
+            Hfr[ii] = Spectral(fs=Hnl[ii].fs,dur=Hnl[ii].dur).similar(w=Wnl[ii])
+            if debug_plot:
+                Hfr[ii].plot(ax=a1,plot_phase=False,label='Harmonic '+str(ii))
             if ii==1:
-                thd = abs(Hnl[ii])
+                thd = abs(Hfr[ii])
             elif ii>1:
-                thd += abs(Hnl[ii])
-        # thd = thd.similar(desc='THD')
-        thd.plot(ax=a1,plot_phase=False,label='THD')
-        a1.set_xlim([20,20000])
-        a1.legend()
-
-        return Hnl
+                thd += abs(Hfr[ii])
+        if debug_plot:
+            thd.plot(ax=a1,plot_phase=False,label='THD')
+            a1.set_xlim(freqs)
+            a1.legend()
+            
+        return (Hnl, Hfr, thd, delay)
 
     def iir(self,N=2, Wn=(20,20000), rp=None, rs=None, btype='band',  ftype='butter'):
         """Infinite impulse response filter of a signal.
@@ -733,13 +762,13 @@ class Signal:
         :type N: int, optional
         :param Wn: a cutoff frequency (if low or highpass) or a tuple of frequency (if bandpass/stop), defaults to (20,20000)
         :type Wn: tuple, optional
-        :param rp: [description], defaults to None
-        :type rp: [type], optional
-        :param rs: [description], defaults to None
-        :type rs: [type], optional
+        :param rp: For Chebyshev and elliptic filters, provides the maximum ripple in the passband. (dB)
+        :type rp: float, optional
+        :param rs: For Chebyshev and elliptic filters, provides the minimum attenuation in the stop band. (dB)
+        :type rs: float, optional
         :param btype: Type of filter (band, hp, lp), defaults to 'band'
-        :type btype: str, optional
-        :param ftype: Type of dilter (butter, elliptic, etc.), defaults to 'butter'
+        :type btype: str in {'bandpass', 'lowpass', 'highpass', 'bandstop'}, optional
+        :param ftype: Type of filter (butter, elliptic, etc.), defaults to 'butter'
         :type ftype: str, optional
         :return: A filtered signal
         :rtype: measpy.signal.Signal
@@ -919,8 +948,8 @@ class Signal:
     def length(self):
         return len(self._rawvalues)
     @property
-    def dur(self):
-        return len(self._rawvalues)/self.fs
+    def dur(oeuf):
+        return len(oeuf._rawvalues)/oeuf.fs
 
     def unit_to(self,unit):
         """Change Signal unit
@@ -1298,6 +1327,7 @@ class Spectral:
         unit = kwargs.setdefault("unit",'1')
         full = kwargs.setdefault("full",False)
         norm = kwargs.setdefault("norm","backward")
+        odd = kwargs.setdefault("odd",False)
         if 'dur' in kwargs:
             if full:
                 self._values=np.zeros(int(round(fs*kwargs['dur'])),dtype=complex)
@@ -1310,6 +1340,7 @@ class Spectral:
         self.fs = fs
         self.full = full
         self.norm = norm
+        self.odd = odd
 
     def similar(self,**kwargs):
         """ Returns a copy of the Spectral object
@@ -1339,7 +1370,8 @@ class Spectral:
         unit = kwargs.setdefault("unit",str(self.unit.units))
         full = kwargs.setdefault("full",self.full)
         norm = kwargs.setdefault("norm",self.norm)
-        out = Spectral(values=values,fs=fs,desc=desc,unit=unit,full=full,norm=norm)
+        odd = kwargs.setdefault("odd",self.odd)
+        out = Spectral(values=values,fs=fs,desc=desc,unit=unit,full=full,norm=norm,odd=odd)
         if 'w' in kwargs:
             w = kwargs['w']
             spa = csaps(w.freqs, w.amp, smooth=0.9)
@@ -1462,13 +1494,13 @@ class Spectral:
             desc=add_step(self.desc,'1/'+str(n)+'th oct. smooth')
         ).filterout((fmin,fmax))
 
-    def irfft(self):
+    def irfft(self,l=None):
         """ Compute the real inverse Fourier transform
             of the spectral data set
         """
         if self.full:
             raise Exception('Error: the spectrum is full, use ifft instead')
-        return Signal(raw=np.fft.irfft(self.values,norm=self.norm),
+        return Signal(raw=np.fft.irfft(self.values,n=self.sample_number,norm=self.norm),
                             desc=add_step(self.desc,'IFFT'),
                             fs=self.fs,
                             unit=self.unit)
@@ -1852,18 +1884,25 @@ class Spectral:
     @property
     def freqs(self):
         if self.full:
-            return np.linspace(0, self.fs, num=len(self._values))
+            return np.fft.fftfreq(self.sample_number,1/self.fs)
         else:
-            return np.linspace(0, self.fs/2, num=len(self._values))
+            return np.fft.rfftfreq(self.sample_number,1/self.fs)
     @property
     def length(self):
         return len(self._values)
     @property
-    def dur(self):
+    def sample_number(self):
         if self.full:
-            return self.length/self.fs
+            return self.length 
         else:
-            return 2*(self.length-1)/self.fs
+            return 2*self.length-1 if self.odd else 2*self.length-2
+    @property
+    def dur(self):
+        return self.sample_number/self.fs
+        # if self.full:
+        #     return self.length/self.fs
+        # else:
+        #     return 2*(self.length-1)/self.fs
 
     def real(self):
         return self.similar(
@@ -2097,10 +2136,10 @@ def picv(long):
     return np.hstack((np.zeros(long),1,np.zeros(long-1)))
 
 def _create_time1(fs,dur):
-    return np.linspace(0,dur,int(round(dur*fs)))  # time axis
+    return np.linspace(0,dur-1/fs,int(round(dur*fs)))  # time axis
 
 def _create_time2(fs,length):
-    return np.linspace(0,length/fs,length)  # time axis
+    return np.linspace(0,(length-1)/fs,length)  # time axis
 
 def create_time(fs,dur=None,length=None):
     if dur==None and length==None:
@@ -2123,14 +2162,13 @@ def _apply_fades(s,fades):
 def _noise(fs, dur, out_amp, freqs):
     """ Create band-limited noise """
     leng = int(dur*fs)
-    lengs2 = int(leng/2)
+    lengs2 = int(np.ceil(leng/2))
     f = fs*np.arange(lengs2+1,dtype=float)/leng
     amp = ((f>freqs[0]) & (f<freqs[1]))*np.sqrt(leng)
     phase  = 2*np.pi*(np.random.rand(lengs2+1)-0.5)
     fftx = amp*np.exp(1j*phase)
-    s = out_amp*np.fft.irfft(fftx)
+    s = out_amp*np.fft.irfft(fftx,leng)
     return s
-
 
 def tfe_welch(x, y, **kwargs):
     """ Transfer function estimate (Welch's method)       
@@ -2169,7 +2207,7 @@ def tfe_welch(x, y, **kwargs):
 
 def _log_sweep(fs, dur, out_amp, freqs):
     """ Create log sweep """
-    L = dur/np.log(freqs[1]/freqs[0])
+    L = (dur-1/fs)/np.log(freqs[1]/freqs[0])
     t = create_time(fs, dur=dur)
     s = np.sin(2*np.pi*freqs[0]*L*np.exp(t/L))
     return out_amp*s
@@ -2197,8 +2235,7 @@ def plot_tfe(f, H):
     plt.ylabel('Arg(H)')
 
 def _sine(fs, dur, out_amp, freq):
-    leng=int(dur*fs)    
-    s = out_amp*np.sin(2*np.pi*np.linspace(0,dur,leng)*freq)
+    s = out_amp*np.sin(2*np.pi*create_time(fs=fs,dur=dur)*freq)
     return(s)
 
 def smooth(in_array,l=20):
