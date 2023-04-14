@@ -63,7 +63,7 @@ class Signal:
         The object has the following properties:
 
         * desc : The description of the signal (string)
-        * unit : The physical unit (pint.Unit)
+        * unit : The physical unit (unyt.Unit)
         * cal : The calibration (in V/unit)
         * dbfs : The input voltage for a raw value of 1
         * fs : The sampling frequency
@@ -79,23 +79,9 @@ class Signal:
         * time (time array)
     """
 
-    def __init__2(self,**kwargs):
-        # Old version of init
-        """ Initializes a Signal object with the specified entries """
-        self.desc = kwargs.setdefault('desc','A signal')
-        unit = kwargs.setdefault('unit','1')
-        self.unit=Unit(unit)
-        self.cal = kwargs.setdefault('cal',1.0)
-        self.dbfs = kwargs.setdefault('dbfs',1.0)
-        self.fs = kwargs.setdefault('fs',1)
-        if 'values' in kwargs:
-            self.values = np.array(kwargs['values'])
-        elif 'volts' in kwargs:
-            self.volts = np.array(kwargs['volts'])
-        elif 'raw' in kwargs:
-            self.raw = np.array(kwargs['raw'])
-        else:
-            self.raw=np.array(None)
+    # #################################################################
+    # Methods returning a signal
+    # #################################################################
 
     def __init__(self,**kwargs):
         """ Initializes a Signal object with the specified entries """
@@ -137,73 +123,6 @@ class Signal:
             elif arg=='raw':
                 self.raw=kwargs[arg]
 
-    def __repr__2(self):
-        # Old version
-        out = "measpy.Signal("
-        out += "fs="+str(self.fs)
-        out += ", desc='"+str(self.desc)+"'"
-        out += ", cal="+str(self.cal)
-        out += ", unit='"+str(self.unit)+"'"
-        out += ", dbfs="+str(self.dbfs)+')'
-        return out
-
-    def __repr__(self):
-        out = "measpy.Signal("
-        for arg in self.__dict__.keys():
-            if type(self.__dict__[arg])==str:
-                out += arg+"='"+self.__dict__[arg]+"',"
-            else:
-                out += arg+"="+str(self.__dict__[arg])+","
-        out += ')'
-        return out
-
-    def similar2(self, **kwargs):
-        # This is the old version of similar
-        """ Returns a copy of the Signal object
-            with properties changed as specified
-            by the optionnal arguments.
-
-            This is the old version of similar
-
-            :param fs: Sampling frequency
-            :type fs: int, optional
-            :param desc: Description
-            :type desc: str, optional
-            :param unit: Signal unit
-            :type unit: str, unyt.Unit, optional
-            :param cal: Calibration in volts/unit
-            :type cal: float, optional
-            :param dbfs: Input voltage for raw value = 1
-            :type dbfs: float, optional
-            :param values: Signal values given in unit
-            :type values: numpy.array, optional
-            :param volts: Signal values given in volts
-            :type volts: numpy.array, optional
-            :param raw: Signal values given as raw samples
-            :type raw: numpy.array, optional
-            :return: A signal
-            :rtype: measpy.signal.Signal
-
-            Only one of the following parameters should
-            be specifified : raw, volts, values
-            If values is specified, the two others are not
-            taken into account. If volts and raw are given,
-            only volts is taken into account.
-
-        """
-        fs = kwargs.setdefault("fs",self.fs)
-        desc = kwargs.setdefault("desc",self.desc)
-        unit = kwargs.setdefault("unit",str(self.unit.units))
-        cal = kwargs.setdefault("cal",self.cal)
-        dbfs = kwargs.setdefault("dbfs",self.dbfs)
-        if 'values' in kwargs:
-            return Signal(values=kwargs['values'],fs=fs,desc=desc,unit=unit,cal=cal,dbfs=dbfs)
-        elif 'volts' in kwargs:
-            return Signal(volts=kwargs['volts'],fs=fs,desc=desc,unit=unit,cal=cal,dbfs=dbfs)
-        elif 'raw' in kwargs:
-            return Signal(raw=kwargs['raw'],fs=fs,desc=desc,unit=unit,cal=cal,dbfs=dbfs)
-        else:
-            return Signal(raw=self.raw,fs=fs,desc=desc,unit=unit,cal=cal,dbfs=dbfs)
 
     def similar(self, **kwargs):
         """ Returns a copy of the Signal object
@@ -261,77 +180,7 @@ class Signal:
             elif arg=='raw':
                 out.raw=kwargs[arg]
         return out
-
-    def plot(self,ax=None,**kwargs):
-        """ Basic plotting of the signal
-            Optionnal arguments:
-
-            - ax : an axes object to plot on
-            - **kwargs : all the optionnal arguments of matplotlib.pyplot.line2D
-
-            Returns:
-            - ax : an axes object
-        """
-
-        kwargs.setdefault("label",self.desc+' ['+str(self.unit.units)+']')
-
-        if ax==None:
-            _,ax = plt.subplots(1)
-        ax.plot(self.time,self.values,**kwargs)
-        ax.set_xlabel('Time (s)')
-        ax.set_position([0.1,0.25,0.85,0.7])
-        ax.legend(loc=(0.05,-0.32),ncol=2)
-        return ax
-
-    def spectrogram(self,ax=None,logy=False,dbvalue=False,**kwargs):
-        """ Spectrogram plot of a signal
-            :param logy: Logarithmic y (frequency) scale
-            :type logy: bool, optional, default to False
-            :param dbvalue: Amplitude in db
-            :type dbvalue: bool, optional, default to False
-            :param ax: an axes object to plot on
-            :type ax: axis type
-            
-            Additionnal **kwargs arguments are all passed scipy.signal.spectrogram function
-
-            Returns:
-            - ax : an axes object
-        """
-        f, t, Sxx = spectrogram(self.values, self.fs, **kwargs)
-        if ax==None:
-            _,ax = plt.subplots(1)
-        if dbvalue:
-            ax.pcolormesh(t, f, 20*np.log10(Sxx), shading='gouraud')
-        else:
-            ax.pcolormesh(t, f, Sxx, shading='gouraud')
-        ax.set_xlabel('Time (s)')
-        if logy:
-            ax.set_yscale('log')
-        return ax
-
-    def psd(self,**kwargs):
-        """ Compute power spectral density of the signal object
-            Optional arguments are the same as the welch function
-            in scipy.signal
-
-            Arguments are the same as scipy.welch()
-
-            Returns : A Spectral object containing the psd
-        """ 
-
-        # Set default values for welch's kwargs
-        if not "fs" in kwargs:
-            kwargs["fs"] = self.fs
-        if not "nperseg" in kwargs:
-            kwargs["nperseg"] = 2**(np.ceil(np.log2(self.fs)))
-
-        return Spectral(
-            values=welch(self.values, **kwargs)[1],
-            desc=add_step(self.desc,'PSD'),
-            fs=self.fs,
-            unit=self.unit**2
-        )
-
+    
     def rms_smooth(self,nperseg=512):
         """ Compute the RMS of the Signal over windows
             of width nperseg samples
@@ -347,15 +196,6 @@ class Signal:
             cal=1.0,
             dbfs=1.0
         )
-
-    def rms(self):
-        """ Compute the RMS of the complete Signal
-
-            :return: A quantity
-            :rtype: unyt.Quantity      
-        """
-        return np.sqrt(np.mean(self.values**2))*self.unit
-
 
     def dB(self,ref):
         """ Computes 20*log10(self.values/ref)
@@ -412,51 +252,6 @@ class Signal:
             desc=add_step(self.desc,'resampled to '+str(fs)+'Hz')
         )
 
-    def tfe_welch(self, x, **kwargs):
-        """ Compute transfer function between signal x and the actual signal
-
-            :param x: Other signal from which the transfert function is computed
-            :type x: measpy.signal.Signal
-            :param **kwargs: Same parameters as scipy.welch or scipy.csd
-        """
-        if self.fs!=x.fs:
-            raise Exception('Sampling frequencies have to be the same')
-        if self.length!=x.length:
-            raise Exception('Lengths have to be the same')
-
-        # Set default values for welch's kwargs
-        if not "fs" in kwargs:
-            kwargs["fs"] = self.fs
-        if not "nperseg" in kwargs:
-            kwargs["nperseg"] = 2**(np.ceil(np.log2(self.fs)))
-
-        return Spectral(
-            values=csd(x.values, self.values, **kwargs)[1]/welch(x.values, **kwargs)[1],
-            desc='Transfer function between '+x.desc+' and '+self.desc,
-            fs=self.fs,
-            unit=self.unit/x.unit,
-            full=False
-        )
-    
-    def coh(self, x, **kwargs):
-        """ Compute the coherence between signal x and the actual signal
-
-            :param x: Other signal to compute the coherence with
-            :type x: measpy.signal.Signal
-        """
-        if self.fs!=x.fs:
-            raise Exception('Sampling frequencies have to be the same')
-        if self.length!=x.length:
-            raise Exception('Lengths have to be the same')
-
-        return Spectral(
-            values=coherence(self.values, x.values, **kwargs)[1],
-            desc='Coherence between '+x.desc+' and '+self.desc,
-            fs=self.fs,
-            unit=self.unit/x.unit,
-            full=False
-        )
-
     def corr(self,x,**kwargs):
         """ Compute the cross correlation between signal x and the actual signal
 
@@ -468,17 +263,6 @@ class Signal:
             values=correlate(self.values,x.values,**kwargs), 
             desc=add_step(self.desc,'correlation with '+x.desc),
             t0 = (correlation_lags(self.length,x.length)[0]-0.5)/self.fs)
-    
-    def timelag(self,x):
-        """ Estimate the time delay between two correlated signals,
-            by computing the time at maximum cross-correlation between
-            the two signals.
-
-            :param x: Other signal to compute the timelag with
-            :type x: measpy.signal.Signal
-        """
-        c = self.corr(x)
-        return c.time[np.argmax(c.values)]
 
     def cut(self,**kwargs):
         """ Cut signal between positions.
@@ -533,226 +317,7 @@ class Signal:
                 self.raw,
                 np.zeros(int(np.round(extrat[1]*self.fs))) ))
                 )
-
-    def tfe_farina(self, freqs):
-        """ Compute the transfer function between x and the actual signal
-            where x is a log sweep of same duration between freqs[0] and
-            freq[1]
-        """
-        leng = int(2**np.ceil(np.log2(self.length)))
-        Y = np.fft.rfft(self.values,leng)/self.fs
-        f = np.linspace(0, self.fs/2, num=round(leng/2)+1) # frequency axis
-        L = (self.length-1)/self.fs/np.log(freqs[1]/freqs[0])
-        S = 2*np.sqrt(f/L)*np.exp(-1j*2*np.pi*f*L*(1-np.log(f/freqs[0])) + 1j*np.pi/4)
-        S[0] = 0j
-        return Spectral(values=Y*S,
-            desc='Transfer function between input log sweep and '+self.desc,
-            unit=self.unit/Unit('V'),
-            fs=self.fs,
-            full=False
-        )
     
-    def fft(self,norm="backward"):
-        """ FFT of the signal.
-            Returns a Spectral object. Unit is preserved during the process.
-        """
-        return Spectral(values=np.fft.fft(self.values,norm=norm),
-                                fs=self.fs,
-                                unit=self.unit,
-                                full=True,
-                                norm=norm,
-                                desc=add_step(self.desc,'FFT'))
-    
-    def rfft(self,norm="backward"):
-        """ Real FFT of the signal.
-            Returns a Spectral object. Unit is preserved during the process.
-        """
-        odd = np.mod(self.length,2)==1
-        return Spectral(values=np.fft.rfft(self.values,norm=norm),
-                                fs=self.fs,
-                                unit=self.unit,
-                                full=False,
-                                norm=norm,
-                                desc=add_step(self.desc,'RFFT'),
-                                odd=odd)
-    
-    def to_csvwav_old(self,filename):
-        """Saves the signal into a pair of files:
-
-        * A CSV file with the signal parameters
-        * A WAV file with the raw data
-
-        If the str parameter filename='file', the created files are file.csv and file.wav
-
-        :param filename: string for the base file name
-        :type filename: str
-        """
-        with open(filename+'.csv', 'w', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow(['desc',self.desc])
-            writer.writerow(['fs',self.fs])
-            writer.writerow(['unit',str(self.unit.units)])
-            writer.writerow(['cal',self.cal])
-            writer.writerow(['dbfs',self.dbfs])
-        wav.write(filename+'.wav',int(round(self.fs)),self.raw)
-
-    def to_csvwav(self,filename):
-        """Saves the signal into a pair of files:
-
-        * A CSV file with the signal parameters
-        * A WAV file with the raw data
-
-        If the str parameter filename='file', the created files are file.csv and file.wav
-
-        :param filename: string for the base file name
-        :type filename: str
-        """
-        with open(filename+'.csv', 'w', newline='') as file:
-            writer = csv.writer(file)
-            for arg in self.__dict__.keys():
-                if arg!='_rawvalues':
-                    writer.writerow([arg,self.__dict__[arg]])
-        wav.write(filename+'.wav',int(round(self.fs)),self.raw)
-
-    def to_csvtxt(self,filename,datatype='raw',includetime=False):
-        """Saves the signal into a pair of files:
-
-        * A CSV file with the signal parameters
-        * A TXT file with the data
-
-        If the str parameter filename='file', the created files are file.csv and file.wav
-
-        :param filename: string for the base file name
-        :type filename: str
-        :param datatype: string for the optionnal data format (defaults to 'raw')
-        :type datatype: str
-        :param includetime: does the txt contains a time column ?
-        :type includetime: bool
-        
-        """
-        with open(filename+'.csv', 'w', newline='') as file:
-            writer = csv.writer(file)
-            for arg in self.__dict__.keys():
-                if arg!='_rawvalues':
-                    writer.writerow([arg,self.__dict__[arg]])
-        if datatype=='raw':
-            outdata = self.raw[:,None]
-        elif datatype=='volts':
-            outdata = self.volts[:,None]
-        elif datatype=='values':
-            outdata = self.values[:,None]
-        else:
-            raise Exception("'"+str(datatype)+"' is not a possible choice for datatype option")
-        if includetime:
-            outdata = np.concatenate((self.time[:,None],outdata),1)
-        np.savetxt(filename+'.txt',outdata)
-
-    def harmonic_disto(self,nh=4,freqs=(20,20000),delay=None,l=2**15,nsmooth=24,debug_plot=False):
-        """Compute the harmonic distorsion of an in/out system
-        using the method proposed by Farina (2000) and adapted by
-        Novak et al. (2015) to correctly estimate the phase of the
-        higher harmonics.
-
-        The signal object (```self```) is the response of a
-        system to a logarithmic sweep created with the
-        ```Signal.log_sweep``` method.
-
-        :param nh: number of harmonics, including harmonic 0 (the linear
-        part of the response), defaults to 4
-        :type nh: int, optional
-        :param freqs: frequencies between which the output signal that
-        was used sweeps, defaults to [20,20000]
-        :type freqs: tuple, optional
-        :param delay: the mean delay between output and input, defaults to None.
-        If None, the delay is estimated looking at the max value of the cross correlation of the signal with the input logarithmic sweep.
-        :type delay: float, optional
-        :param l: Window length for each harmonic Fourier analysis in number of samples.
-        Has to be even. Defaults to 2**15
-        :type l: int
-        :param nsmooth: Parameter for 1/nsmooth smoothing before Weighting conversion, defaults to 12
-        :type nsmooth: int
-        :param debug_plot: Specifies if debugging plots are shown during the process, defaults to False
-        :type debug_plot: bool
-        :return: A four element tuple containing:
-            - A dictionary of Spectral objects representing the different harmonics as function of the frequency, not frequency aligned
-            - A dictionnary of Spectral objects, representing the different harmonics, smoothed and frequency aligned
-            - The total harmonic distortion (THD)
-            - The delay between output (sent signal) and input (measure signal)
-        :rtype: tuple
-        """
-
-        # Compute transfer function using Farina's method
-        sp = self.tfe_farina(freqs)
-
-        # Delay calculation based on group delay (less robust)
-        # if type(delay)==type(None):
-        #     # Estimate the delay by calculating the mean value of
-        #     # the group delay
-        #     gd = sp.group_delay()
-        #     delay = np.mean(
-        #         gd.values[(gd.freqs > freqs[0])&(gd.freqs < freqs[1])]
-        #     ) - 0.5*l/sp.fs
-
-        # print (delay)
-
-        # dl is the window shift for each Fourier transform computation
-        # of the harmonic peaks l/2 is a standard value that center the
-        # windows around each peaks
-        dl = l/2
-
-        # Compute delay from cross correlation
-        # (timelag method)
-        if type(delay)==type(None):
-            delay = self.timelag(Signal.log_sweep(
-                fs=self.fs,
-                dur=self.dur,
-                freqs=freqs))
-
-        # Green's function from Farina's spectrum
-        G=sp.irfft()
-
-        # Center positions of harmonics in the time signal G
-        # and time shifting for phase reconstruction
-        L = (self.dur-1/self.fs)/np.log(freqs[1]/freqs[0])
-        dt = L*np.log(np.arange(nh)+1)
-        decal = dt*G.fs-np.ceil(dt*G.fs)
-        ns = np.round((G.dur-dt+delay)*G.fs)-dl
-
-        if debug_plot:
-            ts = np.take(G.time,list(map(int,list(ns))),mode='wrap')
-            tf = ts+l/sp.fs
-            maxG = np.max(np.abs(G.values))
-            axG=G.plot(label="IFFT of Farina's spectrum")
-            for ii in range(nh):
-                axG.plot([ts[ii],ts[ii]],[-maxG/10,maxG/10],lw=1,c='k')
-                axG.plot([tf[ii],tf[ii]],[-maxG/10,maxG/10],lw=1,c='k')
-                axG.plot([ts[ii],tf[ii]],[maxG/10,maxG/10],lw=1,c='k')
-                axG.plot([ts[ii],tf[ii]],[-maxG/10,-maxG/10],lw=1,c='k')
-                
-        Hnl = {}
-        Wnl = {}
-        Hfr = {}
-        if debug_plot:
-            a1 = sp.plot(plot_phase=False,label="Full spectrum")
-        for ii in range(nh):
-            Hnl[ii] = G.cut(pos=(int(ns[ii]),int(ns[ii]+l))).rfft()
-            Hnl[ii] = Hnl[ii].similar(values=Hnl[ii].values*np.exp(-1j*Hnl[ii].freqs*2*np.pi*(dl+decal[ii])/Hnl[ii].fs))
-            Wnl[ii] = Hnl[ii].nth_oct_smooth_to_weight_complex(nsmooth)
-            Wnl[ii].freqs = Wnl[ii].freqs/(ii+1)
-            Hfr[ii] = Spectral(fs=Hnl[ii].fs,dur=Hnl[ii].dur).similar(w=Wnl[ii])
-            if debug_plot:
-                Hfr[ii].plot(ax=a1,plot_phase=False,label='Harmonic '+str(ii))
-            if ii==1:
-                thd = abs(Hfr[ii])
-            elif ii>1:
-                thd += abs(Hfr[ii])
-        if debug_plot:
-            thd.plot(ax=a1,plot_phase=False,label='THD')
-            a1.set_xlim(freqs)
-            a1.legend()
-            
-        return (Hnl, Hfr, thd, delay)
-
     def iir(self,N=2, Wn=(20,20000), rp=None, rs=None, btype='band',  ftype='butter'):
         """Infinite impulse response filter of a signal.
 
@@ -795,6 +360,303 @@ class Signal:
         """
         return self.similar(values=hilbert(self.values),desc=add_step(self.desc,'hilbert_ana'))
 
+    def as_volts(self):
+        return self.similar(unit='V',cal=1.0,dbfs=1.0,raw=self.volts,desc=add_step(self.desc,'Voltage'))
+
+    def as_raw(self):
+        return self.similar(unit='1',cal=1.0,dbfs=1.0,raw=self.raw,desc=add_step(self.desc,'Raw data'))
+
+    def unit_to(self,unit):
+        """Change Signal unit
+
+        :param unit: Unit to convert to (has to be compatible)
+        :type unit: unyt.unit or str
+        :raises Exception: 'Incompatible units'
+        :return: Signal converted to the new unit
+        :rtype: measpy.Signal
+        """
+        if type(unit)==str:
+            unit=Unit(unit)
+        if not self.unit.same_dimensions_as(unit):
+            raise Exception('Incompatible units')
+        a=list(self.unit.get_conversion_factor(unit))
+        if a[1]==None:
+            a[1]=0
+        return self.similar(
+            values=a[0]*self.values-a[1],
+            cal=1.0,
+            dbfs=1.0,
+            unit=unit,
+            desc=add_step(self.desc,'Unit to '+str(unit))
+        )
+
+    def unit_to_std(self):
+        """Change Signal unit to the standard base equivalent
+
+        :return: Signal converted to the new unit
+        :rtype: measpy.Signal
+        """
+        return self.unit_to(self.unit.get_base_equivalent())
+
+    def normalize(self):
+        """Normalize a signal
+
+        :return: Dimensionless normalized signal
+        :rtype: measpy.Signal
+        """
+        
+        return (self/self.max()).similar(desc=add_step(self.desc,"Normalize"))
+
+    def diff(self):
+        """ Compute time derivative
+
+        :return: Time derivative of signal (unit/s)
+        :rtype: measpy.signal
+        """
+        return self.similar(values=np.diff(self.values)*self.fs,unit=self.unit/Unit('s'),desc=add_step(self.desc,'diff'),cal=1.0,dbfs=1.0)
+
+    def real(self):
+        """ Real part of the signal, calibrations applied
+
+        :return: The real part of the signal
+        :rtype: measpy.signal        
+        """
+        return self.similar(
+            values=np.real(self.values),
+            desc=add_step(self.desc,"Real part")
+        )
+
+    def imag(self):
+        """ Imaginary part of the signal, calibrations applied
+
+        :return: The imaginary part of the signal
+        :rtype: measpy.signal        
+        """
+        return self.similar(
+            values=np.real(self.values),
+            desc=add_step(self.desc,"Imaginary part")
+        )
+
+    def angle(self,unwrap=True):
+        """ Compute the angle of the signal, if complex
+
+        :param unwrap: If True, the angle data is unwrapped
+        :type unwrap: bool
+
+        :return: The angle part of the signal, unit=rad
+        :rtype: measpy.signal  
+
+        """
+        vals = np.angle(self.values)
+        if unwrap:
+            vals = np.unwrap(vals)
+            desc = add_step(self.desc,"Angle (unwraped)")
+        else:
+            desc = add_step(self.desc,"Angle")
+        return self.similar(
+            values=vals,
+            desc=desc,
+            unit = 'rad',
+            cal=1.0,
+            dbfs=1.0
+        )
+    
+    # def __init__2(self,**kwargs):
+    #     # Old version of init
+    #     """ Initializes a Signal object with the specified entries """
+    #     self.desc = kwargs.setdefault('desc','A signal')
+    #     unit = kwargs.setdefault('unit','1')
+    #     self.unit=Unit(unit)
+    #     self.cal = kwargs.setdefault('cal',1.0)
+    #     self.dbfs = kwargs.setdefault('dbfs',1.0)
+    #     self.fs = kwargs.setdefault('fs',1)
+    #     if 'values' in kwargs:
+    #         self.values = np.array(kwargs['values'])
+    #     elif 'volts' in kwargs:
+    #         self.volts = np.array(kwargs['volts'])
+    #     elif 'raw' in kwargs:
+    #         self.raw = np.array(kwargs['raw'])
+    #     else:
+    #         self.raw=np.array(None)
+
+        # def __repr__2(self):
+    #     # Old version
+    #     out = "measpy.Signal("
+    #     out += "fs="+str(self.fs)
+    #     out += ", desc='"+str(self.desc)+"'"
+    #     out += ", cal="+str(self.cal)
+    #     out += ", unit='"+str(self.unit)+"'"
+    #     out += ", dbfs="+str(self.dbfs)+')'
+    #     return out
+
+    # def similar2(self, **kwargs):
+    #     # This is the old version of similar
+    #     """ Returns a copy of the Signal object
+    #         with properties changed as specified
+    #         by the optionnal arguments.
+
+    #         This is the old version of similar
+
+    #         :param fs: Sampling frequency
+    #         :type fs: int, optional
+    #         :param desc: Description
+    #         :type desc: str, optional
+    #         :param unit: Signal unit
+    #         :type unit: str, unyt.Unit, optional
+    #         :param cal: Calibration in volts/unit
+    #         :type cal: float, optional
+    #         :param dbfs: Input voltage for raw value = 1
+    #         :type dbfs: float, optional
+    #         :param values: Signal values given in unit
+    #         :type values: numpy.array, optional
+    #         :param volts: Signal values given in volts
+    #         :type volts: numpy.array, optional
+    #         :param raw: Signal values given as raw samples
+    #         :type raw: numpy.array, optional
+    #         :return: A signal
+    #         :rtype: measpy.signal.Signal
+
+    #         Only one of the following parameters should
+    #         be specifified : raw, volts, values
+    #         If values is specified, the two others are not
+    #         taken into account. If volts and raw are given,
+    #         only volts is taken into account.
+
+    #     """
+    #     fs = kwargs.setdefault("fs",self.fs)
+    #     desc = kwargs.setdefault("desc",self.desc)
+    #     unit = kwargs.setdefault("unit",str(self.unit.units))
+    #     cal = kwargs.setdefault("cal",self.cal)
+    #     dbfs = kwargs.setdefault("dbfs",self.dbfs)
+    #     if 'values' in kwargs:
+    #         return Signal(values=kwargs['values'],fs=fs,desc=desc,unit=unit,cal=cal,dbfs=dbfs)
+    #     elif 'volts' in kwargs:
+    #         return Signal(volts=kwargs['volts'],fs=fs,desc=desc,unit=unit,cal=cal,dbfs=dbfs)
+    #     elif 'raw' in kwargs:
+    #         return Signal(raw=kwargs['raw'],fs=fs,desc=desc,unit=unit,cal=cal,dbfs=dbfs)
+    #     else:
+    #         return Signal(raw=self.raw,fs=fs,desc=desc,unit=unit,cal=cal,dbfs=dbfs)
+
+    # #################################################################
+    # Methods that return an object of type Spectral
+    # #################################################################
+    
+    def fft(self,norm="backward"):
+        """ FFT of the signal.
+            Returns a Spectral object. Unit is preserved during the process.
+        """
+        return Spectral(values=np.fft.fft(self.values,norm=norm),
+                                fs=self.fs,
+                                unit=self.unit,
+                                full=True,
+                                norm=norm,
+                                desc=add_step(self.desc,'FFT'))
+    
+    def rfft(self,norm="backward"):
+        """ Real FFT of the signal.
+            Returns a Spectral object. Unit is preserved during the process.
+        """
+        odd = np.mod(self.length,2)==1
+        return Spectral(values=np.fft.rfft(self.values,norm=norm),
+                                fs=self.fs,
+                                unit=self.unit,
+                                full=False,
+                                norm=norm,
+                                desc=add_step(self.desc,'RFFT'),
+                                odd=odd)
+
+    def tfe_welch(self, x, **kwargs):
+        """ Compute transfer function between signal x and the actual signal
+
+            :param x: Other signal from which the transfert function is computed
+            :type x: measpy.signal.Signal
+            :param **kwargs: Same parameters as scipy.welch or scipy.csd
+        """
+        if self.fs!=x.fs:
+            raise Exception('Sampling frequencies have to be the same')
+        if self.length!=x.length:
+            raise Exception('Lengths have to be the same')
+
+        # Set default values for welch's kwargs
+        if not "fs" in kwargs:
+            kwargs["fs"] = self.fs
+        if not "nperseg" in kwargs:
+            kwargs["nperseg"] = 2**(np.ceil(np.log2(self.fs)))
+
+        return Spectral(
+            values=csd(x.values, self.values, **kwargs)[1]/welch(x.values, **kwargs)[1],
+            desc='Transfer function between '+x.desc+' and '+self.desc,
+            fs=self.fs,
+            unit=self.unit/x.unit,
+            full=False
+        )
+    
+    def coh(self, x, **kwargs):
+        """ Compute the coherence between signal x and the actual signal
+
+            :param x: Other signal to compute the coherence with
+            :type x: measpy.signal.Signal
+        """
+        if self.fs!=x.fs:
+            raise Exception('Sampling frequencies have to be the same')
+        if self.length!=x.length:
+            raise Exception('Lengths have to be the same')
+
+        return Spectral(
+            values=coherence(self.values, x.values, **kwargs)[1],
+            desc='Coherence between '+x.desc+' and '+self.desc,
+            fs=self.fs,
+            unit=self.unit/x.unit,
+            full=False
+        )
+
+    def psd(self,**kwargs):
+        """ Compute power spectral density of the signal object
+            Optional arguments are the same as the welch function
+            in scipy.signal
+
+            Arguments are the same as scipy.welch()
+
+            Returns : A Spectral object containing the psd
+        """ 
+
+        # Set default values for welch's kwargs
+        if not "fs" in kwargs:
+            kwargs["fs"] = self.fs
+        if not "nperseg" in kwargs:
+            kwargs["nperseg"] = 2**(np.ceil(np.log2(self.fs)))
+
+        return Spectral(
+            values=welch(self.values, **kwargs)[1],
+            desc=add_step(self.desc,'PSD'),
+            fs=self.fs,
+            unit=self.unit**2
+        )
+    
+    def tfe_farina(self, freqs):
+        """ Compute the transfer function between x and the actual signal
+            where x is a log sweep of same duration between freqs[0] and
+            freq[1]
+        """
+        leng = int(2**np.ceil(np.log2(self.length)))
+        Y = np.fft.rfft(self.values,leng)/self.fs
+        f = np.linspace(0, self.fs/2, num=round(leng/2)+1) # frequency axis
+        L = (self.length-1)/self.fs/np.log(freqs[1]/freqs[0])
+        S = 2*np.sqrt(f/L)*np.exp(-1j*2*np.pi*f*L*(1-np.log(f/freqs[0])) + 1j*np.pi/4)
+        S[0] = 0j
+        return Spectral(values=Y*S,
+            desc='Transfer function between input log sweep and '+self.desc,
+            unit=self.unit/Unit('V'),
+            fs=self.fs,
+            full=False
+        )
+
+
+
+    #######################################################################
+    # Classmethods
+    #####################################################################
+    
     @classmethod
     def noise(cls,fs=44100,dur=2.0,amp=1.0,freqs=[20.0,20000.0],unit='1',cal=1.0,dbfs=1.0):
         return cls(
@@ -827,32 +689,6 @@ class Signal:
             dbfs=dbfs,
             desc='Sine '+str(freq)+'Hz'
         )
-
-    @classmethod
-    def from_csvwav_old(cls,filename):
-        """Load a signal from a pair of csv and wav files
-
-        :param filename: base file name
-        :type filename: str
-        :return: The loaded signal
-        :rtype: measpy.signal.Signal
-        """
-        out = cls()
-        with open(filename+'.csv', 'r') as file:
-            reader = csv.reader(file)
-            for row in reader:
-                if row[0]=='desc':
-                    out.desc=row[1]
-                if row[0]=='fs':
-                    out.fs=int(row[1])
-                if row[0]=='unit':
-                    out.unit=Unit(row[1])
-                if row[0]=='cal':
-                    out.cal=float(row[1])
-                if row[0]=='dbfs':
-                    out.dbfs=float(row[1])
-        _, out._rawvalues = wav.read(filename+'.wav')
-        return out
 
     @classmethod
     def from_csvwav(cls,filename):
@@ -897,18 +733,43 @@ class Signal:
         out.fs, out._rawvalues = wav.read(filename)
         return out
 
-    def as_volts(self):
-        return self.similar(unit='V',cal=1.0,dbfs=1.0,raw=self.volts,desc=add_step(self.desc,'Voltage'))
+    # @classmethod
+    # def from_csvwav_old(cls,filename):
+    #     """Load a signal from a pair of csv and wav files
 
-    def as_raw(self):
-        return self.similar(unit='1',cal=1.0,dbfs=1.0,raw=self.raw,desc=add_step(self.desc,'Raw data'))
+    #     :param filename: base file name
+    #     :type filename: str
+    #     :return: The loaded signal
+    #     :rtype: measpy.signal.Signal
+    #     """
+    #     out = cls()
+    #     with open(filename+'.csv', 'r') as file:
+    #         reader = csv.reader(file)
+    #         for row in reader:
+    #             if row[0]=='desc':
+    #                 out.desc=row[1]
+    #             if row[0]=='fs':
+    #                 out.fs=int(row[1])
+    #             if row[0]=='unit':
+    #                 out.unit=Unit(row[1])
+    #             if row[0]=='cal':
+    #                 out.cal=float(row[1])
+    #             if row[0]=='dbfs':
+    #                 out.dbfs=float(row[1])
+    #     _, out._rawvalues = wav.read(filename+'.wav')
+    #     return out
 
+    #######################################################################
+    # Properties
+    #####################################################################
+    
     @property
     def raw(self):
         return self._rawvalues
     @raw.setter
     def raw(self,val):
         self._rawvalues = val
+
     @property
     def values(self):
         if isinstance(self.cal,(int,float)):
@@ -932,57 +793,30 @@ class Signal:
                 self._rawvalues = d['x']/self.dbfs
             else:
                 print('cal property seems to be a function whereas no invcal property has been given: values cannot be set')
+
     @property
     def volts(self):
         return self._rawvalues*self.dbfs
     @volts.setter
     def volts(self,val):
         self._rawvalues = val/self.dbfs
+
     @property
     def time(self):
         if hasattr(self,'t0'):
             return create_time(self.fs,length=len(self._rawvalues))+self.t0
         else:
             return create_time(self.fs,length=len(self._rawvalues))
+        
     @property
     def length(self):
         return len(self._rawvalues)
+    
     @property
     def dur(oeuf):
         return len(oeuf._rawvalues)/oeuf.fs
 
-    def unit_to(self,unit):
-        """Change Signal unit
-
-        :param unit: Unit to convert to (has to be compatible)
-        :type unit: unyt.unit or str
-        :raises Exception: 'Incompatible units'
-        :return: Signal converted to the new unit
-        :rtype: measpy.Signal
-        """
-        if type(unit)==str:
-            unit=Unit(unit)
-        if not self.unit.same_dimensions_as(unit):
-            raise Exception('Incompatible units')
-        a=list(self.unit.get_conversion_factor(unit))
-        if a[1]==None:
-            a[1]=0
-        return self.similar(
-            values=a[0]*self.values-a[1],
-            cal=1.0,
-            dbfs=1.0,
-            unit=unit,
-            desc=add_step(self.desc,'Unit to '+str(unit))
-        )
-
-    def unit_to_std(self):
-        """Change Signal unit to the standard base equivalent
-
-        :return: Signal converted to the new unit
-        :rtype: measpy.Signal
-        """
-        return self.unit_to(self.unit.get_base_equivalent())
-
+    @property
     def max(self):
         """Max value of a signal
 
@@ -992,6 +826,7 @@ class Signal:
 
         return max(self.values)*unyt.Unit(self.unit)
 
+    @property
     def tmax(self):
         """Time at max value of a signal
 
@@ -1001,6 +836,7 @@ class Signal:
 
         return self.time[argmax(self.values)]*unyt.Unit('s')
 
+    @property
     def min(self):
         """Min value of a signal
 
@@ -1010,23 +846,19 @@ class Signal:
         
         return max(self.values)*unyt.Unit(self.unit)
 
-    def normalize(self):
-        """Normalize a signal
+    @property
+    def rms(self):
+        """ Compute the RMS of the complete Signal
 
-        :return: Dimensionless normalized signal
-        :rtype: measpy.Signal
+            :return: A quantity
+            :rtype: unyt.Quantity      
         """
-        
-        return (self/self.max()).similar(desc=add_step(self.desc,"Normalize"))
+        return np.sqrt(np.mean(self.values**2))*self.unit
 
-    def diff(self):
-        """ Compute time derivative
-
-        :return: Time derivative of signal (unit/s)
-        :rtype: measpy.signal
-        """
-        return self.similar(values=np.diff(self.values)*self.fs,unit=self.unit/Unit('s'),desc=add_step(self.desc,'diff'),cal=1.0,dbfs=1.0)
-
+    # #################################################################
+    # Operators
+    # ###################################################################
+    
     def _add(self,other):
         """Add two signals
 
@@ -1043,8 +875,6 @@ class Signal:
         if self.length!=other.length:
             raise Exception('Incompatible signal lengths')
 
-        # print("test")
-        # print(other.unit_to(self.unit))
         return self.similar(
             values=self.values+other.unit_to(self.unit).values,
             cal=1.0,
@@ -1239,51 +1069,255 @@ class Signal:
 
         return self.abs()
 
-    def real(self):
-        """ Real part of the signal, calibrations applied
+    #####################################################################
+    # Other methods
+    #####################################################################
+    
+    def to_csvwav(self,filename):
+        """Saves the signal into a pair of files:
 
-        :return: The real part of the signal
-        :rtype: measpy.signal        
+        * A CSV file with the signal parameters
+        * A WAV file with the raw data
+
+        If the str parameter filename='file', the created files are file.csv and file.wav
+
+        :param filename: string for the base file name
+        :type filename: str
         """
-        return self.similar(
-            values=np.real(self.values),
-            desc=add_step(self.desc,"Real part")
-        )
+        with open(filename+'.csv', 'w', newline='') as file:
+            writer = csv.writer(file)
+            for arg in self.__dict__.keys():
+                if arg!='_rawvalues':
+                    writer.writerow([arg,self.__dict__[arg]])
+        wav.write(filename+'.wav',int(round(self.fs)),self.raw)
 
-    def imag(self):
-        """ Imaginary part of the signal, calibrations applied
+    def to_csvtxt(self,filename,datatype='raw',includetime=False):
+        """Saves the signal into a pair of files:
 
-        :return: The imaginary part of the signal
-        :rtype: measpy.signal        
+        * A CSV file with the signal parameters
+        * A TXT file with the data
+
+        If the str parameter filename='file', the created files are file.csv and file.wav
+
+        :param filename: string for the base file name
+        :type filename: str
+        :param datatype: string for the optionnal data format (defaults to 'raw')
+        :type datatype: str
+        :param includetime: does the txt contains a time column ?
+        :type includetime: bool
+        
         """
-        return self.similar(
-            values=np.real(self.values),
-            desc=add_step(self.desc,"Imaginary part")
-        )
-
-    def angle(self,unwrap=True):
-        """ Compute the angle of the signal, if complex
-
-        :param unwrap: If True, the angle data is unwrapped
-        :type unwrap: bool
-
-        :return: The angle part of the signal, unit=rad
-        :rtype: measpy.signal  
-
-        """
-        vals = np.angle(self.values)
-        if unwrap:
-            vals = np.unwrap(vals)
-            desc = add_step(self.desc,"Angle (unwraped)")
+        with open(filename+'.csv', 'w', newline='') as file:
+            writer = csv.writer(file)
+            for arg in self.__dict__.keys():
+                if arg!='_rawvalues':
+                    writer.writerow([arg,self.__dict__[arg]])
+        if datatype=='raw':
+            outdata = self.raw[:,None]
+        elif datatype=='volts':
+            outdata = self.volts[:,None]
+        elif datatype=='values':
+            outdata = self.values[:,None]
         else:
-            desc = add_step(self.desc,"Angle")
-        return self.similar(
-            values=vals,
-            desc=desc,
-            unit = 'rad',
-            cal=1.0,
-            dbfs=1.0
-        )
+            raise Exception("'"+str(datatype)+"' is not a possible choice for datatype option")
+        if includetime:
+            outdata = np.concatenate((self.time[:,None],outdata),1)
+        np.savetxt(filename+'.txt',outdata)
+
+    def harmonic_disto(self,nh=4,freqs=(20,20000),delay=None,l=2**15,nsmooth=24,debug_plot=False):
+        """Compute the harmonic distorsion of an in/out system
+        using the method proposed by Farina (2000) and adapted by
+        Novak et al. (2015) to correctly estimate the phase of the
+        higher harmonics.
+
+        The signal object (```self```) is the response of a
+        system to a logarithmic sweep created with the
+        ```Signal.log_sweep``` method.
+
+        :param nh: number of harmonics, including harmonic 0 (the linear
+        part of the response), defaults to 4
+        :type nh: int, optional
+        :param freqs: frequencies between which the output signal that
+        was used sweeps, defaults to [20,20000]
+        :type freqs: tuple, optional
+        :param delay: the mean delay between output and input, defaults to None.
+        If None, the delay is estimated looking at the max value of the cross correlation of the signal with the input logarithmic sweep.
+        :type delay: float, optional
+        :param l: Window length for each harmonic Fourier analysis in number of samples.
+        Has to be even. Defaults to 2**15
+        :type l: int
+        :param nsmooth: Parameter for 1/nsmooth smoothing before Weighting conversion, defaults to 12
+        :type nsmooth: int
+        :param debug_plot: Specifies if debugging plots are shown during the process, defaults to False
+        :type debug_plot: bool
+        :return: A four element tuple containing:
+            - A dictionary of Spectral objects representing the different harmonics as function of the frequency, not frequency aligned
+            - A dictionnary of Spectral objects, representing the different harmonics, smoothed and frequency aligned
+            - The total harmonic distortion (THD)
+            - The delay between output (sent signal) and input (measure signal)
+        :rtype: tuple
+        """
+
+        # Compute transfer function using Farina's method
+        sp = self.tfe_farina(freqs)
+
+        # Delay calculation based on group delay (less robust)
+        # if type(delay)==type(None):
+        #     # Estimate the delay by calculating the mean value of
+        #     # the group delay
+        #     gd = sp.group_delay()
+        #     delay = np.mean(
+        #         gd.values[(gd.freqs > freqs[0])&(gd.freqs < freqs[1])]
+        #     ) - 0.5*l/sp.fs
+
+        # print (delay)
+
+        # dl is the window shift for each Fourier transform computation
+        # of the harmonic peaks l/2 is a standard value that center the
+        # windows around each peaks
+        dl = l/2
+
+        # Compute delay from cross correlation
+        # (timelag method)
+        if type(delay)==type(None):
+            delay = self.timelag(Signal.log_sweep(
+                fs=self.fs,
+                dur=self.dur,
+                freqs=freqs))
+
+        # Green's function from Farina's spectrum
+        G=sp.irfft()
+
+        # Center positions of harmonics in the time signal G
+        # and time shifting for phase reconstruction
+        L = (self.dur-1/self.fs)/np.log(freqs[1]/freqs[0])
+        dt = L*np.log(np.arange(nh)+1)
+        decal = dt*G.fs-np.ceil(dt*G.fs)
+        ns = np.round((G.dur-dt+delay)*G.fs)-dl
+
+        if debug_plot:
+            ts = np.take(G.time,list(map(int,list(ns))),mode='wrap')
+            tf = ts+l/sp.fs
+            maxG = np.max(np.abs(G.values))
+            axG=G.plot(label="IFFT of Farina's spectrum")
+            for ii in range(nh):
+                axG.plot([ts[ii],ts[ii]],[-maxG/10,maxG/10],lw=1,c='k')
+                axG.plot([tf[ii],tf[ii]],[-maxG/10,maxG/10],lw=1,c='k')
+                axG.plot([ts[ii],tf[ii]],[maxG/10,maxG/10],lw=1,c='k')
+                axG.plot([ts[ii],tf[ii]],[-maxG/10,-maxG/10],lw=1,c='k')
+                
+        Hnl = {}
+        Wnl = {}
+        Hfr = {}
+        if debug_plot:
+            a1 = sp.plot(plot_phase=False,label="Full spectrum")
+        for ii in range(nh):
+            Hnl[ii] = G.cut(pos=(int(ns[ii]),int(ns[ii]+l))).rfft()
+            Hnl[ii] = Hnl[ii].similar(values=Hnl[ii].values*np.exp(-1j*Hnl[ii].freqs*2*np.pi*(dl+decal[ii])/Hnl[ii].fs))
+            Wnl[ii] = Hnl[ii].nth_oct_smooth_to_weight_complex(nsmooth)
+            Wnl[ii].freqs = Wnl[ii].freqs/(ii+1)
+            Hfr[ii] = Spectral(fs=Hnl[ii].fs,dur=Hnl[ii].dur).similar(w=Wnl[ii])
+            if debug_plot:
+                Hfr[ii].plot(ax=a1,plot_phase=False,label='Harmonic '+str(ii))
+            if ii==1:
+                thd = abs(Hfr[ii])
+            elif ii>1:
+                thd += abs(Hfr[ii])
+        if debug_plot:
+            thd.plot(ax=a1,plot_phase=False,label='THD')
+            a1.set_xlim(freqs)
+            a1.legend()
+            
+        return (Hnl, Hfr, thd, delay)
+
+    def __repr__(self):
+        out = "measpy.Signal("
+        for arg in self.__dict__.keys():
+            if type(self.__dict__[arg])==str:
+                out += arg+"='"+self.__dict__[arg]+"',"
+            else:
+                out += arg+"="+str(self.__dict__[arg])+","
+        out += ')'
+        return out
+    
+    def timelag(self,x):
+        """ Estimate the time delay between two correlated signals,
+            by computing the time at maximum cross-correlation between
+            the two signals.
+
+            :param x: Other signal to compute the timelag with
+            :type x: measpy.signal.Signal
+        """
+        c = self.corr(x)
+        return c.time[np.argmax(c.values)]
+
+    def plot(self,ax=None,**kwargs):
+        """ Basic plotting of the signal
+            Optionnal arguments:
+
+            - ax : an axes object to plot on
+            - **kwargs : all the optionnal arguments of matplotlib.pyplot.line2D
+
+            Returns:
+            - ax : an axes object
+        """
+
+        kwargs.setdefault("label",self.desc+' ['+str(self.unit.units)+']')
+
+        if ax==None:
+            _,ax = plt.subplots(1)
+        ax.plot(self.time,self.values,**kwargs)
+        ax.set_xlabel('Time (s)')
+        ax.set_position([0.1,0.25,0.85,0.7])
+        ax.legend(loc=(0.05,-0.32),ncol=2)
+        return ax
+
+    def spectrogram(self,ax=None,logy=False,dbvalue=False,**kwargs):
+        """ Spectrogram plot of a signal
+            :param logy: Logarithmic y (frequency) scale
+            :type logy: bool, optional, default to False
+            :param dbvalue: Amplitude in db
+            :type dbvalue: bool, optional, default to False
+            :param ax: an axes object to plot on
+            :type ax: axis type
+            
+            Additionnal **kwargs arguments are all passed scipy.signal.spectrogram function
+
+            Returns:
+            - ax : an axes object
+        """
+        f, t, Sxx = spectrogram(self.values, self.fs, **kwargs)
+        if ax==None:
+            _,ax = plt.subplots(1)
+        if dbvalue:
+            ax.pcolormesh(t, f, 20*np.log10(Sxx), shading='gouraud')
+        else:
+            ax.pcolormesh(t, f, Sxx, shading='gouraud')
+        ax.set_xlabel('Time (s)')
+        if logy:
+            ax.set_yscale('log')
+        return ax
+
+    # def to_csvwav_old(self,filename):
+    #     """Saves the signal into a pair of files:
+
+    #     * A CSV file with the signal parameters
+    #     * A WAV file with the raw data
+
+    #     If the str parameter filename='file', the created files are file.csv and file.wav
+
+    #     :param filename: string for the base file name
+    #     :type filename: str
+    #     """
+    #     with open(filename+'.csv', 'w', newline='') as file:
+    #         writer = csv.writer(file)
+    #         writer.writerow(['desc',self.desc])
+    #         writer.writerow(['fs',self.fs])
+    #         writer.writerow(['unit',str(self.unit.units)])
+    #         writer.writerow(['cal',self.cal])
+    #         writer.writerow(['dbfs',self.dbfs])
+    #     wav.write(filename+'.wav',int(round(self.fs)),self.raw)
+
 
     # END of Signal
 
