@@ -88,7 +88,30 @@ class Signal:
     # #################################################################
 
     def __init__(self,**kwargs):
-        """ Initializes a Signal object with the specified entries """
+        """ Signal initialization
+
+        If one optional parameter values, volts or raw is given, the created signal is initialized with the given values. If none of these optional parameter are given, the created signal is empty.
+
+        :param fs: Sampling frequency, defaults to 1.
+        :type fs: int, optional
+        :param desc: Description, defaults to 1.
+        :type desc: str, optional
+        :param unit: Signal unit, defaults to '1' (dimensionless).
+        :type unit: str, unyt.Unit, optional
+        :param cal: Calibration in volts/unit, defaults to 1.
+        :type cal: float, optional
+        :param dbfs: Input voltage for raw value = 1, defaults to 1.
+        :type dbfs: float, optional
+        :param values: Signal values given in unit
+        :type values: numpy.array, optional
+        :param volts: Signal values given in volts
+        :type volts: numpy.array, optional
+        :param raw: Signal values given as raw samples
+        :type raw: numpy.array, optional
+        :return: A signal
+        :rtype: measpy.signal.Signal
+           
+        """
 
         if 'fs' not in kwargs:
             self.fs = 1.0
@@ -231,6 +254,8 @@ class Signal:
     def dB_SPL(self):
         """ Computes 20*log10(self.values/PREF).
             PREF is the reference pressure in air (20e-6 Pa)
+            :return: Signal of unit dB
+            :rtype: measpy.signal.Signal
         """
         return self.dB(PREF)
 
@@ -238,6 +263,8 @@ class Signal:
     def dB_SVL(self):
         """ Computes 20*log10(self.values/VREF).
             VREF is the reference particle velocity (5e-8 m/s)
+            :return: Signal of unit dB
+            :rtype: measpy.signal.Signal
         """
         return self.dB(VREF)
 
@@ -290,10 +317,10 @@ class Signal:
             raw=np.take(self.raw,list(range(pos[0],pos[1])),mode='wrap'),
             desc=add_step(self.desc,"Cut between "+str(pos[0])+" and "+str(pos[1]))
         )
-        return self.similar(
-            raw=self.raw[pos[0]:pos[1]],
-            desc=add_step(self.desc,"Cut between "+str(pos[0])+" and "+str(pos[1]))
-        )
+        # return self.similar(
+        #     raw=self.raw[pos[0]:pos[1]],
+        #     desc=add_step(self.desc,"Cut between "+str(pos[0])+" and "+str(pos[1]))
+        # )
 
     def fade(self,fades):
         """Apply fades at the begining and the end of the signal
@@ -354,6 +381,9 @@ class Signal:
         """
         Computes the hilbert transform of a signal
         Warning: This method the imaginary part of the hilbert function of the scipy module.
+
+        :return: A signal
+        :rtype: measpy.signal.Signal
         """
         return self.similar(values=np.imag(hilbert(self.values)),desc=add_step(self.desc,'hilbert'))
 
@@ -361,13 +391,30 @@ class Signal:
         """
         Computes the analytical signal through hilbert transform of a signal
         Note: This method is exactly the hilbert function of the scipy module.
+
+        :return: A signal
+        :rtype: measpy.signal.Signal
+        
         """
         return self.similar(values=hilbert(self.values),desc=add_step(self.desc,'hilbert_ana'))
 
     def as_volts(self):
+        """
+        Returns the signal in volts, no calibration applied.
+
+        :return: A signal
+        :rtype: measpy.signal.Signal
+        """
+        
         return self.similar(unit='V',cal=1.0,dbfs=1.0,raw=self.volts,desc=add_step(self.desc,'Voltage'))
 
     def as_raw(self):
+        """
+        Returns the signal raw values, dimensionless, no calibration applied, no dbfs applied.
+
+        :return: A signal
+        :rtype: measpy.signal.Signal
+        """
         return self.similar(unit='1',cal=1.0,dbfs=1.0,raw=self.raw,desc=add_step(self.desc,'Raw data'))
 
     def unit_to(self,unit):
