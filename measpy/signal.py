@@ -419,7 +419,8 @@ class Signal:
         return self.similar(unit='1', cal=1.0, dbfs=1.0, raw=self.raw, desc=add_step(self.desc, 'Raw data'))
 
     def unit_to(self, unit):
-        """Change Signal unit
+        """
+        Change Signal unit
 
         :param unit: Unit to convert to (has to be compatible)
         :type unit: unyt.unit or str
@@ -1167,17 +1168,13 @@ class Signal:
         system to a logarithmic sweep created with the
         ```Signal.log_sweep``` method.
 
-        :param nh: number of harmonics, including harmonic 0 (the linear
-        part of the response), defaults to 4
+        :param nh: number of harmonics, including harmonic 0 (the linear part of the response), defaults to 4
         :type nh: int, optional
-        :param freqs: frequencies between which the output signal that
-        was used sweeps, defaults to [20,20000]
+        :param freqs: frequencies between which the output signal that was used sweeps, defaults to [20,20000]
         :type freqs: tuple, optional
-        :param delay: the mean delay between output and input, defaults to None.
-        If None, the delay is estimated looking at the max value of the cross correlation of the signal with the input logarithmic sweep.
+        :param delay: the mean delay between output and input, defaults to None. If None, the delay is estimated looking at the max value of the cross correlation of the signal with the input logarithmic sweep.
         :type delay: float, optional
-        :param l: Window length for each harmonic Fourier analysis in number of samples.
-        Has to be even. Defaults to 2**15
+        :param l: Window length for each harmonic Fourier analysis in number of samples. Has to be even. Defaults to 2**15
         :type l: int
         :param nsmooth: Parameter for 1/nsmooth smoothing before Weighting conversion, defaults to 12
         :type nsmooth: int
@@ -1483,12 +1480,26 @@ class Spectral:
         )
 
     def apply_weighting(self, w, inverse=False):
+        """ Applies weighting w to the spectral object
+
+        :param inverse: If true, applies division instead of multiplication. Defaults to False.
+        :type inverse: Bool, optional
+
+        :return: New spectral object (with new unit)
+        :rtype: measpy.signal.Spectral
+        """
         if inverse:
             return self*(1/self.similar(w=w, unit=Unit('1'), desc=w.desc))
         else:
             return self*self.similar(w=w, unit=Unit('1'), desc=w.desc)
 
     def unit_to(self, unit):
+        """ Converts to a new compatible unit
+
+        :return: New spectral object (with new unit)
+        :rtype: measpy.signal.Spectral
+        """
+
         if type(unit) == str:
             unit = Unit(unit)
         if not self.unit.same_dimensions_as(unit):
@@ -1500,32 +1511,72 @@ class Spectral:
         )
 
     def apply_dBA(self):
+        """
+        Apply dBA weighting
+
+        :return: Weighted spectrum
+        :rtype: measpy.signal.Spectral        
+        """
         # w = Weighting.from_csv('measpy/data/dBA.csv')
         return self.apply_weighting(WDBA)
 
     def apply_dBC(self):
+        """
+        Apply dBC weighting
+
+        :return: Weighted spectrum
+        :rtype: measpy.signal.Spectral        
+        """
         # w = Weighting.from_csv('measpy/data/dBC.csv')
         return self.apply_weighting(WDBC)
 
     def dB_SPL(self):
+        """
+        Convert to dB SPL (20 log10 |P|/P0)
+        Signal unit has to be compatible with Pa
+
+        :return: Weighted spectrum
+        :rtype: measpy.signal.Spectral        
+        """
         return self.unit_to(Unit(PREF)).similar(
             values=20*np.log10(np.abs(self._values)/PREF.v),
             desc=add_step(self.desc, 'dB SPL')
         )
 
     def dB_SVL(self):
+        """
+        Convert to dB SVL (20 log10 |V|/V0)
+        Signal unit has to be compatible with m/s
+
+        :return: Weighted spectrum
+        :rtype: measpy.signal.Spectral        
+        """
         return self.unit_to(Unit(VREF)).similar(
             values=20*np.log10(np.abs(self._values)/VREF.v),
             desc=add_step(self.desc, 'dB SVL')
         )
 
     def dBV(self):
+        """
+        Convert to dB dBV
+        Signal unit has to be compatible with Volts
+
+        :return: Weighted spectrum
+        :rtype: measpy.signal.Spectral        
+        """
         return self.unit_to(Unit(PREF)).similar(
             values=20*np.log10(np.abs(self._values)/DBVREF.v),
             desc=add_step(self.desc, 'dBV')
         )
 
     def dBu(self):
+        """
+        Convert to dB dBu
+        Signal unit has to be compatible with Volts
+
+        :return: Weighted spectrum
+        :rtype: measpy.signal.Spectral        
+        """
         return self.unit_to(Unit(PREF)).similar(
             values=20*np.log10(np.abs(self._values)/DBUREF.v),
             desc=add_step(self.desc, 'dBu')
@@ -1535,11 +1586,16 @@ class Spectral:
         """ Compute frequency derivative
 
         :return: Frequency derivative of spectral (unit/Hz)
-        :rtype: measpy.signal
+        :rtype: measpy.signal.Spectral
         """
         return self.similar(values=np.diff(self.values)*self.dur, unit=self.unit/Unit('Hz'), desc=add_step(self.desc, 'diff'))
 
     def group_delay(self):
+        """ Compute group delay
+
+        :return: Group delay (s)
+        :rtype: measpy.signal.Spectral
+        """
         return self.similar(
             values=(self.angle().diff()/(-2)/np.pi).values,
             unit='s',
@@ -1547,12 +1603,22 @@ class Spectral:
         )
 
     def real(self):
+        """ Real part
+
+        :return: Real part (same unit)
+        :rtype: measpy.signal.Spectral
+        """
         return self.similar(
             values=np.real(self.values),
             desc=add_step(self.desc, "Real part")
         )
 
     def imag(self):
+        """ Imaginary part
+
+        :return: Real part (same unit)
+        :rtype: measpy.signal.Spectral
+        """
         return self.similar(
             values=np.real(self.values),
             desc=add_step(self.desc, "Imaginary part")
