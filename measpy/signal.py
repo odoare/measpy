@@ -570,11 +570,28 @@ class Signal:
                                 odd=odd)
 
     def tfe_welch(self, x, **kwargs):
-        """ Compute transfer function between signal x and the actual signal
+        """ Compute transfer function between signal x and the actual signal. Optional parameters are the same as scipy.signal.csd or scipy.signal.welch
 
-            :param x: Other signal from which the transfert function is computed
-            :type x: measpy.signal.Signal
-            :param **kwargs: Same parameters as scipy.welch or scipy.csd
+        :param x: Other signal from which the transfert function is computed
+        :type x: measpy.signal.Signal
+        :param window: Window function type, default 'hann'
+        :type window: str, optional
+        :param nperseg: Length of each segment. Defaults to the power of two closest to one second duration, so that the frequency spacing is approx. 1Hz.
+        :type nperseg: int, optional
+        :param noverlap: Number of points to overlap between segments. If None, noverlap = nperseg // 2. Defaults to None.
+        :type noverlab: int, optional
+        :param nfft: Length of the FFT used, if a zero padded FFT is desired. If None, the FFT length is nperseg. Defaults to None.
+        :type nfft: int or None, optional
+        :param detrend: Specifies how to detrend each segment. If detrend is a string, it is passed as the type argument to the detrend function. If it is a function, it takes a segment and returns a detrended segment. If detrend is False, no detrending is done. Defaults to ‘constant’.
+        :type detrend: str or function or False, optional
+        :param return_onesided: If True, return a one-sided spectrum for real data. If False return a two-sided spectrum. Defaults to True, but for complex data, a two-sided spectrum is always returned. Defaults to True.
+        :type return_onesided: bool, optional
+        :param scaling: Selects between computing the power spectral density (‘density’) where Pxx has units of V**2/Hz and computing the power spectrum (‘spectrum’) where Pxx has units of V**2, if x is measured in V and fs is measured in Hz. Defaults to ‘density’
+        :type scaling: str, optional
+        :param average: Method to use when averaging periodograms. Defaults to ‘mean’.
+        :type average: str, optional
+
+        :return: A Spectral object
         """
         if self.fs!=x.fs:
             raise Exception('Sampling frequencies have to be the same')
@@ -598,8 +615,27 @@ class Signal:
     def coh(self, x, **kwargs):
         """ Compute the coherence between signal x and the actual signal
 
-            :param x: Other signal to compute the coherence with
-            :type x: measpy.signal.Signal
+        :param x: Other signal to compute the coherence with
+        :type x: measpy.signal.Signal
+        :param window: Window function type, default 'hann'
+        :type window: str, optional
+        :param nperseg: Length of each segment. Defaults to the power of two closest to one second duration, so that the frequency spacing is approx. 1Hz.
+        :type nperseg: int, optional
+        :param noverlap: Number of points to overlap between segments. If None, noverlap = nperseg // 2. Defaults to None.
+        :type noverlab: int, optional
+        :param nfft: Length of the FFT used, if a zero padded FFT is desired. If None, the FFT length is nperseg. Defaults to None.
+        :type nfft: int or None, optional
+        :param detrend: Specifies how to detrend each segment. If detrend is a string, it is passed as the type argument to the detrend function. If it is a function, it takes a segment and returns a detrended segment. If detrend is False, no detrending is done. Defaults to ‘constant’.
+        :type detrend: str or function or False, optional
+        :param return_onesided: If True, return a one-sided spectrum for real data. If False return a two-sided spectrum. Defaults to True, but for complex data, a two-sided spectrum is always returned. Defaults to True.
+        :type return_onesided: bool, optional
+        :param scaling: Selects between computing the power spectral density (‘density’) where Pxx has units of V**2/Hz and computing the power spectrum (‘spectrum’) where Pxx has units of V**2, if x is measured in V and fs is measured in Hz. Defaults to ‘density’
+        :type scaling: str, optional
+        :param average: Method to use when averaging periodograms. Defaults to ‘mean’.
+        :type average: str, optional
+
+        :return: A Spectral object
+
         """
         if self.fs!=x.fs:
             raise Exception('Sampling frequencies have to be the same')
@@ -619,7 +655,24 @@ class Signal:
             Optional arguments are the same as the welch function
             in scipy.signal
 
-            Arguments are the same as scipy.welch()
+            Optional arguments are the same as scipy.welch()
+
+            :param window: Window function type, default 'hann'
+            :type window: str, optional
+            :param nperseg: Length of each segment. Defaults to the power of two closest to one second duration, so that the frequency spacing is approx. 1Hz.
+            :type nperseg: int, optional
+            :param noverlap: Number of points to overlap between segments. If None, noverlap = nperseg // 2. Defaults to None.
+            :type noverlab: int, optional
+            :param nfft: Length of the FFT used, if a zero padded FFT is desired. If None, the FFT length is nperseg. Defaults to None.
+            :type nfft: int or None, optional
+            :param detrend: Specifies how to detrend each segment. If detrend is a string, it is passed as the type argument to the detrend function. If it is a function, it takes a segment and returns a detrended segment. If detrend is False, no detrending is done. Defaults to ‘constant’.
+            :type detrend: str or function or False, optional
+            :param return_onesided: If True, return a one-sided spectrum for real data. If False return a two-sided spectrum. Defaults to True, but for complex data, a two-sided spectrum is always returned. Defaults to True.
+            :type return_onesided: bool, optional
+            :param scaling: Selects between computing the power spectral density (‘density’) where Pxx has units of V**2/Hz and computing the power spectrum (‘spectrum’) where Pxx has units of V**2, if x is measured in V and fs is measured in Hz. Defaults to ‘density’
+            :type scaling: str, optional
+            :param average: Method to use when averaging periodograms. Defaults to ‘mean’.
+            :type average: str, optional
 
             Returns : A Spectral object containing the psd
         """ 
@@ -654,8 +707,6 @@ class Signal:
             fs=self.fs,
             full=False
         )
-
-
 
     #######################################################################
     # Classmethods
@@ -1887,7 +1938,6 @@ class Spectral:
         if (type(x)!=Signal) & (type(y)!=Signal):
             raise Exception('x and y inputs have to be Signal')      
         return y.tfe_welch(x,**kwargs)
-    
 
     #####################################################################
     # Properties
