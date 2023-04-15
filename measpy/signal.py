@@ -1380,6 +1380,10 @@ class Spectral:
         self.norm = norm
         self.odd = odd
 
+    #####################################################################
+    # Methods returning a Spectral object
+    #####################################################################
+    
     def similar(self,**kwargs):
         """ Returns a copy of the Spectral object
             with properties changed as specified
@@ -1416,6 +1420,179 @@ class Spectral:
             spp = csaps(w.freqs, w.phase, smooth=0.9)
             out.values=spa(self.freqs)*np.exp(1j*spp(self.freqs))
         return out
+
+    def nth_oct_smooth(self,n,fmin=5,fmax=20000):
+        """ Nth octave smoothing
+            Works on real valued spectra. For complex values,
+            use nth_oct_smooth_complex.
+
+            :param n: Ratio of smoothing (1/nth smoothing), defaults to 3
+            :type n: int, optionnal
+            :param fmin: Min value of the output frequencies, defaults to 5
+            :type fmin: float, int, optionnal
+            :param fmax: Max value of the output frequencies, defaults to 20000
+            :type fmax: float, int, optionnal
+            :return: A smoothed spectral object
+            :rtype: measpy.signal.Spectral
+        """
+        return self.similar(
+            w=self.nth_oct_smooth_to_weight(n,fmin=fmin,fmax=fmax),
+            desc=add_step(self.desc,'1/'+str(n)+'th oct. smooth')
+        ).filterout((fmin,fmax))
+
+    def nth_oct_smooth_complex(self,n,fmin=5,fmax=20000):
+        """ Nth octave smoothing
+            Complex signal version 
+
+            :param n: Ratio of smoothing (1/nth smoothing), defaults to 3
+            :type n: int, optionnal
+            :param fmin: Min value of the output frequencies, defaults to 5
+            :type fmin: float, int, optionnal
+            :param fmax: Max value of the output frequencies, defaults to 20000
+            :type fmax: float, int, optionnal
+            :return: A smoothed spectral object
+            :rtype: measpy.signal.Spectral
+        """
+        return self.similar(
+            w=self.nth_oct_smooth_to_weight_complex(n,fmin=fmin,fmax=fmax),
+            desc=add_step(self.desc,'1/'+str(n)+'th oct. smooth')
+        ).filterout((fmin,fmax))
+
+    def filterout(self,freqsrange):
+        """ Cancels values below and above a given frequency
+            Returns a Spectral class object
+        """
+        return self.similar(
+            values=self._values*(
+                (self.freqs>freqsrange[0]) & (self.freqs<freqsrange[1]))
+            )
+
+    def apply_weighting(self,w,inverse=False):
+        if inverse:
+            return self*(1/self.similar(w=w,unit=Unit('1'),desc=w.desc))
+        else:
+            return self*self.similar(w=w,unit=Unit('1'),desc=w.desc)
+
+    def unit_to(self,unit):
+        if type(unit)==str:
+            unit=Unit(unit)
+        if not self.unit.same_dimensions_as(unit):
+            raise Exception('Incompatible units')
+        a=self.unit.get_conversion_factor(unit)[0]
+        return self.similar(
+            values=a*self.values,
+            desc=add_step(self.desc,'Unit to '+str(unit))
+        )  
+    
+    def apply_dBA(self):
+        #w = Weighting.from_csv('measpy/data/dBA.csv')
+        return self.apply_weighting(WDBA)
+
+    def apply_dBC(self):
+        #w = Weighting.from_csv('measpy/data/dBC.csv')
+        return self.apply_weighting(WDBC)
+
+    def dB_SPL(self):
+        return self.unit_to(Unit(PREF)).similar(
+            values=20*np.log10(np.abs(self._values)/PREF.v),
+            desc=add_step(self.desc,'dB SPL')
+        )
+
+    def dB_SVL(self):
+        return self.unit_to(Unit(VREF)).similar(
+            values=20*np.log10(np.abs(self._values)/VREF.v),
+            desc=add_step(self.desc,'dB SVL')
+        )
+
+    def dBV(self):
+        return self.unit_to(Unit(PREF)).similar(
+            values=20*np.log10(np.abs(self._values)/DBVREF.v),
+            desc=add_step(self.desc,'dBV')
+        )
+    
+    def dBu(self):
+        return self.unit_to(Unit(PREF)).similar(
+            values=20*np.log10(np.abs(self._values)/DBUREF.v),
+            desc=add_step(self.desc,'dBu')
+        )
+
+    def diff(self):
+        """ Compute frequency derivative
+
+        :return: Frequency derivative of spectral (unit/Hz)
+        :rtype: measpy.signal
+        """
+        return self.similar(values=np.diff(self.values)*self.dur,unit=self.unit/Unit('Hz'),desc=add_step(self.desc,'diff'))
+
+    def group_delay(self):
+        return self.similar(
+            values=(self.angle().diff()/(-2)/np.pi).values,
+            unit='s',
+            desc='Group delay of '+self.desc
+        )
+    def real(self):
+        return self.similar(
+            values=np.real(self.values),
+            desc=add_step(self.desc,"Real part")
+        )
+
+    def imag(self):
+        return self.similar(
+            values=np.real(self.values),
+            desc=add_step(self.desc,"Imaginary part")
+        )
+
+    def angle(self,unwrap=True):
+        """ Compute the angle of the spectrum
+
+        :param unwrap: If True, the angle data is unwrapped
+        :type unwrap: bool
+
+        :return: The angle part of the signal, unit=rad
+        :rtype: measpy.signal  
+
+        """
+        vals = np.angle(self.values)
+        if unwrap:
+            vals = np.unwrap(vals)
+            desc = add_step(self.desc,"Angle (unwraped)")
+        else:
+            desc = add_step(self.desc,"Angle")
+        return self.similar(
+            values=vals,
+            desc=desc,
+            unit = 'rad'
+        )
+    
+    #####################################################################
+    # Mehtods returning a Signal
+    #####################################################################
+    
+    def irfft(self,l=None):
+        """ Compute the real inverse Fourier transform
+            of the spectral data set
+        """
+        if self.full:
+            raise Exception('Error: the spectrum is full, use ifft instead')
+        return Signal(raw=np.fft.irfft(self.values,n=self.sample_number,norm=self.norm),
+                            desc=add_step(self.desc,'IFFT'),
+                            fs=self.fs,
+                            unit=self.unit)
+
+    def ifft(self):
+        """ Compute the inverse Fourier transform
+            of the spectral data set
+        """
+        if not(self.full):
+            raise Exception('Error: the spectrum is not full, use irfft instead')
+        return Signal(raw=np.fft.ifft(self.values,norm=self.norm),
+                            desc=add_step(self.desc,'IFFT'),
+                            fs=self.fs,
+                            unit=self.unit)
+
+    #####################################################################
+    # Mehtods returning a Weighting object
+    #####################################################################
 
     def nth_oct_smooth_to_weight(self,n=3,fmin=5,fmax=20000):
         """ Nth octave smoothing
@@ -1495,217 +1672,10 @@ class Spectral:
             desc=add_step(self.desc,'1/'+str(n)+'th oct. smooth (complex)')
         )
 
-    def nth_oct_smooth(self,n,fmin=5,fmax=20000):
-        """ Nth octave smoothing
-            Works on real valued spectra. For complex values,
-            use nth_oct_smooth_complex.
-
-            :param n: Ratio of smoothing (1/nth smoothing), defaults to 3
-            :type n: int, optionnal
-            :param fmin: Min value of the output frequencies, defaults to 5
-            :type fmin: float, int, optionnal
-            :param fmax: Max value of the output frequencies, defaults to 20000
-            :type fmax: float, int, optionnal
-            :return: A smoothed spectral object
-            :rtype: measpy.signal.Spectral
-        """
-        return self.similar(
-            w=self.nth_oct_smooth_to_weight(n,fmin=fmin,fmax=fmax),
-            desc=add_step(self.desc,'1/'+str(n)+'th oct. smooth')
-        ).filterout((fmin,fmax))
-
-    def nth_oct_smooth_complex(self,n,fmin=5,fmax=20000):
-        """ Nth octave smoothing
-            Complex signal version 
-
-            :param n: Ratio of smoothing (1/nth smoothing), defaults to 3
-            :type n: int, optionnal
-            :param fmin: Min value of the output frequencies, defaults to 5
-            :type fmin: float, int, optionnal
-            :param fmax: Max value of the output frequencies, defaults to 20000
-            :type fmax: float, int, optionnal
-            :return: A smoothed spectral object
-            :rtype: measpy.signal.Spectral
-        """
-        return self.similar(
-            w=self.nth_oct_smooth_to_weight_complex(n,fmin=fmin,fmax=fmax),
-            desc=add_step(self.desc,'1/'+str(n)+'th oct. smooth')
-        ).filterout((fmin,fmax))
-
-    def irfft(self,l=None):
-        """ Compute the real inverse Fourier transform
-            of the spectral data set
-        """
-        if self.full:
-            raise Exception('Error: the spectrum is full, use ifft instead')
-        return Signal(raw=np.fft.irfft(self.values,n=self.sample_number,norm=self.norm),
-                            desc=add_step(self.desc,'IFFT'),
-                            fs=self.fs,
-                            unit=self.unit)
-
-    def ifft(self):
-        """ Compute the inverse Fourier transform
-            of the spectral data set
-        """
-        if not(self.full):
-            raise Exception('Error: the spectrum is not full, use irfft instead')
-        return Signal(raw=np.fft.ifft(self.values,norm=self.norm),
-                            desc=add_step(self.desc,'IFFT'),
-                            fs=self.fs,
-                            unit=self.unit)
-
-    def filterout(self,freqsrange):
-        """ Cancels values below and above a given frequency
-            Returns a Spectral class object
-        """
-        return self.similar(
-            values=self._values*(
-                (self.freqs>freqsrange[0]) & (self.freqs<freqsrange[1]))
-            )
-
-    def apply_weighting(self,w,inverse=False):
-        if inverse:
-            return self*(1/self.similar(w=w,unit=Unit('1'),desc=w.desc))
-        else:
-            return self*self.similar(w=w,unit=Unit('1'),desc=w.desc)
-
-    def unit_to(self,unit):
-        if type(unit)==str:
-            unit=Unit(unit)
-        if not self.unit.same_dimensions_as(unit):
-            raise Exception('Incompatible units')
-        a=self.unit.get_conversion_factor(unit)[0]
-        return self.similar(
-            values=a*self.values,
-            desc=add_step(self.desc,'Unit to '+str(unit))
-        )  
+    #####################################################################
+    # Operators
+    #####################################################################
     
-    def apply_dBA(self):
-        #w = Weighting.from_csv('measpy/data/dBA.csv')
-        return self.apply_weighting(WDBA)
-
-    def apply_dBC(self):
-        #w = Weighting.from_csv('measpy/data/dBC.csv')
-        return self.apply_weighting(WDBC)
-
-    def dB_SPL(self):
-        return self.unit_to(Unit(PREF)).similar(
-            values=20*np.log10(np.abs(self._values)/PREF.v),
-            desc=add_step(self.desc,'dB SPL')
-        )
-
-    def dB_SVL(self):
-        return self.unit_to(Unit(VREF)).similar(
-            values=20*np.log10(np.abs(self._values)/VREF.v),
-            desc=add_step(self.desc,'dB SVL')
-        )
-
-    def dBV(self):
-        return self.unit_to(Unit(PREF)).similar(
-            values=20*np.log10(np.abs(self._values)/DBVREF.v),
-            desc=add_step(self.desc,'dBV')
-        )
-    
-    def dBu(self):
-        return self.unit_to(Unit(PREF)).similar(
-            values=20*np.log10(np.abs(self._values)/DBUREF.v),
-            desc=add_step(self.desc,'dBu')
-        )
-
-    def diff(self):
-        """ Compute frequency derivative
-
-        :return: Frequency derivative of spectral (unit/Hz)
-        :rtype: measpy.signal
-        """
-        return self.similar(values=np.diff(self.values)*self.dur,unit=self.unit/Unit('Hz'),desc=add_step(self.desc,'diff'))
-
-    def group_delay(self):
-        return self.similar(
-            values=(self.angle().diff()/(-2)/np.pi).values,
-            unit='s',
-            desc='Group delay of '+self.desc
-        )
-
-    def plot(self,ax=None,logx=True,dby=True,plot_phase=True,unwrap_phase=True,**kwargs):
-        """Plot spectral data
-
-        :param ax: Axis where to plot the data, defaults to None
-        :type ax: Axis type, optional
-        :param logx: If true, the frequency axis is in log scale, defaults to True
-        :type logx: bool, optional
-        :param dby: If true dB are plotted (20 log10 of absolute value), defaults to True
-        :type dby: bool, optional
-        :param plot_phase: If True, also plots the phase , defaults to True
-        :type plot_phase: bool, optional
-        :param unwrap_phase: If True, phase is unwrapped, defaults to True
-        :type unwrap_phase: bool, optional
-        :return: An axes type object if plotphase is False, a list of two axes objects if plotphase is True
-        :rtype: axes, or list of axes
-        """
-
-        kwargs.setdefault("label",self.desc+' ['+str(self.unit.units)+']')
-
-        if type(ax)==type(None):
-            if plot_phase:
-                _,ax = plt.subplots(2)
-                ax_0 = ax[0]
-            else:
-                _,ax = plt.subplots(1)
-                ax_0 = ax
-        else:
-            if plot_phase:
-                ax_0 = ax[0]
-            else:
-                ax_0 = ax
-
-        if dby:
-            if(self.unit == Unit("Pa")):
-                modulus_to_plot = self.dB_SPL().values
-                label = '20 Log |P|/P0'
-            elif(self.unit == Unit("m/s")):
-                modulus_to_plot = self.dB_SVL().values
-                label = '20 Log |V|/V0'
-            else:
-                modulus_to_plot = 20*np.log10(np.abs(self.values))
-                label = '20 Log |H|'
-
-            #Only keep finite values
-            valid_indices = np.isfinite(modulus_to_plot)
-
-            frequencies_to_plot = self.freqs[valid_indices]
-            modulus_to_plot = modulus_to_plot[valid_indices]
-            phase_to_plot = np.angle(self.values)[valid_indices]
-            if unwrap_phase:
-                phase_to_plot = np.unwrap(phase_to_plot)
-            
-        else:
-            modulus_to_plot = np.abs(self.values)
-
-            #Only keep positive values
-            valid_indices = np.where(modulus_to_plot > 0)
-
-            frequencies_to_plot = self.freqs[valid_indices]
-            modulus_to_plot = modulus_to_plot[valid_indices]
-            phase_to_plot = np.angle(self.values)[valid_indices]
-            if unwrap_phase:
-                phase_to_plot = np.unwrap(phase_to_plot)
-            label = '|H|'
-
-        ax_0.plot(frequencies_to_plot,modulus_to_plot,**kwargs)
-        ax_0.set_xlabel('Freq (Hz)')
-        ax_0.set_ylabel(label)       
-        if logx:
-            ax_0.set_xscale('log')
-        if plot_phase:
-            ax[1].plot(frequencies_to_plot,phase_to_plot,**kwargs)
-            ax[1].set_ylabel('Phase')
-            ax[1].set_xlabel('Freq (Hz)')
-            if logx:
-                ax[1].set_xscale('log')
-        return ax
-        
-
     def _add(self,other):
         """Add two spectra
 
@@ -1908,11 +1878,21 @@ class Spectral:
         """Absolute value """
         return self._abs()
 
+    #####################################################################
+    # Classmethods
+    #####################################################################
+    
     @classmethod
     def tfe(cls,x,y,**kwargs):
         if (type(x)!=Signal) & (type(y)!=Signal):
             raise Exception('x and y inputs have to be Signal')      
         return y.tfe_welch(x,**kwargs)
+    
+
+    #####################################################################
+    # Properties
+    #####################################################################
+    
     @property
     def values(self):
         return self._values
@@ -1942,40 +1922,10 @@ class Spectral:
         # else:
         #     return 2*(self.length-1)/self.fs
 
-    def real(self):
-        return self.similar(
-            values=np.real(self.values),
-            desc=add_step(self.desc,"Real part")
-        )
+    #####################################################################
+    # Other methods
+    #####################################################################
 
-    def imag(self):
-        return self.similar(
-            values=np.real(self.values),
-            desc=add_step(self.desc,"Imaginary part")
-        )
-
-    def angle(self,unwrap=True):
-        """ Compute the angle of the spectrum
-
-        :param unwrap: If True, the angle data is unwrapped
-        :type unwrap: bool
-
-        :return: The angle part of the signal, unit=rad
-        :rtype: measpy.signal  
-
-        """
-        vals = np.angle(self.values)
-        if unwrap:
-            vals = np.unwrap(vals)
-            desc = add_step(self.desc,"Angle (unwraped)")
-        else:
-            desc = add_step(self.desc,"Angle")
-        return self.similar(
-            values=vals,
-            desc=desc,
-            unit = 'rad'
-        )
-    
     def values_at_freqs(self,freqlist):
         """ Get a series of values of the spectral object at
             given frequencies, using interpolation
@@ -1986,6 +1936,84 @@ class Spectral:
         spamp = csaps(self.freqs, abs(self.values), smooth=0.9)
         spangle = csaps(self.freqs, self.angle().values, smooth=0.9)
         return spamp(freqlist)*np.exp(1j*spangle(freqlist))
+
+    def plot(self,ax=None,logx=True,dby=True,plot_phase=True,unwrap_phase=True,**kwargs):
+        """Plot spectral data
+
+        :param ax: Axis where to plot the data, defaults to None
+        :type ax: Axis type, optional
+        :param logx: If true, the frequency axis is in log scale, defaults to True
+        :type logx: bool, optional
+        :param dby: If true dB are plotted (20 log10 of absolute value), defaults to True
+        :type dby: bool, optional
+        :param plot_phase: If True, also plots the phase , defaults to True
+        :type plot_phase: bool, optional
+        :param unwrap_phase: If True, phase is unwrapped, defaults to True
+        :type unwrap_phase: bool, optional
+        :return: An axes type object if plotphase is False, a list of two axes objects if plotphase is True
+        :rtype: axes, or list of axes
+        """
+
+        kwargs.setdefault("label",self.desc+' ['+str(self.unit.units)+']')
+
+        if type(ax)==type(None):
+            if plot_phase:
+                _,ax = plt.subplots(2)
+                ax_0 = ax[0]
+            else:
+                _,ax = plt.subplots(1)
+                ax_0 = ax
+        else:
+            if plot_phase:
+                ax_0 = ax[0]
+            else:
+                ax_0 = ax
+
+        if dby:
+            if(self.unit == Unit("Pa")):
+                modulus_to_plot = self.dB_SPL().values
+                label = '20 Log |P|/P0'
+            elif(self.unit == Unit("m/s")):
+                modulus_to_plot = self.dB_SVL().values
+                label = '20 Log |V|/V0'
+            else:
+                modulus_to_plot = 20*np.log10(np.abs(self.values))
+                label = '20 Log |H|'
+
+            #Only keep finite values
+            valid_indices = np.isfinite(modulus_to_plot)
+
+            frequencies_to_plot = self.freqs[valid_indices]
+            modulus_to_plot = modulus_to_plot[valid_indices]
+            phase_to_plot = np.angle(self.values)[valid_indices]
+            if unwrap_phase:
+                phase_to_plot = np.unwrap(phase_to_plot)
+            
+        else:
+            modulus_to_plot = np.abs(self.values)
+
+            #Only keep positive values
+            valid_indices = np.where(modulus_to_plot > 0)
+
+            frequencies_to_plot = self.freqs[valid_indices]
+            modulus_to_plot = modulus_to_plot[valid_indices]
+            phase_to_plot = np.angle(self.values)[valid_indices]
+            if unwrap_phase:
+                phase_to_plot = np.unwrap(phase_to_plot)
+            label = '|H|'
+
+        ax_0.plot(frequencies_to_plot,modulus_to_plot,**kwargs)
+        ax_0.set_xlabel('Freq (Hz)')
+        ax_0.set_ylabel(label)       
+        if logx:
+            ax_0.set_xscale('log')
+        if plot_phase:
+            ax[1].plot(frequencies_to_plot,phase_to_plot,**kwargs)
+            ax[1].set_ylabel('Phase')
+            ax[1].set_xlabel('Freq (Hz)')
+            if logx:
+                ax[1].set_xscale('log')
+        return ax
 
     # END of Spectral
 
