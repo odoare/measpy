@@ -298,11 +298,15 @@ class Signal:
         """ Cut signal between positions.
 
             :param pos: Start and stop positions of the new signal, given as indices, defaults to (0,-1)
-            :type pos: tuple of int, optionnal
+            :type pos: tuple of int, optional
             :param dur: Start and stop positions of the new signal, given as time values
-            :type dur: tuple of float, optionnal
+            :type dur: tuple of float, optional
 
-            pos and dur cannot be both specified
+            pos and dur cannot be both specified. An exception is raised in that case.
+
+            Negative values are possible, as well as values beyond the end of the signal. The signal is looped in that case.
+
+            pos[1] can be lower that pos[0], in that case, the signal is reversed.
         """
         if ('dur' in kwargs) and ('pos' in kwargs):
             raise Exception('Error: dur and pos cannot be both specified')
@@ -314,7 +318,7 @@ class Signal:
         else:
             pos = (0, -1)
         return self.similar(
-            raw=np.take(self.raw, list(range(pos[0], pos[1])), mode='wrap'),
+            raw=np.take(self.raw, range(pos[0], pos[1], np.sign(pos[1]-pos[0])), mode='wrap'),
             desc=add_step(self.desc, "Cut between " +
                           str(pos[0])+" and "+str(pos[1]))
         )
@@ -1979,6 +1983,16 @@ class Spectral:
 
     @classmethod
     def tfe(cls, x, y, **kwargs):
+        """
+        Initializes a spectral object by computing the transfer function between two signals of same sampling frequency and length. Optional arguments are the same as measpy.Signal.tfe_welch
+
+        :param x: Input signal
+        :type x: measpy.Signal.signal
+        :param y: Output signal
+        :type y: measpy.Signal.signal
+        :return: A spectral object
+        :rtype: measpy.Signal.spectral
+        """
         if (type(x) != Signal) & (type(y) != Signal):
             raise Exception('x and y inputs have to be Signal')
         return y.tfe_welch(x, **kwargs)
@@ -1989,6 +2003,9 @@ class Spectral:
 
     @property
     def values(self):
+        """
+        Values as 1D numpy array
+        """
         return self._values
 
     @values.setter
@@ -1997,6 +2014,9 @@ class Spectral:
 
     @property
     def freqs(self):
+        """
+        Frequencies as 1D numpy array. If the property full=True, max frequency is fs. If full=False, max frequency is fs/2 or fs*(n-1)/(2n) if the sample_number is even or odd respectively.
+        """
         if self.full:
             return np.fft.fftfreq(self.sample_number, 1/self.fs)
         else:
@@ -2004,10 +2024,16 @@ class Spectral:
 
     @property
     def length(self):
+        """
+        Length of the spectral data (i.e. number of elements in its array values or freqs properties)
+        """
         return len(self._values)
 
     @property
     def sample_number(self):
+        """
+        Number of samples of the signal in time domain that corresponds to this spectral object. If the property full=True, sample_number=length. If full=False (half spectrum of a real signal), the number of samples depends on the odd property.
+        """
         if self.full:
             return self.length
         else:
@@ -2015,6 +2041,9 @@ class Spectral:
 
     @property
     def dur(self):
+        """
+        Duration of the signal in time domain that corresponds to this spectral object.
+        """
         return self.sample_number/self.fs
 
     #####################################################################
