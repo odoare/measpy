@@ -106,6 +106,7 @@ def ps2000_run_measurement(M):
     else:
         enabledB = False
         rangeB = ps2000.PS2000_VOLTAGE_RANGE['PS2000_10V']
+        couplingB = 'PICO_DC'
         print('Channel B: disabled')
 
     def get_overview_buffers(buffers, _overflow, _triggered_at, _triggered, _auto_stop, n_values):
@@ -176,10 +177,15 @@ def ps2000_run_measurement(M):
 
         for i in range(len(M.in_map)):
             if M.in_map[i] == 1:
-                M.data[M.in_name[i]].raw = decimate(np.double(adc_to_mv(adc_valuesA, rangeA)[:])/1000,M.upsampling_factor,ftype='fir')[0:int(round(M.dur*M.fs))]
+                if M.upsampling_factor > 1:
+                    M.data[M.in_name[i]].raw = decimate(np.double(adc_to_mv(adc_valuesA, rangeA)[:])/1000,M.upsampling_factor,ftype='fir')[0:int(round(M.dur*M.fs))]
+                else:
+                    M.data[M.in_name[i]].raw = (np.double(adc_to_mv(adc_valuesA, rangeA)[:])/1000)[0:int(round(M.dur*M.fs))]
             elif M.in_map[i] == 2:
-                M.data[M.in_name[i]].raw = decimate(np.double(adc_to_mv(adc_valuesB, rangeB)[:])/1000,M.upsampling_factor,ftype='fir')[0:int(round(M.dur*M.fs))]
-
+                if M.upsampling_factor > 1:
+                    M.data[M.in_name[i]].raw = decimate(np.double(adc_to_mv(adc_valuesB, rangeB)[:])/1000,M.upsampling_factor,ftype='fir')[0:int(round(M.dur*M.fs))]
+                else:
+                    M.data[M.in_name[i]].raw = (np.double(adc_to_mv(adc_valuesB, rangeB)[:])/1000)[0:int(round(M.dur*M.fs))]
 
 def ps4000_run_measurement(M):
     """
