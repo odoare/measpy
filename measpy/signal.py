@@ -670,8 +670,7 @@ class Signal:
 
     def tfe_farina(self, freqs):
         """ Compute the transfer function between x and the actual signal
-            where x is a log sweep of same duration between freqs[0] and
-            freq[1]
+            where x is a log sweep of same duration between freqs[0] and freqs[1]
         """
         leng = int(2**np.ceil(np.log2(self.length)))
         Y = np.fft.rfft(self.values, leng)/self.fs
