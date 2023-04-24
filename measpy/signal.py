@@ -479,7 +479,7 @@ class Signal:
         :rtype: measpy.Signal
         """
 
-        return (self/self.max()).similar(desc=add_step(self.desc, "Normalize"))
+        return (self/self.max).similar(desc=add_step(self.desc, "Normalize"))
 
     def diff(self):
         """ Compute time derivative
