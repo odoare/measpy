@@ -224,6 +224,23 @@ class Signal:
             cal=1.0,
             dbfs=1.0
         )
+    
+    def smooth(self, nperseg=512):
+        """ Compute the RMS of the Signal over windows
+            of width nperseg samples
+
+            :param nperseg: Window size, defaults to 512
+            :type nperseg: int, optionnal
+            :return: A resampled signal
+            :rtype: measpy.signal.Signal       
+        """
+        return self.similar(
+            values=smooth(self.values, nperseg),
+            desc=add_step(self.desc, 'Smoothed on ' +
+                          str(nperseg)+' data points'),
+            cal=1.0,
+            dbfs=1.0
+        )
 
     def dB(self, ref):
         """ Computes 20*log10(self.values/ref)
