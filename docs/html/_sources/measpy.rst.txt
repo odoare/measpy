@@ -28,6 +28,14 @@ measpy.ni module
    :undoc-members:
    :show-inheritance:
 
+measpy.pico module
+----------------
+
+.. automodule:: measpy.pico
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 measpy.signal module
 --------------------
 

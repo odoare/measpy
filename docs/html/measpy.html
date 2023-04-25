@@ -88,6 +88,14 @@
 <li class="toctree-l3"><a class="reference internal" href="#measpy.ni.ni_run_measurement"><code class="docutils literal notranslate"><span class="pre">ni_run_measurement()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="#measpy-pico-module">measpy.pico module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#measpy.pico.findindex"><code class="docutils literal notranslate"><span class="pre">findindex()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#measpy.pico.ps2000_plot"><code class="docutils literal notranslate"><span class="pre">ps2000_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#measpy.pico.ps2000_run_measurement"><code class="docutils literal notranslate"><span class="pre">ps2000_run_measurement()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#measpy.pico.ps4000_plot"><code class="docutils literal notranslate"><span class="pre">ps4000_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#measpy.pico.ps4000_run_measurement"><code class="docutils literal notranslate"><span class="pre">ps4000_run_measurement()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#module-measpy.signal">measpy.signal module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#measpy.signal.Signal"><code class="docutils literal notranslate"><span class="pre">Signal</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.abs"><code class="docutils literal notranslate"><span class="pre">Signal.abs()</span></code></a></li>
@@ -128,6 +136,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.rms_smooth"><code class="docutils literal notranslate"><span class="pre">Signal.rms_smooth()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.similar"><code class="docutils literal notranslate"><span class="pre">Signal.similar()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.sine"><code class="docutils literal notranslate"><span class="pre">Signal.sine()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.smooth"><code class="docutils literal notranslate"><span class="pre">Signal.smooth()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.spectrogram"><code class="docutils literal notranslate"><span class="pre">Signal.spectrogram()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.tfe_farina"><code class="docutils literal notranslate"><span class="pre">Signal.tfe_farina()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.tfe_welch"><code class="docutils literal notranslate"><span class="pre">Signal.tfe_welch()</span></code></a></li>
@@ -468,6 +477,103 @@ units using the calibration and dbfs properties</p>
 <dt class="sig sig-object py" id="measpy.ni.ni_run_measurement">
 <span class="sig-prename descclassname"><span class="pre">measpy.ni.</span></span><span class="sig-name descname"><span class="pre">ni_run_measurement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.ni.ni_run_measurement" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
+
+</section>
+<section id="measpy-pico-module">
+<h2>measpy.pico module<a class="headerlink" href="#measpy-pico-module" title="Permalink to this heading"></a></h2>
+<span class="target" id="module-measpy.pico"></span><dl class="py function">
+<dt class="sig sig-object py" id="measpy.pico.findindex">
+<span class="sig-prename descclassname"><span class="pre">measpy.pico.</span></span><span class="sig-name descname"><span class="pre">findindex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">l</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.pico.findindex" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="measpy.pico.ps2000_plot">
+<span class="sig-prename descclassname"><span class="pre">measpy.pico.</span></span><span class="sig-name descname"><span class="pre">ps2000_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotbuffersize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">updatetime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.pico.ps2000_plot" title="Permalink to this definition"></a></dt>
+<dd><p>Realtime plot of signal and spectrum</p>
+<dl class="simple">
+<dt>This function needs M to contain the following properties:</dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt>in_range<span class="classifier">a list of strings specifying the voltage range.</span></dt><dd><p>Possible voltage ranges are “10MV”, “20MV”, “50MV”, “100MV”,
+“200MV”, “500MV”, “1V”, “2V”, “5V”, “10V”, “20V”, “50V”, “100V”</p>
+</dd>
+</dl>
+</li>
+<li><p>upsampling_factor : upsampling factor</p></li>
+<li><dl class="simple">
+<dt>in_coupling<span class="classifier">Coupling configuration of the channels.</span></dt><dd><p>Can be “ac” or “dc”</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="measpy.pico.ps2000_run_measurement">
+<span class="sig-prename descclassname"><span class="pre">measpy.pico.</span></span><span class="sig-name descname"><span class="pre">ps2000_run_measurement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.pico.ps2000_run_measurement" title="Permalink to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>This function needs M to contain the following properties:</dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt>in_range<span class="classifier">a list of strings specifying the voltage range.</span></dt><dd><p>Possible voltage ranges are “10MV”, “20MV”, “50MV”, “100MV”,
+“200MV”, “500MV”, “1V”, “2V”, “5V”, “10V”, “20V”, “50V”, “100V”</p>
+</dd>
+</dl>
+</li>
+<li><p>upsampling_factor : upsampling factor</p></li>
+<li><dl class="simple">
+<dt>in_coupling<span class="classifier">Coupling configuration of the channels.</span></dt><dd><p>Can be “ac” or “dc”</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="measpy.pico.ps4000_plot">
+<span class="sig-prename descclassname"><span class="pre">measpy.pico.</span></span><span class="sig-name descname"><span class="pre">ps4000_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotbuffersize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">updatetime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.pico.ps4000_plot" title="Permalink to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>This function needs M to contain the following properties:</dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt>in_range<span class="classifier">a list of strings specifying the voltage range.</span></dt><dd><p>Possible voltage ranges are “10MV”, “20MV”, “50MV”, “100MV”,
+“200MV”, “500MV”, “1V”, “2V”, “5V”, “10V”, “20V”, “50V”, “100V”</p>
+</dd>
+</dl>
+</li>
+<li><p>upsampling_factor : upsampling factor</p></li>
+<li><dl class="simple">
+<dt>in_coupling<span class="classifier">Coupling configuration of the channels.</span></dt><dd><p>Can be “ac” or “dc”</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="measpy.pico.ps4000_run_measurement">
+<span class="sig-prename descclassname"><span class="pre">measpy.pico.</span></span><span class="sig-name descname"><span class="pre">ps4000_run_measurement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.pico.ps4000_run_measurement" title="Permalink to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>This function needs M to contain the following properties:</dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt>in_range<span class="classifier">a list of strings specifying the voltage range.</span></dt><dd><p>Possible voltage ranges are “10MV”, “20MV”, “50MV”, “100MV”,
+“200MV”, “500MV”, “1V”, “2V”, “5V”, “10V”, “20V”, “50V”, “100V”</p>
+</dd>
+</dl>
+</li>
+<li><p>upsampling_factor : upsampling factor</p></li>
+<li><dl class="simple">
+<dt>in_coupling<span class="classifier">Coupling configuration of the channels.</span></dt><dd><p>Can be “ac” or “dc”</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 </section>
 <section id="module-measpy.signal">
@@ -1060,6 +1166,24 @@ only volts is taken into account.</p>
 <dt class="sig sig-object py" id="measpy.signal.Signal.sine">
 <em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">44100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dur</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dbfs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.sine" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="measpy.signal.Signal.smooth">
+<span class="sig-name descname"><span class="pre">smooth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nperseg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">512</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.smooth" title="Permalink to this definition"></a></dt>
+<dd><p>Compute the RMS of the Signal over windows
+of width nperseg samples</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>nperseg</strong> (<em>int</em><em>, </em><em>optionnal</em>) – Window size, defaults to 512</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A resampled signal</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#measpy.signal.Signal" title="measpy.signal.Signal">measpy.signal.Signal</a></p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Signal.spectrogram">

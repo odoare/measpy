@@ -1,5 +1,5 @@
 # measpy - Measurements with Python
-
+(c) 2020-2023 Olivier Doaré
 Contact: olivier.doare@ensta-paris.fr
 
 measpy is a set of classes and methods to help data acquisition with DAQ cards or sound cards and analysis of signals. It is mainly acoustics and vibrations oriented.
@@ -13,7 +13,8 @@ The base classes are:
 For now, these daq devices are implemented :
 - Audio cards, via the ```sounddevice``` package,
 - NI DAQ cards, via the ```nidaqmx``` package.
-
+- Picoscope scopes, via the ```picosdk-python-wrappers``` package.
+    
 To import the package and perform data acquisition with sound cards:
 ```python
 import measpy as mp
@@ -40,7 +41,7 @@ print(l)
 ## TODO
 
 Things to improve, implement, fix:
-- New processing methods have to be implemented (e.g. Hilbert Transform, more filters, FIR, etc.)
+- New processing methods have to be implemented (e.g. FIR, convolution, etc.)
 - Improve plotting methods
 - Other In/Out synchronization methods (for now a method using a peak sync before measurement is implemented)
 - More documentation

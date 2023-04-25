@@ -6,7 +6,7 @@ from datetime import datetime
 
 now = datetime.now()
 VERSION = 'git'+now.strftime("%Y%m%d")
-VERSION = '0.0.13'
+VERSION = '0.0.14'
 DESCRIPTION = 'Measurements with Python'
 LONG_DESCRIPTION = """
     measpy is a set of classes and methods to help the data acquisition and analysis of signals. It is mainly acoustics and vibrations oriented. This package is very recent, it is still incomplete and many bugs may appear.
@@ -18,10 +18,12 @@ LONG_DESCRIPTION = """
     - ```Measurement``` : A class that describe a data acquisition process, its outputs (Signal objects), its inputs (Signal objects)...
     - ```Weighting``` : Weighting spectral functions (Not yet fully test/functionnal)
 
-    For now, these daq devices are implemented :
+    For now, these daq devices can be used :
 
     - Audio cards, via the ```sounddevice``` package,
     - NI DAQ cards, via the ```nidaqmx``` package.
+    - Picoscope scopes, via the ```picosdk-python-wrappers``` package.
+    
     """
 
 # Setting up
