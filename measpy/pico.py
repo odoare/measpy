@@ -501,7 +501,7 @@ def ps4000_plot(M,plotbuffersize=2000,updatetime=0.1):
     global nextSample, autoStopOuter, wasCalledBack
 
     # Buffer size fixed to 20k samples
-    sizeOfOneBuffer = 100_000
+    sizeOfOneBuffer = 20_000
 
     # Effective sampling frequency
     # If upsampling is > 1, the actual data acquisition is
@@ -585,6 +585,7 @@ def ps4000_plot(M,plotbuffersize=2000,updatetime=0.1):
             M.in_coupling[indB]='dc'
     else:
         enabledB = False
+        couplingB = 1
         rangeB = ps4000.PS4000_RANGE['PS4000_10V']
         print('Channel B: disabled')
 
@@ -667,7 +668,7 @@ def ps4000_plot(M,plotbuffersize=2000,updatetime=0.1):
         sourceEnd = startIndex + noOfSamples
         timesincelastupdate += noOfSamples/M.fs
         plotbuffer=np.roll(plotbuffer,int(-noOfSamples),axis=0)
-        plotbuffer[-noOfSamples:] = (np.array(adc_to_mv(bufferAMax[startIndex:sourceEnd],rangeA,maxADC))/1000)
+        plotbuffer[-noOfSamples:] = (np.array(adc2mV(bufferAMax[startIndex:sourceEnd],rangeA,maxADC))/1000)
         if timesincelastupdate > updtime:
             linet.set_ydata(plotbuffer)
             linef.set_ydata(np.abs(np.fft.fft(plotbuffer*np.hanning(plotbuffersize),norm='ortho')))
@@ -685,7 +686,7 @@ def ps4000_plot(M,plotbuffersize=2000,updatetime=0.1):
     cFuncPtr = ps4000.StreamingReadyType(streaming_callback)
 
     # Fetch data from the driver in a loop, copying it out of the registered buffers and into our complete one.
-    while nextSample < totalSamples and not autoStopOuter:
+    while nextSample < totalSamples and not autoStopOuter and not stop:
         wasCalledBack = False
         status["getStreamingLastestValues"] = ps4000.ps4000GetStreamingLatestValues(chandle, cFuncPtr, None)
         if not wasCalledBack:
@@ -704,15 +705,15 @@ def ps4000_plot(M,plotbuffersize=2000,updatetime=0.1):
     # # Create time data
     # time = np.linspace(0, (totalSamples - 1) * actualSampleIntervalNs, totalSamples)
 
-    # # Stop the scope
-    # # handle = chandle
-    # status["stop"] = ps4000.ps4000Stop(chandle)
-    # assert_pico_ok(status["stop"])
+    # Stop the scope
+    # handle = chandle
+    status["stop"] = ps4000.ps4000Stop(chandle)
+    assert_pico_ok(status["stop"])
 
-    # # Disconnect the scope
-    # # handle = chandle
-    # status["close"] = ps4000.ps4000CloseUnit(chandle)
-    # assert_pico_ok(status["close"])
+    # Disconnect the scope
+    # handle = chandle
+    status["close"] = ps4000.ps4000CloseUnit(chandle)
+    assert_pico_ok(status["close"])
 
     # for i in range(len(M.in_map)):
     #     if M.in_map[i] == 1:
