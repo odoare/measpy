@@ -139,6 +139,8 @@ class Signal:
                 pass
             elif arg == 'unit':
                 self.unit = Unit(kwargs[arg])
+            elif arg == 't0':
+                self._t0 = kwargs[arg]    
             else:
                 self.__dict__[arg] = kwargs[arg]
 
@@ -198,6 +200,8 @@ class Signal:
                 pass
             elif arg == 'unit':
                 out.unit = Unit(kwargs[arg])
+            elif arg == 't0':
+                out._t0 = kwargs[arg]    
             else:
                 out.__dict__[arg] = kwargs[arg]
         for arg in kwargs:
@@ -325,6 +329,8 @@ class Signal:
             Negative values are possible, as well as values beyond the end of the signal. The signal is looped in that case.
 
             pos[1] can be lower that pos[0], in that case, the signal is reversed.
+
+            NOTE : cut ignores the timeshift _t0 property
         """
         if ('dur' in kwargs) and ('pos' in kwargs):
             raise Exception('Error: dur and pos cannot be both specified')
@@ -861,10 +867,21 @@ class Signal:
         """
         Time values of the signal as 1D numpy array
         """
-        if hasattr(self, 't0'):
-            return create_time(self.fs, length=len(self._rawvalues))+self.t0
+        return create_time(self.fs, length=len(self._rawvalues))+self.t0
+
+    @property
+    def t0(self):
+        """
+        Time shifting of the signal (reads the t0 value if ot exists, else 0)
+        """
+        if hasattr(self, '_t0'):
+            return self._t0
         else:
-            return create_time(self.fs, length=len(self._rawvalues))
+            return 0
+    @t0.setter
+    def t0(self,val):
+        self._t0 = val
+
 
     @property
     def length(self):
@@ -1343,9 +1360,9 @@ class Signal:
         out = "measpy.Signal("
         for arg in self.__dict__.keys():
             if type(self.__dict__[arg]) == str:
-                out += arg+"='"+self.__dict__[arg]+"',"
+                out += arg+"='"+self.__dict__[arg]+"',\n"
             else:
-                out += arg+"="+str(self.__dict__[arg])+","
+                out += arg+"="+str(self.__dict__[arg])+",\n"
         out += ')'
         return out
 
