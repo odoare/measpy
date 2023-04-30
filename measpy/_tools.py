@@ -43,7 +43,7 @@ def wrap(phase):
     return np.mod((phase + np.pi), (2 * np.pi)) - np.pi
 
 def unwrap_around_index(phase,n):
-    """ Opposite of np.unwrap   
+    """ Unwraps a phase array around a specified index  
     """
     return np.hstack((np.unwrap(phase[n-1::-1])[::-1],np.unwrap(phase[n:])))
 
