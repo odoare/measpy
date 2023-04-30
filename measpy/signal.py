@@ -975,6 +975,16 @@ class Signal:
                     desc=str(other)
                 )
             )
+        if type(other) == np.ndarray:
+            return self._add(
+                self.similar(
+                    raw=other,
+                    unit='1',
+                    cal=1.0,
+                    dbfs=1.0,
+                    desc='array'
+                )
+            )
         else:
             raise Exception(
                 'Incompatible type when adding something to a Signal')
@@ -1047,6 +1057,16 @@ class Signal:
                     cal=1.0,
                     dbfs=1.0,
                     desc=str(other)
+                )
+            )
+        if type(other) == np.ndarray:
+            return self._mul(
+                self.similar(
+                    raw=other,
+                    unit='1',
+                    cal=1.0,
+                    dbfs=1.0,
+                    desc='array'
                 )
             )
         else:
