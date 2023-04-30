@@ -978,10 +978,7 @@ class Signal:
         if type(other) == np.ndarray:
             return self._add(
                 self.similar(
-                    raw=other,
-                    unit='1',
-                    cal=1.0,
-                    dbfs=1.0,
+                    value=other,
                     desc='array'
                 )
             )
