@@ -964,7 +964,6 @@ class Signal:
                     desc=str(other)
                 )
             )
-
         if type(other) == unyt.array.unyt_quantity:
             if not self.unit.same_dimensions_as(other.units):
                 raise Exception('Incompatible units in addition of sginals')
@@ -980,6 +979,14 @@ class Signal:
                 self.similar(
                     value=other,
                     desc='array'
+                )
+            )
+        if type(other) == unyt.array.unyt_array:
+            return self._add(
+                self.similar(
+                    values=other.value,
+                    unit=other.units,
+                    desc='unyt array'
                 )
             )
         else:
@@ -1064,6 +1071,14 @@ class Signal:
                     cal=1.0,
                     dbfs=1.0,
                     desc='array'
+                )
+            )
+        if type(other) == unyt.array.unyt_array:
+            return self._mul(
+                self.similar(
+                    values=other.value,
+                    unit=other.units,
+                    desc='unyt array'
                 )
             )
         else:
