@@ -2117,9 +2117,9 @@ class Spectral:
             :type freqlist:  Number or list or Numpy array
             :return: A complex number or an array of complex numbers
         """
-        spamp = csaps(self.freqs, abs(self.values), smooth=0.9)
-        spangle = csaps(self.freqs, self.angle().values, smooth=0.9)
-        return spamp(freqlist)*np.exp(1j*spangle(freqlist))
+        spamp = np.interp(freqlist,self.freqs, abs(self.values))
+        spangle = np.interp(freqlist,self.freqs, self.angle().values)
+        return spamp*np.exp(1j*spangle)
 
     def plot(self, ax=None, logx=True, dby=True, plot_phase=True, unwrap_phase=True, **kwargs):
         """Plot spectral data
