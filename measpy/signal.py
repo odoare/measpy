@@ -17,7 +17,8 @@ from scipy.signal import (welch,
                           correlate,
                           correlation_lags,
                           hilbert,
-                          spectrogram)
+                          spectrogram,
+                          convolve)
 # from scipy.interpolate import InterpolatedUnivariateSpline
 from csaps import csaps
 import scipy.io.wavfile as wav
@@ -534,6 +535,23 @@ class Signal:
             cal=1.0,
             dbfs=1.0
         )
+    
+    def convolve(self,other,**kwargs):
+        """
+        Convolution of two signals
+        """
+        if self.fs != other.fs:
+            raise Exception(
+                'Incompatible sampling frequencies in convolution of two signals')
+        return self.similar(
+            values = convolve(self.values,other.values),
+            desc = self.desc+' convolved with '+other.desc,
+            unit = self.unit*other.unit,
+            cal = 1.0,
+            dbfs = 1.0
+        )
+
+
 
     # #################################################################
     # Methods that return an object of type Spectral
@@ -1121,6 +1139,12 @@ class Signal:
         """
 
         return self.abs()
+    
+    def __matmul__(self, other):
+        """
+        @ (matmul) operator convolves two signals
+        """
+        return self.convolve(other)
 
     #####################################################################
     # Other methods
