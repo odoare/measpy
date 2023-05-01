@@ -1,4 +1,4 @@
-import measpy.signal as ms
+import measpy.sigspec as ms
 
 import numpy as np
 

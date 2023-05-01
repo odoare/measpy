@@ -1,12 +1,12 @@
 import nidaqmx
 import nidaqmx.constants as niconst
 
-import measpy.signal as ms
-
 import numpy as np
 from numpy.matlib import repmat
 
 from datetime import datetime
+
+from ._tools import picv
 
 def __n_to_ain(n):
     return 'ai'+str(n-1)
@@ -83,7 +83,7 @@ def ni_run_measurement(M):
     elif M.io_sync>0:
         if M.io_sync in M.in_map:
             nout = M.x.shape[1]
-            peaks = repmat(ms.picv(M.fs),nout,1).T
+            peaks = repmat(picv(M.fs),nout,1).T
             zers = repmat(np.zeros(int(M.fs)),nout,1).T
             outx = np.block([[peaks],[M.x],[zers]])
             effsync = True
