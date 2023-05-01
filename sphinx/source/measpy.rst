@@ -33,21 +33,21 @@ measpy.pico module
    :undoc-members:
    :show-inheritance:
 
-measpy.signal module
+measpy.sigspec module
 --------------------
 
-.. automodule:: measpy.signal
+.. automodule:: measpy.sigspec
    :members:
    :undoc-members:
    :show-inheritance:
 
-measpy.spectral module
-----------------------
+.. measpy.spectral module
+.. ----------------------
 
-.. automodule:: measpy.spectral
-   :members:
-   :undoc-members:
-   :show-inheritance:
+.. .. automodule:: measpy.spectral
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
 
 measpy.weighting module
 -----------------------
