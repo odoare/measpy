@@ -8,13 +8,13 @@ from numpy.matlib import repmat
 
 from datetime import datetime
 
-def n_to_ain(n):
+def __n_to_ain(n):
     return 'ai'+str(n-1)
-def n_to_aon(n):
+def __n_to_aon(n):
     return 'ao'+str(n-1)
 
 
-def callback(task_handle, every_n_samples_event_type,
+def _callback(task_handle, every_n_samples_event_type,
                 number_of_samples, callback_data):
     print('Every N Samples callback invoked.')
 
@@ -22,6 +22,18 @@ def callback(task_handle, every_n_samples_event_type,
 
 
 def ni_run_measurement(M):
+    """
+    Runs a measurement defined in the object of
+    the class measpy.measurement.Measurement given
+    as argument.
+
+    Once the data acquisition process is terminated,
+    the measurement object given in argument contains
+    a data property.
+
+    ```data``` is a dictionary containing the sent and
+    received signals.
+    """
     system = nidaqmx.system.System.local()
     nsamps = int(round(M.dur*M.fs))
 
@@ -96,9 +108,9 @@ def ni_run_measurement(M):
 
     # Set up the read tasks
     for i,n in enumerate(M.in_map):
-        print(n_to_ain(n))
+        print(__n_to_ain(n))
         intask.ai_channels.add_ai_voltage_chan(
-            physical_channel=M.in_device + "/" + n_to_ain(n),
+            physical_channel=M.in_device + "/" + __n_to_ain(n),
             terminal_config=niconst.TerminalConfiguration.DEFAULT,
             min_val=-M.in_range[i], max_val=M.in_range[i],
             units=niconst.VoltageUnits.VOLTS)
@@ -112,7 +124,7 @@ def ni_run_measurement(M):
         # Set up the write tasks, use the sample clock of the Analog input if possible
         for i,n in enumerate(M.out_map):   
             outtask.ao_channels.add_ao_voltage_chan(
-                physical_channel=M.out_device + "/" + n_to_aon(n), 
+                physical_channel=M.out_device + "/" + __n_to_aon(n), 
                 min_val=-M.out_range[i], max_val=M.out_range[i],
                 units=niconst.VoltageUnits.VOLTS)
       
@@ -176,6 +188,11 @@ def ni_run_measurement(M):
             n+=1
 
 def ni_get_devices():
+    """
+    Get the list of NI devices present in the system
+
+    :returns: A list of devices object
+    """
     system = nidaqmx.system.System.local()
     print(system.devices)
     return system.devices
