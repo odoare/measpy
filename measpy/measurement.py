@@ -4,10 +4,9 @@
 #
 # OD - 2021
 
-import measpy.signal as ms
 from measpy.signal import Signal
 
-from measpy._tools import csv_to_dict, convl, convl1
+from ._tools import csv_to_dict, convl, convl1, sine, log_sweep, noise, create_time
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -143,7 +142,7 @@ class Measurement:
         """
         if self.out_sig=='noise': # White noise output signal
             self.data[self.out_name[0]] = self.data[self.out_name[0]].similar(
-                volts=ms._noise(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
+                volts=noise(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
             ).fade(self.out_sig_fades).add_silence(self.extrat)
 
             if self.out_map==0:
@@ -151,7 +150,7 @@ class Measurement:
 
         elif self.out_sig=='logsweep': # Logarithmic sweep output signal
             self.data[self.out_name[0]] = self.data[self.out_name[0]].similar(
-                volts=ms._log_sweep(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
+                volts=log_sweep(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
             ).fade(self.out_sig_fades).add_silence(self.extrat)
 
             if self.out_map==0:
@@ -159,7 +158,7 @@ class Measurement:
 
         elif self.out_sig=='sine':  # Sinusoidal output signal
             self.data[self.out_name[0]] = self.data[self.out_name[0]].similar(
-                volts=ms._sine(self.fs,self.dur,self.out_amp,self.out_sig_freqs[0])
+                volts=sine(self.fs,self.dur,self.out_amp,self.out_sig_freqs[0])
             ).fade(self.out_sig_fades).add_silence(self.extrat)
         
             if self.out_map==0:
@@ -685,48 +684,7 @@ class Measurement:
     @property
     def t(self):
         """ Time array """
-        return ms.create_time(self.fs,dur=self.dur+self.extrat[0]+self.extrat[1])
-
-    # Old tfe function (deprecated)
-    def tfeb(self,nperseg=2**16,noverlap=None,plotH=False):
-        """ DEPRECATED
-            Helper function that calculates the transfer function between
-            the output channel x and all the input channels y. Works only
-            if x has only one channel.
-            If out_sig='logsweep', the method of Farina is used, Welch's
-            method is used otherwise.
-
-            Returns : 1D f array and 2D H array 
-        """
-        print('Warning: DEPRECATED')
-        if (self.out_sig=='noise') or (self.out_sig.upper().endswith('.WAV')):
-            if self.x.shape[1]>1:
-                print("tfe : This basic helper function works only if out_sig has only one channel")
-                return None, None
-            Hout = np.zeros((1+int(nperseg/2),self.y.shape[1]),dtype=complex)
-            for ii in range(self.y.shape[1]):
-                freqs, Hout[:,ii] =  ms.tfe_welch(self.x[:,0],
-                                    self.y[:,ii],
-                                    nperseg=nperseg,
-                                    noverlap=noverlap,
-                                    fs=self.fs)
-        elif self.out_sig=='logsweep':
-            #H = np.zeros_like(self.y,dtype=complex)
-            freqs, Hout = ms.tfe_farina(self.y[:,0],
-                                self.fs,
-                                self.out_sig_freqs)
-            Hout = Hout[:,None]
-            for ii in range(self.y.shape[1]-1):
-                freqs, H =  ms.tfe_farina(self.y[:,ii+1],
-                                    self.fs,
-                                    self.out_sig_freqs)
-                Hout = np.block([Hout,H[:,None]])
-        else:
-            print("tfe : This basic helper function works only if ouSig='noise' or 'logsweep'")
-            return None, None
-        if plotH:
-            ms.plot_tfe(freqs,Hout)
-        return freqs, Hout
+        return create_time(self.fs,dur=self.dur+self.extrat[0]+self.extrat[1])
 
     def tfe_xy(self,x,y,plotH=False,**kwargs):
         """ DEPRECATED
