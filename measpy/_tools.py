@@ -107,43 +107,6 @@ def noise(fs, dur, out_amp, freqs):
     s = out_amp*np.fft.irfft(fftx, leng)
     return s
 
-
-def tfe_welch(x, y, **kwargs):
-    """ Transfer function estimate (Welch's method)       
-        Arguments and defaults :
-        NFFT=None,
-        Fs=None,
-        detrend=None,
-        window=None,
-        noverlap=None,
-        pad_to=None,
-        sides=None,
-        scale_by_freq=None
-    """
-    if type(x) != type(y):
-        raise Exception(
-            'x and y must have the same type (numpy array or Signal object).')
-
-    # Set default values for welch's kwargs
-    if not "fs" in kwargs:
-        kwargs["fs"] = x.fs
-    if not "nperseg" in kwargs:
-        kwargs["nperseg"] = 2**(np.ceil(np.log2(x.fs)))
-
-    if type(x) == Signal:
-        f, p = welch(x.values_in_unit, **kwargs)
-        f, c = csd(y.values_in_unit, x.values_in_unit, **kwargs)
-        out = Spectral(desc='Transfer function between '+x.desc+' and '+y.desc,
-                       fs=x.fs,
-                       unit=y.unit+'/'+x.unit)
-        out.values = c/p
-        return out
-    else:
-        f, p = welch(x, **kwargs)
-        f, c = csd(y, x, **kwargs)
-    return f, c/p
-
-
 def log_sweep(fs, dur, out_amp, freqs):
     """ Create log sweep """
     L = (dur-1/fs)/np.log(freqs[1]/freqs[0])
@@ -151,20 +114,57 @@ def log_sweep(fs, dur, out_amp, freqs):
     s = np.sin(2*np.pi*freqs[0]*L*np.exp(t/L))
     return out_amp*s
 
-
-def tfe_farina(y, fs, freqs):
-    """ Transfer function estimate
-        Farina's method """
-    leng = int(2**np.ceil(np.log2(len(y))))
-    Y = np.fft.rfft(y, leng)/fs
-    f = np.linspace(0, fs/2, num=round(leng/2)+1)  # frequency axis
-    L = len(y)/fs/np.log(freqs[1]/freqs[0])
-    S = 2*np.sqrt(f/L)*np.exp(-1j*2*np.pi*f*L *
-                              (1-np.log(f/freqs[0])) + 1j*np.pi/4)
-    S[0] = 0j
-    H = Y*S
-    return f, H
-
 def sine(fs, dur, out_amp, freq):
     s = out_amp*np.sin(2*np.pi*create_time(fs=fs, dur=dur)*freq)
     return (s)
+
+
+# def tfe_welch(x, y, **kwargs):
+#     """ Transfer function estimate (Welch's method)       
+#         Arguments and defaults :
+#         NFFT=None,
+#         Fs=None,
+#         detrend=None,
+#         window=None,
+#         noverlap=None,
+#         pad_to=None,
+#         sides=None,
+#         scale_by_freq=None
+#     """
+#     if type(x) != type(y):
+#         raise Exception(
+#             'x and y must have the same type (numpy array or Signal object).')
+
+#     # Set default values for welch's kwargs
+#     if not "fs" in kwargs:
+#         kwargs["fs"] = x.fs
+#     if not "nperseg" in kwargs:
+#         kwargs["nperseg"] = 2**(np.ceil(np.log2(x.fs)))
+
+#     if type(x) == Signal:
+#         f, p = welch(x.values_in_unit, **kwargs)
+#         f, c = csd(y.values_in_unit, x.values_in_unit, **kwargs)
+#         out = Spectral(desc='Transfer function between '+x.desc+' and '+y.desc,
+#                        fs=x.fs,
+#                        unit=y.unit+'/'+x.unit)
+#         out.values = c/p
+#         return out
+#     else:
+#         f, p = welch(x, **kwargs)
+#         f, c = csd(y, x, **kwargs)
+#     return f, c/p
+
+
+# def tfe_farina(y, fs, freqs):
+#     """ Transfer function estimate
+#         Farina's method """
+#     leng = int(2**np.ceil(np.log2(len(y))))
+#     Y = np.fft.rfft(y, leng)/fs
+#     f = np.linspace(0, fs/2, num=round(leng/2)+1)  # frequency axis
+#     L = len(y)/fs/np.log(freqs[1]/freqs[0])
+#     S = 2*np.sqrt(f/L)*np.exp(-1j*2*np.pi*f*L *
+#                               (1-np.log(f/freqs[0])) + 1j*np.pi/4)
+#     S[0] = 0j
+#     H = Y*S
+#     return f, H
+
