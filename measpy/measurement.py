@@ -4,7 +4,7 @@
 #
 # OD - 2021
 
-from measpy.signal import Signal
+from .sigspec import Signal
 
 from ._tools import csv_to_dict, convl, convl1, sine, log_sweep, noise, create_time
 
