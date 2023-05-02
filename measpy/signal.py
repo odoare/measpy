@@ -33,7 +33,10 @@ from ._tools import (add_step,
                            smooth,
                            nth_octave_bands,
                            create_time,
-                           apply_fades)
+                           apply_fades,
+                           sine,
+                           noise,
+                           log_sweep)
 
 ##################
 ##              ##
@@ -734,7 +737,7 @@ class Signal:
     @classmethod
     def noise(cls, fs=44100, dur=2.0, amp=1.0, freqs=[20.0, 20000.0], unit='1', cal=1.0, dbfs=1.0):
         return cls(
-            raw=_noise(fs, dur, amp, freqs),
+            raw=noise(fs, dur, amp, freqs),
             fs=fs,
             unit=unit,
             cal=cal,
@@ -745,7 +748,7 @@ class Signal:
     @classmethod
     def log_sweep(cls, fs=44100, dur=2.0, amp=1.0, freqs=[20.0, 20000.0], unit='1', cal=1.0, dbfs=1.0):
         return cls(
-            raw=_log_sweep(fs, dur, amp, freqs),
+            raw=log_sweep(fs, dur, amp, freqs),
             fs=fs,
             unit=unit,
             cal=cal,
@@ -756,7 +759,7 @@ class Signal:
     @classmethod
     def sine(cls, fs=44100, dur=2.0, amp=1.0, freq=1000.0, unit='1', cal=1.0, dbfs=1.0):
         return cls(
-            raw=_sine(fs, dur, amp, freq),
+            raw=sine(fs, dur, amp, freq),
             fs=fs,
             unit=unit,
             cal=cal,
@@ -2414,79 +2417,6 @@ WDBC = Weighting(
 
 # Below are functions that may be useful (some cleaning should be done)
 
-
-def _noise(fs, dur, out_amp, freqs):
-    """ Create band-limited noise """
-    leng = int(dur*fs)
-    lengs2 = int(np.ceil(leng/2))
-    f = fs*np.arange(lengs2+1, dtype=float)/leng
-    amp = ((f > freqs[0]) & (f < freqs[1]))*np.sqrt(leng)
-    phase = 2*np.pi*(np.random.rand(lengs2+1)-0.5)
-    fftx = amp*np.exp(1j*phase)
-    s = out_amp*np.fft.irfft(fftx, leng)
-    return s
-
-
-def _tfe_welch(x, y, **kwargs):
-    """ Transfer function estimate (Welch's method)       
-        Arguments and defaults :
-        NFFT=None,
-        Fs=None,
-        detrend=None,
-        window=None,
-        noverlap=None,
-        pad_to=None,
-        sides=None,
-        scale_by_freq=None
-    """
-    if type(x) != type(y):
-        raise Exception(
-            'x and y must have the same type (numpy array or Signal object).')
-
-    # Set default values for welch's kwargs
-    if not "fs" in kwargs:
-        kwargs["fs"] = x.fs
-    if not "nperseg" in kwargs:
-        kwargs["nperseg"] = 2**(np.ceil(np.log2(x.fs)))
-
-    if type(x) == Signal:
-        f, p = welch(x.values_in_unit, **kwargs)
-        f, c = csd(y.values_in_unit, x.values_in_unit, **kwargs)
-        out = Spectral(desc='Transfer function between '+x.desc+' and '+y.desc,
-                       fs=x.fs,
-                       unit=y.unit+'/'+x.unit)
-        out.values = c/p
-        return out
-    else:
-        f, p = welch(x, **kwargs)
-        f, c = csd(y, x, **kwargs)
-    return f, c/p
-
-
-def _log_sweep(fs, dur, out_amp, freqs):
-    """ Create log sweep """
-    L = (dur-1/fs)/np.log(freqs[1]/freqs[0])
-    t = create_time(fs, dur=dur)
-    s = np.sin(2*np.pi*freqs[0]*L*np.exp(t/L))
-    return out_amp*s
-
-
-def _tfe_farina(y, fs, freqs):
-    """ Transfer function estimate
-        Farina's method """
-    leng = int(2**np.ceil(np.log2(len(y))))
-    Y = np.fft.rfft(y, leng)/fs
-    f = np.linspace(0, fs/2, num=round(leng/2)+1)  # frequency axis
-    L = len(y)/fs/np.log(freqs[1]/freqs[0])
-    S = 2*np.sqrt(f/L)*np.exp(-1j*2*np.pi*f*L *
-                              (1-np.log(f/freqs[0])) + 1j*np.pi/4)
-    S[0] = 0j
-    H = Y*S
-    return f, H
-
-def _sine(fs, dur, out_amp, freq):
-    s = out_amp*np.sin(2*np.pi*create_time(fs=fs, dur=dur)*freq)
-    return (s)
 
 
 # class Signalb(np.ndarray):

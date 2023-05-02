@@ -1,20 +1,20 @@
 import nidaqmx
 import nidaqmx.constants as niconst
 
-import measpy.signal as ms
+from ._tools import picv
 
 import numpy as np
 from numpy.matlib import repmat
 
 from datetime import datetime
 
-def n_to_ain(n):
+def _n_to_ain(n):
     return 'ai'+str(n-1)
-def n_to_aon(n):
+def _n_to_aon(n):
     return 'ao'+str(n-1)
 
 
-def callback(task_handle, every_n_samples_event_type,
+def _callback(task_handle, every_n_samples_event_type,
                 number_of_samples, callback_data):
     print('Every N Samples callback invoked.')
 
@@ -64,14 +64,14 @@ def ni_run_measurement(M):
     M.date = now.strftime("%Y-%m-%d")
     M.time = now.strftime("%H:%M:%S")
 
-    # Insert a synchronization peak at the begining of the output signals
+    # Insert a synchronization peak at the beginning of the output signals
     if M.out_sig==None:
         dursync=0
         effsync=False
     elif M.io_sync>0:
         if M.io_sync in M.in_map:
             nout = M.x.shape[1]
-            peaks = repmat(ms.picv(M.fs),nout,1).T
+            peaks = repmat(picv(M.fs),nout,1).T
             zers = repmat(np.zeros(int(M.fs)),nout,1).T
             outx = np.block([[peaks],[M.x],[zers]])
             effsync = True
@@ -96,9 +96,9 @@ def ni_run_measurement(M):
 
     # Set up the read tasks
     for i,n in enumerate(M.in_map):
-        print(n_to_ain(n))
+        print(_n_to_ain(n))
         intask.ai_channels.add_ai_voltage_chan(
-            physical_channel=M.in_device + "/" + n_to_ain(n),
+            physical_channel=M.in_device + "/" + _n_to_ain(n),
             terminal_config=niconst.TerminalConfiguration.DEFAULT,
             min_val=-M.in_range[i], max_val=M.in_range[i],
             units=niconst.VoltageUnits.VOLTS)
@@ -112,7 +112,7 @@ def ni_run_measurement(M):
         # Set up the write tasks, use the sample clock of the Analog input if possible
         for i,n in enumerate(M.out_map):   
             outtask.ao_channels.add_ao_voltage_chan(
-                physical_channel=M.out_device + "/" + n_to_aon(n), 
+                physical_channel=M.out_device + "/" + _n_to_aon(n), 
                 min_val=-M.out_range[i], max_val=M.out_range[i],
                 units=niconst.VoltageUnits.VOLTS)
       

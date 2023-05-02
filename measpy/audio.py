@@ -1,6 +1,6 @@
 import sounddevice as sd
 
-import measpy.signal as ms
+from ._tools import picv
 
 import numpy as np
 from numpy.matlib import repmat
@@ -40,7 +40,7 @@ def audio_run_measurement(M,progress=True):
     elif M.io_sync>0:
         if M.io_sync in M.in_map:
             nout = M.x_raw.shape[1]
-            peaks = repmat(ms.picv(M.fs),nout,1).T
+            peaks = repmat(picv(M.fs),nout,1).T
             zers = repmat(np.zeros(int(M.fs)),nout,1).T
             outx = np.block([[peaks],[M.x_raw],[zers]])
             effsync = True

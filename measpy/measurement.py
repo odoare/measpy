@@ -7,7 +7,7 @@
 import measpy.signal as ms
 from measpy.signal import Signal
 
-from measpy._tools import csv_to_dict, convl, convl1
+from ._tools import csv_to_dict, convl, convl1, sine, log_sweep, noise
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -143,7 +143,7 @@ class Measurement:
         """
         if self.out_sig=='noise': # White noise output signal
             self.data[self.out_name[0]] = self.data[self.out_name[0]].similar(
-                volts=ms._noise(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
+                volts=noise(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
             ).fade(self.out_sig_fades).add_silence(self.extrat)
 
             if self.out_map==0:
@@ -151,7 +151,7 @@ class Measurement:
 
         elif self.out_sig=='logsweep': # Logarithmic sweep output signal
             self.data[self.out_name[0]] = self.data[self.out_name[0]].similar(
-                volts=ms._log_sweep(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
+                volts=log_sweep(self.fs,self.dur,self.out_amp,self.out_sig_freqs)
             ).fade(self.out_sig_fades).add_silence(self.extrat)
 
             if self.out_map==0:
@@ -159,7 +159,7 @@ class Measurement:
 
         elif self.out_sig=='sine':  # Sinusoidal output signal
             self.data[self.out_name[0]] = self.data[self.out_name[0]].similar(
-                volts=ms._sine(self.fs,self.dur,self.out_amp,self.out_sig_freqs[0])
+                volts=sine(self.fs,self.dur,self.out_amp,self.out_sig_freqs[0])
             ).fade(self.out_sig_fades).add_silence(self.extrat)
         
             if self.out_map==0:
