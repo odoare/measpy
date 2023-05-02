@@ -1,4 +1,13 @@
-import measpy.signal as ms
+# measpy/pico.py
+#
+# ---------------------------------------
+# Data acquisition with Picoscope devices
+# ---------------------------------------
+#
+# Part of measpy package for signal acquisition and processing
+# (c) OD - 2021 - 2023
+# https://github.com/odoare/measpy
+
 
 import numpy as np
 

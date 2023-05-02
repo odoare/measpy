@@ -1,3 +1,14 @@
+# measpy/audio.py
+#
+# -----------------------------------
+# Data acquisition with audio devices
+# -----------------------------------
+#
+# Part of measpy package for signal acquisition and processing
+# (c) OD - 2021 - 2023
+# https://github.com/odoare/measpy
+
+
 import sounddevice as sd
 
 from ._tools import picv
@@ -11,7 +22,20 @@ import tkinter as tk
 from datetime import datetime
 from time import time, sleep
 
-def audio_run_measurement(M,progress=True):
+def audio_run_measurement(M,progress=False):
+    """
+    Runs a measurement defined in the object of
+    the class measpy.measurement.Measurement given
+    as argument.
+
+    Once the data acquisition process is terminated,
+    the measurement object given in argument contains
+    a data property.
+
+    ```data``` is a dictionary containing the sent and
+    received signals.
+    """
+    
     if M.device_type!='audio':
         print("Warning: deviceType != 'audio'. Changing to 'audio'.")
         M.device_type='audio'
@@ -104,5 +128,8 @@ def audio_run_measurement(M,progress=True):
         M.data[M.in_name[ii]].raw=np.array(y[:,ii],dtype=float)
 
 def audio_get_devices():
+   """
+   Returns a list of audio devices present in the system
+   """
    return sd.query_devices()
  

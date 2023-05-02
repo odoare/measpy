@@ -1,3 +1,13 @@
+# measpy/ni.py
+#
+# -------------------------------------------------
+# Data acquisition with National Instrument devices
+# -------------------------------------------------
+#
+# Part of measpy package for signal acquisition and processing
+# (c) OD - 2021 - 2023
+# https://github.com/odoare/measpy
+
 import nidaqmx
 import nidaqmx.constants as niconst
 
@@ -13,7 +23,6 @@ def _n_to_ain(n):
 def _n_to_aon(n):
     return 'ao'+str(n-1)
 
-
 def _callback(task_handle, every_n_samples_event_type,
                 number_of_samples, callback_data):
     print('Every N Samples callback invoked.')
@@ -22,6 +31,18 @@ def _callback(task_handle, every_n_samples_event_type,
 
 
 def ni_run_measurement(M):
+    """
+    Runs a measurement defined in the object of
+    the class measpy.measurement.Measurement given
+    as argument.
+
+    Once the data acquisition process is terminated,
+    the measurement object given in argument contains
+    a data property.
+
+    ```data``` is a dictionary containing the sent and
+    received signals.
+    """
     system = nidaqmx.system.System.local()
     nsamps = int(round(M.dur*M.fs))
 
@@ -176,6 +197,11 @@ def ni_run_measurement(M):
             n+=1
 
 def ni_get_devices():
+    """
+    Get the list of NI devices present in the system
+
+    :returns: A list of devices object
+    """
     system = nidaqmx.system.System.local()
     print(system.devices)
     return system.devices

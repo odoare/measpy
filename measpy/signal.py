@@ -1,8 +1,16 @@
-# measpysignal.py
+# measpy/signal.py
 #
-# Signal helper functions for measpy
+# -------------------------------------------------
+# This file defines the Signal and Spectral classes
+# Namespaces :  measpy.signal.Signal
+#               measpy.signal.Spectral
+#               measpy.signal.Weighting
+# -------------------------------------------------
 #
-# OD - 2021
+# Part of measpy package for signal acquisition and processing
+# (c) OD - 2021 - 2023
+# https://github.com/odoare/measpy
+
 
 from warnings import WarningMessage
 import numpy as np
@@ -44,56 +52,57 @@ from ._tools import (add_step,
 ##              ##
 ##################
 
-
 class Signal:
-    """ The class signal describes a sampled data, its sampling
-        frequency, its unit, the calibration and dbfs used for
-        data acquisition. Methods are provided to analyse and
-        transform the data.
+    """ Signal definition class
 
-        :param raw: raw data of the signal, defaults to array(None)
-        :type raw: 1D numpy array, optional
-        :param volts: raw data of the signal
-        :type volts: 1D numpy array, optional
-        :param values: raw data of the signal
-        :type values: 1D numpy array, optional
-        :param desc: Description of the signal, defaults to 'A signal'
-        :type desc: str, optional
-        :param fs: Sampling frequency, defaults to 1
-        :type fs: int, optional
-        :param unit: Unit of the signal given as a string that pint can understand, defaults to '1'
-        :type unit: str, optional
-        :param cal: calibration in V/unit, defaults to 1.0
-        :type cal: float, optional
-        :param dbfs: dbfs of the input data acquisition card, defaults to 1.0
-        :type dbfs: float, optional
+    The class signal describes a sampled data, its sampling
+    frequency, its unit, the calibration and dbfs used for
+    data acquisition. Methods are provided to analyse and
+    transform the data.
 
-        A signal is a temporal series of values.
-        The object has the following properties:
+    :param raw: raw data of the signal, defaults to array(None)
+    :type raw: 1D numpy array, optional
+    :param volts: raw data of the signal
+    :type volts: 1D numpy array, optional
+    :param values: raw data of the signal
+    :type values: 1D numpy array, optional
+    :param desc: Description of the signal, defaults to 'A signal'
+    :type desc: str, optional
+    :param fs: Sampling frequency, defaults to 1
+    :type fs: int, optional
+    :param unit: Unit of the signal given as a string that pint can understand, defaults to '1'
+    :type unit: str, optional
+    :param cal: calibration in V/unit, defaults to 1.0
+    :type cal: float, optional
+    :param dbfs: dbfs of the input data acquisition card, defaults to 1.0
+    :type dbfs: float, optional
 
-        * desc : The description of the signal (string)
-        * unit : The physical unit (unyt.Unit)
-        * cal : The calibration (in V/unit)
-        * dbfs : The input voltage for a raw value of 1
-        * fs : The sampling frequency
-        * _rawvalues : A numpy array of raw values
+    A signal is a temporal series of values.
+    The object has the following properties:
 
-        Setters and getters properties:
+    * desc : The description of the signal (string)
+    * unit : The physical unit (unyt.Unit)
+    * cal : The calibration (in V/unit)
+    * dbfs : The input voltage for a raw value of 1
+    * fs : The sampling frequency
+    * _rawvalues : A numpy array of raw values
 
-        * values (values expressed in unit, calibrations applied)
-        * volts (only dbfs applied)
-        * raw (same as _rawvalues)
-        * length (data length)
-        * dur (duration in seconds)
-        * time (time array)
+    Setters and getters properties:
+
+    * values (values expressed in unit, calibrations applied)
+    * volts (only dbfs applied)
+    * raw (same as _rawvalues)
+    * length (data length)
+    * dur (duration in seconds)
+    * time (time array)
     """
-
     # #################################################################
     # Methods returning a signal
     # #################################################################
 
     def __init__(self, **kwargs):
-        """ Signal initialization
+        """
+        Signal initialization
 
         If one optional parameter values, volts or raw is given, the created signal is initialized with the given values. If none of these optional parameter are given, the created signal is empty.
 
@@ -1628,7 +1637,7 @@ class Spectral:
 
     def dB_SPL(self):
         """
-        Convert to dB SPL (20 log10 |P|/P0)
+        Convert to dB SPL (20 log10 ||P||/P0)
         Signal unit has to be compatible with Pa
 
         :return: Weighted spectrum
@@ -1641,7 +1650,7 @@ class Spectral:
 
     def dB_SVL(self):
         """
-        Convert to dB SVL (20 log10 |V|/V0)
+        Convert to dB SVL (20 log10 ||V||/V0)
         Signal unit has to be compatible with m/s
 
         :return: Weighted spectrum
@@ -2244,6 +2253,16 @@ class Weighting:
     """ Class for weighting functions
 
         Amplitudes are stored as absolute values and phase (in radians)
+
+        A Weighting object stores:
+
+        - A list of frequencies (numpy.array)
+
+        - Corresponding amplitudes (numpy.array)
+
+        - Corresponding phases in radians (numpy.array)
+
+        - A descriptor (string)       
     """
 
     def __init__(self, freqs, amp, phase=None, desc='Weigthing function'):
@@ -2262,7 +2281,26 @@ class Weighting:
 
     @classmethod
     def from_csv(cls, filename, asdB=True, asradians=True):
-        out = cls([], [], 'Weigting')
+        """
+        Loads a weighting object from a csv file
+        The file must contain three columns:
+
+        - One frequency column
+
+        - One amplitude column (linear or as dB, which must be specified in the asdB boolean optional argument)
+
+        - One phase column (as radians or degree, which must be specified in the asradians boolean optional argument)
+
+        :param filename: File name of the csv file to load
+        :type filename: str
+        :param asdB: Specifies if the amplitude is given in dB or not
+        :type asdB: bool
+        :param asradians: Specifies if the phase is given in radians or degrees
+        :type asradians: bool
+        :returns: A Weighting object
+        :rtype: measpy.weighting.Weighting
+        """
+        out = cls([], [], 'Weighting')
         out.phase = []
         with open(filename, 'r') as file:
             reader = csv.reader(file)
@@ -2293,6 +2331,24 @@ class Weighting:
         return out
 
     def to_csv(self, filename, asdB=True, asradians=True):
+        """
+        Saves a weighting object to a csv file
+        The file then contains three columns:
+
+        - One frequency column
+
+        - One amplitude column (linear or as dB, which must be specified in the asdB boolean optional argument)
+        
+        - One phase column (as radians or degree, which must be specified in the asradians boolean optional argument)
+
+        :param filename: File name of the csv file to load
+        :type filename: str
+        :param asdB: Specifies if the amplitude is given in dB or not
+        :type asdB: bool
+        :param asradians: Specifies if the phase is given in radians or degrees
+        :type asradians: bool
+        """
+
         with open(filename, 'w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow([self.desc])
@@ -2315,10 +2371,17 @@ class Weighting:
 
     @property
     def adb(self):
+        """
+        Amplitude in dB
+        Computes 20 log10 of the modulus of the amplitude 
+        """
         return 20*np.log10(np.abs(self.amp))
 
     @property
     def acomplex(self):
+        """
+        Weighting values represented as a complex number
+        """
         return self.amp*np.exp(1j*self.phase)
 
     # END of Weighting

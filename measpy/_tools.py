@@ -1,8 +1,12 @@
-# _tools.py
+# measpy/_tools.py
 #
-# Various tools for measpy
+# ----------------------------
+# Utilities for measpy package
+# ----------------------------
 #
-# (c) OD, 2021
+# Part of measpy package for signal acquisition and processing
+# (c) OD - 2021 - 2023
+# https://github.com/odoare/measpy
 
 import csv
 import numpy as np
