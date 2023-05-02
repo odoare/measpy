@@ -745,35 +745,41 @@ class Signal:
 
     @classmethod
     def noise(cls, fs=44100, dur=2.0, amp=1.0, freqs=[20.0, 20000.0], unit='1', cal=1.0, dbfs=1.0):
+        if desc==None:
+            desc = 'Noise '+str(freqs[0])+'-'+str(freqs[1])+'Hz'
         return cls(
             raw=noise(fs, dur, amp, freqs),
             fs=fs,
             unit=unit,
             cal=cal,
             dbfs=dbfs,
-            desc='Noise '+str(freqs[0])+'-'+str(freqs[1])+'Hz'
+            desc=str(desc)
         )
 
     @classmethod
     def log_sweep(cls, fs=44100, dur=2.0, amp=1.0, freqs=[20.0, 20000.0], unit='1', cal=1.0, dbfs=1.0):
+        if desc==None:
+            desc = 'Logsweep '+str(freqs[0])+'-'+str(freqs[1])+'Hz'
         return cls(
             raw=log_sweep(fs, dur, amp, freqs),
             fs=fs,
             unit=unit,
             cal=cal,
             dbfs=dbfs,
-            desc='Logsweep '+str(freqs[0])+'-'+str(freqs[1])+'Hz'
+            desc=str(desc)
         )
 
     @classmethod
-    def sine(cls, fs=44100, dur=2.0, amp=1.0, freq=1000.0, unit='1', cal=1.0, dbfs=1.0):
+    def sine(cls, fs=44100, dur=2.0, amp=1.0, freq=1000.0, unit='1', cal=1.0, dbfs=1.0, desc=None):
+        if desc==None:
+            desc = 'Sine '+str(freq)+'Hz'
         return cls(
             raw=sine(fs, dur, amp, freq),
             fs=fs,
             unit=unit,
             cal=cal,
             dbfs=dbfs,
-            desc='Sine '+str(freq)+'Hz'
+            desc=str(desc)
         )
 
     @classmethod
