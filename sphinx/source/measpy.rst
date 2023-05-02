@@ -34,7 +34,7 @@ measpy.pico module
    :show-inheritance:
 
 measpy.sigspec module
---------------------
+---------------------
 
 .. automodule:: measpy.sigspec
    :members:
