@@ -1,9 +1,19 @@
-#%%
+# Example of data acquisition task
+# with a Picoscope of the ps4000 series
+#
+# (tested with 4461) 
+#
+# Part of measpy package for signal acquisition and processing
+# (c) OD - 2021 - 2023
+# https://github.com/odoare/measpy
 
-# Create and run a measurement with a ps4000 device
+#%% This python file uses cell mode (vscode python extension feature)
 
-import sys
-sys.path.insert(0, "..")
+# Import Packages
+# Add to path the parent directory in order to use the local measpy 
+# Comment in order to use the global version (e.g. via pip install)
+# import sys
+# sys.path.insert(0, "..")
 
 import measpy as mp
 from measpy.pico import ps4000_run_measurement
