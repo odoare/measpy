@@ -1,9 +1,6 @@
 measpy package
 ==============
 
-Submodules
-----------
-
 measpy.audio module
 -------------------
 
@@ -29,7 +26,7 @@ measpy.ni module
    :show-inheritance:
 
 measpy.pico module
-----------------
+------------------
 
 .. automodule:: measpy.pico
    :members:
@@ -40,14 +37,6 @@ measpy.signal module
 --------------------
 
 .. automodule:: measpy.signal
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: measpy
    :members:
    :undoc-members:
    :show-inheritance:
