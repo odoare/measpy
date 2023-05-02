@@ -54,46 +54,48 @@ from csaps import csaps
 # --------------------------------------
 
 class Signal:
-    """ The class signal describes a sampled data, its sampling
-        frequency, its unit, the calibration and dbfs used for
-        data acquisition. Methods are provided to analyse and
-        transform the data.
+    """ Signal definition class
 
-        :param raw: raw data of the signal, defaults to array(None)
-        :type raw: 1D numpy array, optional
-        :param volts: raw data of the signal
-        :type volts: 1D numpy array, optional
-        :param values: raw data of the signal
-        :type values: 1D numpy array, optional
-        :param desc: Description of the signal, defaults to 'A signal'
-        :type desc: str, optional
-        :param fs: Sampling frequency, defaults to 1
-        :type fs: int, optional
-        :param unit: Unit of the signal given as a string that pint can understand, defaults to '1'
-        :type unit: str, optional
-        :param cal: calibration in V/unit, defaults to 1.0
-        :type cal: float, optional
-        :param dbfs: dbfs of the input data acquisition card, defaults to 1.0
-        :type dbfs: float, optional
+    The class signal describes a sampled data, its sampling
+    frequency, its unit, the calibration and dbfs used for
+    data acquisition. Methods are provided to analyse and
+    transform the data.
 
-        A signal is a temporal series of values.
-        The object has the following properties:
+    :param raw: raw data of the signal, defaults to array(None)
+    :type raw: 1D numpy array, optional
+    :param volts: raw data of the signal
+    :type volts: 1D numpy array, optional
+    :param values: raw data of the signal
+    :type values: 1D numpy array, optional
+    :param desc: Description of the signal, defaults to 'A signal'
+    :type desc: str, optional
+    :param fs: Sampling frequency, defaults to 1
+    :type fs: int, optional
+    :param unit: Unit of the signal given as a string that pint can understand, defaults to '1'
+    :type unit: str, optional
+    :param cal: calibration in V/unit, defaults to 1.0
+    :type cal: float, optional
+    :param dbfs: dbfs of the input data acquisition card, defaults to 1.0
+    :type dbfs: float, optional
 
-        * desc : The description of the signal (string)
-        * unit : The physical unit (unyt.Unit)
-        * cal : The calibration (in V/unit)
-        * dbfs : The input voltage for a raw value of 1
-        * fs : The sampling frequency
-        * _rawvalues : A numpy array of raw values
+    A signal is a temporal series of values.
+    The object has the following properties:
 
-        Setters and getters properties:
+    * desc : The description of the signal (string)
+    * unit : The physical unit (unyt.Unit)
+    * cal : The calibration (in V/unit)
+    * dbfs : The input voltage for a raw value of 1
+    * fs : The sampling frequency
+    * _rawvalues : A numpy array of raw values
 
-        * values (values expressed in unit, calibrations applied)
-        * volts (only dbfs applied)
-        * raw (same as _rawvalues)
-        * length (data length)
-        * dur (duration in seconds)
-        * time (time array)
+    Setters and getters properties:
+
+    * values (values expressed in unit, calibrations applied)
+    * volts (only dbfs applied)
+    * raw (same as _rawvalues)
+    * length (data length)
+    * dur (duration in seconds)
+    * time (time array)
     """
 
     # #################################################################
@@ -1635,7 +1637,7 @@ class Spectral:
 
     def dB_SPL(self):
         """
-        Convert to dB SPL (20 log10 |P|/P0)
+        Convert to dB SPL (20 log10 ||P||/P0)
         Signal unit has to be compatible with Pa
 
         :return: Weighted spectrum
@@ -1648,7 +1650,7 @@ class Spectral:
 
     def dB_SVL(self):
         """
-        Convert to dB SVL (20 log10 |V|/V0)
+        Convert to dB SVL (20 log10 ||V||/V0)
         Signal unit has to be compatible with m/s
 
         :return: Weighted spectrum
