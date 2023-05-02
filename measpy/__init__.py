@@ -1,6 +1,6 @@
 # __init__.py
 
-from measpy.signal import (Signal, 
+from .signal import (Signal, 
                             Spectral,
                             Weighting,
                             PREF,
@@ -8,4 +8,4 @@ from measpy.signal import (Signal,
                             DBVREF,
                             WDBA,
                             WDBC)
-from measpy.measurement import Measurement
+from .measurement import Measurement

@@ -29,7 +29,7 @@ import numbers
 import unyt
 from unyt import Unit
 
-from measpy._tools import (add_step,
+from ._tools import (add_step,
                            smooth,
                            nth_octave_bands,
                            create_time,
