@@ -744,7 +744,7 @@ class Signal:
     #####################################################################
 
     @classmethod
-    def noise(cls, fs=44100, dur=2.0, amp=1.0, freqs=[20.0, 20000.0], unit='1', cal=1.0, dbfs=1.0):
+    def noise(cls, fs=44100, dur=2.0, amp=1.0, freqs=[20.0, 20000.0], unit='1', cal=1.0, dbfs=1.0, desc=None):
         if desc==None:
             desc = 'Noise '+str(freqs[0])+'-'+str(freqs[1])+'Hz'
         return cls(
@@ -757,7 +757,7 @@ class Signal:
         )
 
     @classmethod
-    def log_sweep(cls, fs=44100, dur=2.0, amp=1.0, freqs=[20.0, 20000.0], unit='1', cal=1.0, dbfs=1.0):
+    def log_sweep(cls, fs=44100, dur=2.0, amp=1.0, freqs=[20.0, 20000.0], unit='1', cal=1.0, dbfs=1.0, desc=None):
         if desc==None:
             desc = 'Logsweep '+str(freqs[0])+'-'+str(freqs[1])+'Hz'
         return cls(
