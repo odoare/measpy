@@ -4,8 +4,7 @@
 #
 # OD - 2021
 
-import measpy.signal as ms
-from measpy.signal import Signal
+from .signal import Signal
 
 from ._tools import csv_to_dict, convl, convl1, sine, log_sweep, noise
 
@@ -22,8 +21,7 @@ import json
 from unyt import Unit
 
 class Measurement:
-    """ The class Measurement allows to simply define and perform
-        a measurement.
+    """ The Measurement class defines and performs a data acquisition task (a measurement).
 
         Initialization parameters:
 
