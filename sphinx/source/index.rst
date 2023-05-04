@@ -18,10 +18,6 @@ Welcome to measpy's documentation!
    
    Spectral tutorial <2_spectral_data.md>
    
-   Measurement tutorial <3_measurements.md>
-   
-   Weighting and smoothing tutorial <4_spectrum_smoothing_and_weighting.md>
-   
    measpy
 
 Indices and tables
