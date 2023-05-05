@@ -156,7 +156,7 @@ class Signal:
             else:
                 self.__dict__[arg] = kwargs[arg]
 
-        self.raw = np.array(None)
+        self.raw = np.array([])
 
         for arg in kwargs:
             if arg == 'values':
