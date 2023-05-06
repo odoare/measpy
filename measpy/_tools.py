@@ -115,6 +115,10 @@ def sine(fs, dur, out_amp, freq):
     s = out_amp*np.sin(2*np.pi*create_time(fs=fs, dur=dur)*freq)
     return (s)
 
+def calc_dur_siglist(siglist):
+    t0s = list(s.t0 for s in siglist)
+    tfs = list(s.t0+s.dur for s in siglist)
+    return max(tfs)-min(t0s)
 
 
 # def _tfe_farina(y, fs, freqs):
