@@ -753,7 +753,8 @@ class Signal:
             unit=unit,
             cal=cal,
             dbfs=dbfs,
-            desc=str(desc)
+            desc=str(desc),
+            freqs=freqs
         )
 
     @classmethod
@@ -766,7 +767,8 @@ class Signal:
             unit=unit,
             cal=cal,
             dbfs=dbfs,
-            desc=str(desc)
+            desc=str(desc),
+            freqs=freqs
         )
 
     @classmethod
@@ -779,7 +781,8 @@ class Signal:
             unit=unit,
             cal=cal,
             dbfs=dbfs,
-            desc=str(desc)
+            desc=str(desc),
+            freq=freq
         )
 
     @classmethod
