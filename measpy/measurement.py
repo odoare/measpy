@@ -6,7 +6,13 @@
 
 from .signal import Signal
 
-from ._tools import csv_to_dict, convl, convl1, sine, log_sweep, noise
+from ._tools import (csv_to_dict, 
+                     convl, 
+                     convl1, 
+                     sine, 
+                     log_sweep, 
+                     noise, 
+                     calc_dur_siglist)
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -19,6 +25,235 @@ import pickle
 import json
 
 from unyt import Unit
+
+import os
+
+class Daqtask:
+    # ---------------------------
+    def __init__(self, **params):
+        # Check out_sig contents
+        if 'out_sig' in params:
+            non=params['out_sig']!=None
+            sig=type(params['out_sig'])!=list
+            if non&sig:
+                raise Exception("out_sig must but be a list of measpy.signal.Signal or None")
+            else:
+                #print(list((type(s)==Signal for s in params['out_sig'])))
+                if all((type(s)==Signal for s in params['out_sig'])):
+                    # print('These are all signals')
+                    if all(s.fs==params['out_sig'][0].fs for s in params['out_sig']):
+                        # print('Same fs for all signals')
+                        self.out_sig = params['out_sig']
+                    else:
+                        raise Exception("Signals in out_sig list have different sampling frequencies")                     
+                else:
+                    raise Exception("Some elements of out_sig list are not Signals")
+        else:
+            self.out_sig = None
+
+        # Check in_sig contents
+        if 'in_sig' in params:
+            non=params['in_sig']!=None
+            sig=type(params['in_sig'])!=list
+            if non&sig:
+                raise Exception("in_sig must but be a list of measpy.signal.Signal or None")
+            else:
+                if all((type(s)==Signal for s in params['in_sig'])):
+                    # print('These are all signals')
+                    if all(s.fs==params['in_sig'][0].fs for s in params['in_sig']):
+                        # print('Same fs for all signals')
+                        self.in_sig = params['in_sig']
+                    else:
+                        raise Exception("Signals in in_sig list have different sampling frequencies")                     
+                else:
+                    raise Exception("Some elements of in_sig list are not Signals")
+        else:
+            self.in_sig = None
+
+        #Check sampling frequencies
+        if type(self.out_sig)==type(None):
+            if type(self.in_sig)==type(None):
+                #raise Exception("This is a task with no input nor output ?")
+                print("This is a task with no input nor output ?")
+            else:
+                # print("This is a task with no output.")
+                if 'fs' in params:
+                    if params['fs']!=self.in_sig[0].fs:
+                        print('Selected sampling frequency '+str(params['fs'])+'Hz is different to that given in signals in in_sig list')
+                        print('Sampling frequencies of all input signals are set to the selected value: '+str(params['fs'])+'Hz.')
+                        self.fs = params['fs']
+                        for s in self.in_sig:
+                            s.fs = params['fs']
+                    else:
+                        self.fs = params['fs']
+                else:
+                    self.fs = self.in_sig[0].fs
+                    print('Task frequency is: ', str(self.fs) )
+        else:
+            if 'fs' in params:
+                if params['fs']!=self.out_sig[0].fs:
+                    print('Selected sampling frequency '+str(params['fs'])+'Hz is different to that given in signals in out_sig list')
+                    print("Task's sampling frequency is set to the selected value in outpu signals: "+str(self.out_sig[0].fs)+"Hz.")
+            self.fs = self.out_sig[0].fs
+            if type(self.in_sig)==type(None):
+                print ("This is a task with no input.")
+            else:
+                if self.fs!=self.in_sig[0].fs:
+                    print('Selected sampling frequency '+str(self.fs)+'Hz is different to that given in signals on in_sig list')
+                    print('Sampling frequencies of all input signals are set to the selected value: '+str(self.fs)+'Hz.')
+                    for s in self.in_sig:
+                        s.fs = self.fs
+
+        # Check list lengths
+        if type(self.out_sig)!=type(None):
+            if 'out_map' in params:
+                if len(params['out_map'])!=len(self.out_sig):
+                    raise Exception('Lengths of out_map and out_sig do not correspond.')
+                self.out_map = params['out_map']
+            else:
+                self.out_map = list(range(1,len(self.out_sig)+1))
+                print("out_map not given, it is set to default value of :"+str(self.out_map))
+        if type(self.in_sig)!=type(None):
+            if 'in_map' in params:
+                if len(params['in_map'])!=len(self.in_sig):
+                    raise Exception('Lengths of in_map and in_sig do not correspond.')
+                self.in_map = params['in_map']
+            else:
+                self.in_map = list(range(1,len(self.in_sig)+1))
+                print("in_map not given, it is set to default value of :"+str(self.in_map))
+                print(self.in_map)
+
+        self.in_device = params.setdefault("in_device",'')
+        self.out_device = params.setdefault("in_device",'')
+
+        # Check durations
+        if 'dur' in params:
+            if type(self.out_sig)==type(None):
+                self.dur = params['dur']
+            else:
+                dursigs = calc_dur_siglist(self.out_sig)
+                if params['dur']!=dursigs:
+                    print('Selected duration is different thant duration of combined output signals.')
+                    print('It is changed to match.')
+                self.dur = dursigs
+        else:
+            if type(self.out_sig)==type(None):
+                #raise Exception('No duration nor out_sig given. Impossible to determine task duration')
+                print('No duration nor out_sig given. Impossible to determine task duration')
+            else:
+                self.dur = calc_dur_siglist(self.out_sig)
+                print("Duration of the task set to: "+str(self.dur)+" s.")
+
+        if 'device_type' not in params:
+            self.device_type = ''
+            print('No device_type given, it is set to empty string and will be updated when performing the task.')
+        else:
+            self.device_type = params['device_type']
+
+        # Fix specific properties
+        if self.device_type=='pico':
+            self.in_range = params.setdefault("in_range",list('10V' for b in self.in_map))
+            self.upsampling_factor = params.setdefault("upsampling_factor",1)
+            self.in_coupling = params.setdefault("in_coupling",list('dc' for b in self.in_map))
+        if self.device_type=='ni':
+            self.in_range = params.setdefault("in_range",None)
+            self.out_range = params.setdefault("out_range",None)
+        if type(self.out_sig)!=type(None):
+            self.io_sync = params.setdefault('io_sync',0)
+        elif 'io_sync' in params:
+                print('No output signals given. io_sync param ignored')
+        self.desc = params.setdefault('desc','No description')
+
+    # -----------------
+    def __repr__(self):
+        out = "measpy.Daqtask("
+        out += "fs="+str(self.fs)
+        out += ", dur="+str(self.dur)
+        out += ", device_type='"+str(self.device_type)+"'"
+        out += ', in_map='+str(self.in_map)
+        try:
+            out += ", date='"+self.date+"'"
+            out += ", time='"+self.time+"'"
+        except:
+            pass
+        if self.out_sig!=None:
+            out += ", out_device='"+str(self.out_device)+"'"
+            out += ', out_map='+str(self.out_map)
+            #out += ", out_sig='"+str(self.out_sig)+"'"
+            out += ', out_sig=list of '+str(len(self.out_sig))+' measpy.signal.Signal'
+            out += ", io_sync="+str(self.io_sync)
+        if self.device_type=='pico':
+            out += ", in_range="+str(self.in_range)
+            out += ", upsampling_factor="+str(self.upsampling_factor)
+            out += ", in_coupling="+str(self.in_coupling)
+        if self.device_type=='ni':
+            out += ", in_range="+str(self.in_range)
+            out += ", out_range="+str(self.out_range)
+        out += ', in_sig=list of '+str(len(self.in_sig))+' measpy.signal.Signal'
+        out +=")"
+        
+        return out
+    
+
+    # -----------------------
+    def to_dir(self,dirname):
+        """ Writes the parameters and signals in a directory"""
+        os.mkdir(dirname)
+        self._params_to_csv(dirname+"/params.csv")
+        if type(self.in_sig)!=type(None):
+            for i,s in enumerate(self.in_sig):
+                s.to_csvwav(dirname+"/in_sig_"+str(i))
+        if type(self.out_sig)!=type(None):
+            for i,s in enumerate(self.out_sig):
+                s.to_csvwav(dirname+"/out_sig_"+str(i))
+    
+    # ------------------------
+    @classmethod
+    def from_dir(cls,dirname):
+        """ Load a measurement object from a set of files
+
+            * filebase : string from which two file names are created
+            * filebase+'.csv' : All measurement parameters
+            * filebase+'.wav' : all input and out channels + time (32 bit float WAV at fs)
+        """
+        self=cls()
+        task_dict = csv_to_dict(dirname+'/params.csv')
+        self.fs=convl1(float,task_dict['fs'])
+        self.dur=convl1(float,task_dict['dur'])
+        try:
+            self.date=convl1(str,task_dict['date'])
+            self.time=convl1(str,task_dict['time'])
+        except:
+            pass
+        self.device_type=convl1(str,task_dict['device_type'])
+
+        if 'in_map' in task_dict:
+            self.in_map = task_dict['in_map']
+            self.in_device = task_dict['in_device']
+            self.in_sig = list(Signal.from_csvwav(dirname+'/in_sig_'+str(i)) for i in range(len(task_dict['in_map'])) )
+        else:
+            self.in_sig = None
+        if 'out_map' in task_dict:
+            self.out_map = task_dict['out_map']
+            self.out_device = task_dict['out_device']
+            self.out_sig = list(Signal.from_csvwav(dirname+'/out_sig_'+str(i)) for i in range(len(task_dict['out_map'])) )
+        else:
+            self.out_sig = None
+
+        return self
+
+    # --------------------------------
+    def _params_to_csv(self,filename):
+        """ Writes all the Measurement object parameters to a csv file """
+        dd = self._to_dict(withsig=False)
+        with open(filename, 'w', newline='') as file:
+            writer = csv.writer(file)
+            for key in dd:
+                if type(dd[key])==list:
+                    writer.writerow([key]+dd[key])
+                else:
+                    writer.writerow([key,str(dd[key])])
+
 
 class Measurement:
     """ The Measurement class defines and performs a data acquisition task (a measurement).
