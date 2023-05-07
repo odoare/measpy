@@ -14,6 +14,8 @@ from ._tools import (csv_to_dict,
                      noise, 
                      calc_dur_siglist)
 
+from ._version import VERSION
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -112,7 +114,7 @@ class Daqtask:
                 self.out_map = params['out_map']
             else:
                 self.out_map = list(range(1,len(self.out_sig)+1))
-                print("out_map not given, it is set to default value of :"+str(self.out_map))
+                print("out_map not given, it is set to default value of: "+str(self.out_map))
         if type(self.in_sig)!=type(None):
             if 'in_map' in params:
                 if len(params['in_map'])!=len(self.in_sig):
@@ -120,7 +122,7 @@ class Daqtask:
                 self.in_map = params['in_map']
             else:
                 self.in_map = list(range(1,len(self.in_sig)+1))
-                print("in_map not given, it is set to default value of :"+str(self.in_map))
+                print("in_map not given, it is set to default value of: "+str(self.in_map))
                 print(self.in_map)
 
         self.in_device = params.setdefault("in_device",'')
@@ -168,32 +170,45 @@ class Daqtask:
     def __repr__(self):
         out = "measpy.Daqtask("
         out += "fs="+str(self.fs)
-        out += ", dur="+str(self.dur)
-        out += ", device_type='"+str(self.device_type)+"'"
-        out += ', in_map='+str(self.in_map)
+        out += ",\n dur="+str(self.dur)
+        out += ",\n device_type='"+str(self.device_type)+"'"
+        out += ',\n in_map='+str(self.in_map)
         try:
-            out += ", date='"+self.date+"'"
-            out += ", time='"+self.time+"'"
+            out += ",\n date='"+self.date+"'"
+            out += ",\n time='"+self.time+"'"
         except:
             pass
         if self.out_sig!=None:
-            out += ", out_device='"+str(self.out_device)+"'"
-            out += ', out_map='+str(self.out_map)
+            out += ",\n out_device='"+str(self.out_device)+"'"
+            out += ',\n out_map='+str(self.out_map)
             #out += ", out_sig='"+str(self.out_sig)+"'"
-            out += ', out_sig=list of '+str(len(self.out_sig))+' measpy.signal.Signal'
-            out += ", io_sync="+str(self.io_sync)
+            out += ',\n out_sig=list of '+str(len(self.out_sig))+' measpy.signal.Signal'
+            out += ",\n io_sync="+str(self.io_sync)
         if self.device_type=='pico':
-            out += ", in_range="+str(self.in_range)
-            out += ", upsampling_factor="+str(self.upsampling_factor)
-            out += ", in_coupling="+str(self.in_coupling)
+            out += ",\n in_range="+str(self.in_range)
+            out += ",\n upsampling_factor="+str(self.upsampling_factor)
+            out += ",\n in_coupling="+str(self.in_coupling)
         if self.device_type=='ni':
-            out += ", in_range="+str(self.in_range)
-            out += ", out_range="+str(self.out_range)
-        out += ', in_sig=list of '+str(len(self.in_sig))+' measpy.signal.Signal'
+            out += ",\n in_range="+str(self.in_range)
+            out += ",\n out_range="+str(self.out_range)
+        out += ',\n in_sig=list of '+str(len(self.in_sig))+' measpy.signal.Signal'
         out +=")"
         
         return out
     
+    # ------------------------------
+    def _to_dict(self,withsig=True):
+        """ Converts a Measurement object to a dict
+
+            :param withdata: Optionnally removes the data arrays, defaults to True
+            :type withdata: bool
+            
+        """
+        mesu = copy(self.__dict__)
+        if not(withsig):
+            del mesu['in_sig']
+            del mesu['out_sig']
+        return mesu
 
     # -----------------------
     def to_dir(self,dirname):
@@ -206,6 +221,7 @@ class Daqtask:
         if type(self.out_sig)!=type(None):
             for i,s in enumerate(self.out_sig):
                 s.to_csvwav(dirname+"/out_sig_"+str(i))
+        self._write_readme(dirname+"/README")
     
     # ------------------------
     @classmethod
@@ -228,15 +244,16 @@ class Daqtask:
         self.device_type=convl1(str,task_dict['device_type'])
 
         if 'in_map' in task_dict:
-            self.in_map = task_dict['in_map']
-            self.in_device = task_dict['in_device']
+            self.in_map = convl(int,task_dict['in_map'])
+            self.in_device = convl1(str,task_dict['in_device'])
             self.in_sig = list(Signal.from_csvwav(dirname+'/in_sig_'+str(i)) for i in range(len(task_dict['in_map'])) )
         else:
             self.in_sig = None
         if 'out_map' in task_dict:
-            self.out_map = task_dict['out_map']
-            self.out_device = task_dict['out_device']
+            self.out_map = convl(int,task_dict['out_map'])
+            self.out_device = convl1(str,task_dict['out_device'])
             self.out_sig = list(Signal.from_csvwav(dirname+'/out_sig_'+str(i)) for i in range(len(task_dict['out_map'])) )
+            self.io_sync = convl1(int,task_dict['io_sync'])
         else:
             self.out_sig = None
 
@@ -254,6 +271,12 @@ class Daqtask:
                 else:
                     writer.writerow([key,str(dd[key])])
 
+    # -------------------------------
+    def _write_readme(self,filename):
+        with open(filename, 'w') as f:
+            f.write('Created with measpy version '+VERSION)
+            f.write('\n')
+            f.write('https://github.com/odoare/measpy')
 
 class Measurement:
     """ The Measurement class defines and performs a data acquisition task (a measurement).
