@@ -9,3 +9,5 @@ from .signal import (Signal,
                             WDBA,
                             WDBC)
 from .measurement import Measurement
+
+from ._version import VERSION
