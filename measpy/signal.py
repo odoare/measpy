@@ -754,7 +754,8 @@ class Signal:
             cal=cal,
             dbfs=dbfs,
             desc=str(desc),
-            freqs=freqs
+            fmin = freqs[0],
+            fmax = freqs[1]
         )
 
     @classmethod
@@ -768,7 +769,8 @@ class Signal:
             cal=cal,
             dbfs=dbfs,
             desc=str(desc),
-            freqs=freqs
+            fmin = freqs[0],
+            fmax = freqs[1]
         )
 
     @classmethod
