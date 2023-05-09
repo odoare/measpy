@@ -115,11 +115,22 @@ def sine(fs, dur, out_amp, freq):
     s = out_amp*np.sin(2*np.pi*create_time(fs=fs, dur=dur)*freq)
     return (s)
 
-def calc_dur_siglist(siglist):
-    t0s = list(s.t0 for s in siglist)
-    tfs = list(s.t0+s.dur for s in siglist)
-    return max(tfs)-min(t0s)
+def t_min(siglist):
+    return min(s.t0 for s in siglist)
 
+def t_max(siglist):
+    return max(s.t0+s.dur for s in siglist)
+
+def calc_dur_siglist(siglist):
+    return t_max(siglist)-t_min(siglist)
+
+def siglist_to_array(siglist):
+    durtot = calc_dur_siglist(siglist)
+    out = np.zeros((round(durtot*siglist[0].fs),len(siglist)))
+    t0s = t_min(siglist)
+    for i,s in enumerate(siglist):
+        out[round((s.t0-t0s)*s.fs):round(((s.t0-t0s)+s.dur)*s.fs),i] = s.raw
+    return out
 
 # def _tfe_farina(y, fs, freqs):
 #     """ Transfer function estimate
