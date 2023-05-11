@@ -1,7 +1,7 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>measpy package &mdash; measpy  documentation</title>
@@ -11,17 +11,16 @@
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/doctools.js"></script>
         <script src="_static/sphinx_highlight.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="copyright" title="Copyright" href="copyright.html" />
-    <link rel="prev" title="Tutorial 4: The measpy.Weighting class" href="4_spectrum_smoothing_and_weighting.html" /> 
+    <link rel="prev" title="Tutorial 2: measpy.Spectral class" href="2_spectral_data.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -29,26 +28,28 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="index.html" class="icon icon-home"> measpy
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            measpy
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+    
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="README.html">Readme</a></li>
 <li class="toctree-l1"><a class="reference internal" href="copyright.html">Copyright</a></li>
-<li class="toctree-l1"><a class="reference internal" href="1_play_with_signals.html">Signal tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="1_signals_tutorial.html">Signal tutorial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="2_spectral_data.html">Spectral tutorial</a></li>
-<li class="toctree-l1"><a class="reference internal" href="3_measurements.html">Measurement tutorial</a></li>
-<li class="toctree-l1"><a class="reference internal" href="4_spectrum_smoothing_and_weighting.html">Weighting and smoothing tutorial</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">measpy package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-measpy.audio">measpy.audio module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#measpy.audio.audio_get_devices"><code class="docutils literal notranslate"><span class="pre">audio_get_devices()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#measpy.audio.audio_run_measurement"><code class="docutils literal notranslate"><span class="pre">audio_run_measurement()</span></code></a></li>
@@ -81,14 +82,11 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#module-measpy.ni">measpy.ni module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#measpy.ni.callback"><code class="docutils literal notranslate"><span class="pre">callback()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#measpy.ni.n_to_ain"><code class="docutils literal notranslate"><span class="pre">n_to_ain()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#measpy.ni.n_to_aon"><code class="docutils literal notranslate"><span class="pre">n_to_aon()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#measpy.ni.ni_get_devices"><code class="docutils literal notranslate"><span class="pre">ni_get_devices()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#measpy.ni.ni_run_measurement"><code class="docutils literal notranslate"><span class="pre">ni_run_measurement()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#measpy-pico-module">measpy.pico module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-measpy.pico">measpy.pico module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#measpy.pico.findindex"><code class="docutils literal notranslate"><span class="pre">findindex()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#measpy.pico.ps2000_plot"><code class="docutils literal notranslate"><span class="pre">ps2000_plot()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#measpy.pico.ps2000_run_measurement"><code class="docutils literal notranslate"><span class="pre">ps2000_run_measurement()</span></code></a></li>
@@ -104,6 +102,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.as_raw"><code class="docutils literal notranslate"><span class="pre">Signal.as_raw()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.as_volts"><code class="docutils literal notranslate"><span class="pre">Signal.as_volts()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.coh"><code class="docutils literal notranslate"><span class="pre">Signal.coh()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.convolve"><code class="docutils literal notranslate"><span class="pre">Signal.convolve()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.corr"><code class="docutils literal notranslate"><span class="pre">Signal.corr()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.cut"><code class="docutils literal notranslate"><span class="pre">Signal.cut()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.dB"><code class="docutils literal notranslate"><span class="pre">Signal.dB()</span></code></a></li>
@@ -138,6 +137,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.sine"><code class="docutils literal notranslate"><span class="pre">Signal.sine()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.smooth"><code class="docutils literal notranslate"><span class="pre">Signal.smooth()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.spectrogram"><code class="docutils literal notranslate"><span class="pre">Signal.spectrogram()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.t0"><code class="docutils literal notranslate"><span class="pre">Signal.t0</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.tfe_farina"><code class="docutils literal notranslate"><span class="pre">Signal.tfe_farina()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.tfe_welch"><code class="docutils literal notranslate"><span class="pre">Signal.tfe_welch()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.time"><code class="docutils literal notranslate"><span class="pre">Signal.time</span></code></a></li>
@@ -192,11 +192,12 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#module-measpy">Module contents</a></li>
 </ul>
 </li>
 </ul>
 
+    <a href="genindex.html">Index</a>
+  
         </div>
       </div>
     </nav>
@@ -210,7 +211,7 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
       <li class="breadcrumb-item active">measpy package</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/measpy.rst.txt" rel="nofollow"> View page source</a>
@@ -223,20 +224,26 @@
              
   <section id="measpy-package">
 <h1>measpy package<a class="headerlink" href="#measpy-package" title="Permalink to this heading"></a></h1>
-<section id="submodules">
-<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading"></a></h2>
-</section>
 <section id="module-measpy.audio">
 <span id="measpy-audio-module"></span><h2>measpy.audio module<a class="headerlink" href="#module-measpy.audio" title="Permalink to this heading"></a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="measpy.audio.audio_get_devices">
 <span class="sig-prename descclassname"><span class="pre">measpy.audio.</span></span><span class="sig-name descname"><span class="pre">audio_get_devices</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#measpy.audio.audio_get_devices" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Returns a list of audio devices present in the system</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="measpy.audio.audio_run_measurement">
-<span class="sig-prename descclassname"><span class="pre">measpy.audio.</span></span><span class="sig-name descname"><span class="pre">audio_run_measurement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.audio.audio_run_measurement" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">measpy.audio.</span></span><span class="sig-name descname"><span class="pre">audio_run_measurement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.audio.audio_run_measurement" title="Permalink to this definition"></a></dt>
+<dd><p>Runs a measurement defined in the object of
+the class measpy.measurement.Measurement given
+as argument.</p>
+<p>Once the data acquisition process is terminated,
+the measurement object given in argument contains
+a data property.</p>
+<p><code class="docutils literal notranslate"><span class="pre">`data`</span></code> is a dictionary containing the sent and
+received signals.</p>
+</dd></dl>
 
 </section>
 <section id="module-measpy.measurement">
@@ -245,11 +252,10 @@
 <dt class="sig sig-object py" id="measpy.measurement.Measurement">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">measpy.measurement.</span></span><span class="sig-name descname"><span class="pre">Measurement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.measurement.Measurement" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>The class Measurement allows to simply define and perform
-a measurement.</p>
+<p>The Measurement class defines and performs a data acquisition task (a measurement).</p>
 <p>Initialization parameters:</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>fs</strong> (<em>int</em>) – Sampling frequency, defaults to 44100.</p></li>
 <li><p><strong>dur</strong> (<em>float</em>) – Duration in seconds, defaults to 2.0.</p></li>
@@ -309,13 +315,13 @@ If ‘out_sig’ is None, nothing is created.</p>
 <em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_pickle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.measurement.Measurement.from_pickle" title="Permalink to this definition"></a></dt>
 <dd><p>Load a Measurement class object from a pickle file</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>filename</strong> (<em>str</em>) – Filename</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The loaded measurement object</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#measpy.measurement.Measurement" title="measpy.measurement.Measurement">Measurement</a></p>
 </dd>
 </dl>
@@ -454,34 +460,33 @@ units using the calibration and dbfs properties</p>
 <section id="module-measpy.ni">
 <span id="measpy-ni-module"></span><h2>measpy.ni module<a class="headerlink" href="#module-measpy.ni" title="Permalink to this heading"></a></h2>
 <dl class="py function">
-<dt class="sig sig-object py" id="measpy.ni.callback">
-<span class="sig-prename descclassname"><span class="pre">measpy.ni.</span></span><span class="sig-name descname"><span class="pre">callback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">task_handle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">every_n_samples_event_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number_of_samples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callback_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.ni.callback" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="measpy.ni.n_to_ain">
-<span class="sig-prename descclassname"><span class="pre">measpy.ni.</span></span><span class="sig-name descname"><span class="pre">n_to_ain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.ni.n_to_ain" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="measpy.ni.n_to_aon">
-<span class="sig-prename descclassname"><span class="pre">measpy.ni.</span></span><span class="sig-name descname"><span class="pre">n_to_aon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.ni.n_to_aon" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
 <dt class="sig sig-object py" id="measpy.ni.ni_get_devices">
 <span class="sig-prename descclassname"><span class="pre">measpy.ni.</span></span><span class="sig-name descname"><span class="pre">ni_get_devices</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#measpy.ni.ni_get_devices" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Get the list of NI devices present in the system</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A list of devices object</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="measpy.ni.ni_run_measurement">
 <span class="sig-prename descclassname"><span class="pre">measpy.ni.</span></span><span class="sig-name descname"><span class="pre">ni_run_measurement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.ni.ni_run_measurement" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Runs a measurement defined in the object of
+the class measpy.measurement.Measurement given
+as argument.</p>
+<p>Once the data acquisition process is terminated,
+the measurement object given in argument contains
+a data property.</p>
+<p><code class="docutils literal notranslate"><span class="pre">`data`</span></code> is a dictionary containing the sent and
+received signals.</p>
+</dd></dl>
 
 </section>
-<section id="measpy-pico-module">
-<h2>measpy.pico module<a class="headerlink" href="#measpy-pico-module" title="Permalink to this heading"></a></h2>
-<span class="target" id="module-measpy.pico"></span><dl class="py function">
+<section id="module-measpy.pico">
+<span id="measpy-pico-module"></span><h2>measpy.pico module<a class="headerlink" href="#module-measpy.pico" title="Permalink to this heading"></a></h2>
+<dl class="py function">
 <dt class="sig sig-object py" id="measpy.pico.findindex">
 <span class="sig-prename descclassname"><span class="pre">measpy.pico.</span></span><span class="sig-name descname"><span class="pre">findindex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">l</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.pico.findindex" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
@@ -582,12 +587,13 @@ units using the calibration and dbfs properties</p>
 <dt class="sig sig-object py" id="measpy.signal.Signal">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">measpy.signal.</span></span><span class="sig-name descname"><span class="pre">Signal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Signal definition class</p>
 <p>The class signal describes a sampled data, its sampling
 frequency, its unit, the calibration and dbfs used for
 data acquisition. Methods are provided to analyse and
 transform the data.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>raw</strong> (<em>1D numpy array</em><em>, </em><em>optional</em>) – raw data of the signal, defaults to array(None)</p></li>
 <li><p><strong>volts</strong> (<em>1D numpy array</em><em>, </em><em>optional</em>) – raw data of the signal</p></li>
@@ -631,13 +637,13 @@ Returns a Signal class object</p>
 <span class="sig-name descname"><span class="pre">add_silence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">extrat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">0)</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.add_silence" title="Permalink to this definition"></a></dt>
 <dd><p>Add zeros at the begining and the end of the signal</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>extrat</strong> (<em>tuple</em><em>, </em><em>optional</em>) – number of samples before and after the original signal, defaults to [0,0]</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>New signal</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#measpy.signal.Signal" title="measpy.signal.Signal">measpy.signal.Signal</a></p>
 </dd>
 </dl>
@@ -648,13 +654,13 @@ Returns a Signal class object</p>
 <span class="sig-name descname"><span class="pre">angle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">unwrap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.angle" title="Permalink to this definition"></a></dt>
 <dd><p>Compute the angle of the signal, if complex</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>unwrap</strong> (<em>bool</em>) – If True, the angle data is unwrapped</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The angle part of the signal, unit=rad</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>measpy.signal</p>
 </dd>
 </dl>
@@ -665,10 +671,10 @@ Returns a Signal class object</p>
 <span class="sig-name descname"><span class="pre">as_raw</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.as_raw" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the signal raw values, dimensionless, no calibration applied, no dbfs applied.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A signal</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="#measpy.signal.Signal" title="measpy.signal.Signal">measpy.signal.Signal</a></p>
 </dd>
 </dl>
@@ -679,10 +685,10 @@ Returns a Signal class object</p>
 <span class="sig-name descname"><span class="pre">as_volts</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.as_volts" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the signal in volts, no calibration applied.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A signal</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="#measpy.signal.Signal" title="measpy.signal.Signal">measpy.signal.Signal</a></p>
 </dd>
 </dl>
@@ -693,7 +699,7 @@ Returns a Signal class object</p>
 <span class="sig-name descname"><span class="pre">coh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.coh" title="Permalink to this definition"></a></dt>
 <dd><p>Compute the coherence between signal x and the actual signal</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>x</strong> (<a class="reference internal" href="#measpy.signal.Signal" title="measpy.signal.Signal"><em>measpy.signal.Signal</em></a>) – Other signal to compute the coherence with</p></li>
 <li><p><strong>window</strong> (<em>str</em><em>, </em><em>optional</em>) – Window function type, default ‘hann’</p></li>
@@ -706,10 +712,16 @@ Returns a Signal class object</p>
 <li><p><strong>average</strong> (<em>str</em><em>, </em><em>optional</em>) – Method to use when averaging periodograms. Defaults to ‘mean’.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A Spectral object</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="measpy.signal.Signal.convolve">
+<span class="sig-name descname"><span class="pre">convolve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.convolve" title="Permalink to this definition"></a></dt>
+<dd><p>Convolution of two signals</p>
 </dd></dl>
 
 <dl class="py method">
@@ -717,7 +729,7 @@ Returns a Signal class object</p>
 <span class="sig-name descname"><span class="pre">corr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.corr" title="Permalink to this definition"></a></dt>
 <dd><p>Compute the cross correlation between signal x and the actual signal</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>x</strong> (<a class="reference internal" href="#measpy.signal.Signal" title="measpy.signal.Signal"><em>measpy.signal.Signal</em></a>) – Other signal to compute the coherence with</p>
 </dd>
 </dl>
@@ -728,7 +740,7 @@ Returns a Signal class object</p>
 <span class="sig-name descname"><span class="pre">cut</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.cut" title="Permalink to this definition"></a></dt>
 <dd><p>Cut signal between positions.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>pos</strong> (<em>tuple</em><em> of </em><em>int</em><em>, </em><em>optional</em>) – Start and stop positions of the new signal, given as indices, defaults to (0,-1)</p></li>
 <li><p><strong>dur</strong> (<em>tuple</em><em> of </em><em>float</em><em>, </em><em>optional</em>) – Start and stop positions of the new signal, given as time values</p></li>
@@ -738,6 +750,7 @@ Returns a Signal class object</p>
 <p>pos and dur cannot be both specified. An exception is raised in that case.</p>
 <p>Negative values are possible, as well as values beyond the end of the signal. The signal is looped in that case.</p>
 <p>pos[1] can be lower that pos[0], in that case, the signal is reversed.</p>
+<p>NOTE : cut ignores the timeshift _t0 property</p>
 </dd></dl>
 
 <dl class="py method">
@@ -747,13 +760,13 @@ Returns a Signal class object</p>
 ref is for instance a pressure or volage reference that
 has to be of same units as the signal.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>ref</strong> (<em>unyt.array.unyt_quantity</em>) – Reference quantity that has to be of same dimension</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A signal of dimension dB</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#measpy.signal.Signal" title="measpy.signal.Signal">measpy.signal.Signal</a></p>
 </dd>
 </dl>
@@ -782,10 +795,10 @@ VREF is the reference particle velocity (5e-8 m/s)
 <span class="sig-name descname"><span class="pre">diff</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.diff" title="Permalink to this definition"></a></dt>
 <dd><p>Compute time derivative</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Time derivative of signal (unit/s)</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>measpy.signal</p>
 </dd>
 </dl>
@@ -802,13 +815,13 @@ VREF is the reference particle velocity (5e-8 m/s)
 <span class="sig-name descname"><span class="pre">fade</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fades</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.fade" title="Permalink to this definition"></a></dt>
 <dd><p>Apply fades at the begining and the end of the signal</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>fades</strong> (<em>(</em><em>int</em><em>,</em><em>int</em><em>)</em>) – Tuple of ints specifying the fade in and fade out lengths</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Faded signal</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#measpy.signal.Signal" title="measpy.signal.Signal">measpy.signal.Signal</a></p>
 </dd>
 </dl>
@@ -826,13 +839,13 @@ Returns a Spectral object. Unit is preserved during the process.</p>
 <em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_csvwav</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.from_csvwav" title="Permalink to this definition"></a></dt>
 <dd><p>Load a signal from a pair of csv and wav files</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>filename</strong> (<em>str</em>) – base file name</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The loaded signal</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#measpy.signal.Signal" title="measpy.signal.Signal">measpy.signal.Signal</a></p>
 </dd>
 </dl>
@@ -843,13 +856,13 @@ Returns a Spectral object. Unit is preserved during the process.</p>
 <em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_wav</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.from_wav" title="Permalink to this definition"></a></dt>
 <dd><p>Load a signal from a wav file</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>filename</strong> (<em>str</em>) – base file name</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The loaded signal</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#measpy.signal.Signal" title="measpy.signal.Signal">measpy.signal.Signal</a></p>
 </dd>
 </dl>
@@ -866,7 +879,7 @@ higher harmonics.</p>
 system to a logarithmic sweep created with the
 <code class="docutils literal notranslate"><span class="pre">`Signal.log_sweep`</span></code> method.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>nh</strong> (<em>int</em><em>, </em><em>optional</em>) – number of harmonics, including harmonic 0 (the linear part of the response), defaults to 4</p></li>
 <li><p><strong>freqs</strong> (<em>tuple</em><em>, </em><em>optional</em>) – frequencies between which the output signal that was used sweeps, defaults to [20,20000]</p></li>
@@ -876,14 +889,14 @@ system to a logarithmic sweep created with the
 <li><p><strong>debug_plot</strong> (<em>bool</em>) – Specifies if debugging plots are shown during the process, defaults to False</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A four element tuple containing:
 - A dictionary of Spectral objects representing the different harmonics as function of the frequency, not frequency aligned
 - A dictionnary of Spectral objects, representing the different harmonics, smoothed and frequency aligned
 - The total harmonic distortion (THD)
 - The delay between output (sent signal) and input (measure signal)</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>tuple</p>
 </dd>
 </dl>
@@ -895,10 +908,10 @@ system to a logarithmic sweep created with the
 <dd><p>Computes the hilbert transform of a signal
 Warning: This method the imaginary part of the hilbert function of the scipy module.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A signal</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="#measpy.signal.Signal" title="measpy.signal.Signal">measpy.signal.Signal</a></p>
 </dd>
 </dl>
@@ -910,10 +923,10 @@ Warning: This method the imaginary part of the hilbert function of the scipy mod
 <dd><p>Computes the analytical signal through hilbert transform of a signal
 Note: This method is exactly the hilbert function of the scipy module.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A signal</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="#measpy.signal.Signal" title="measpy.signal.Signal">measpy.signal.Signal</a></p>
 </dd>
 </dl>
@@ -925,7 +938,7 @@ Note: This method is exactly the hilbert function of the scipy module.</p>
 <dd><p>Infinite impulse response filter of a signal.</p>
 <p>The signal is filtered accordingly to the parameters. This method is a wrapper around the scipy.signal iir functions, most of the parameters are hence the same.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>N</strong> (<em>int</em><em>, </em><em>optional</em>) – Filter order, defaults to 2</p></li>
 <li><p><strong>Wn</strong> (<em>tuple</em><em>, </em><em>optional</em>) – a cutoff frequency (if low or highpass) or a tuple of frequency (if bandpass/stop), defaults to (20,20000)</p></li>
@@ -935,10 +948,10 @@ Note: This method is exactly the hilbert function of the scipy module.</p>
 <li><p><strong>ftype</strong> (<em>str</em><em>, </em><em>optional</em>) – Type of filter (butter, elliptic, etc.), defaults to ‘butter’</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A filtered signal</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#measpy.signal.Signal" title="measpy.signal.Signal">measpy.signal.Signal</a></p>
 </dd>
 </dl>
@@ -949,10 +962,10 @@ Note: This method is exactly the hilbert function of the scipy module.</p>
 <span class="sig-name descname"><span class="pre">imag</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.imag" title="Permalink to this definition"></a></dt>
 <dd><p>Imaginary part of the signal, calibrations applied</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The imaginary part of the signal</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>measpy.signal</p>
 </dd>
 </dl>
@@ -966,7 +979,7 @@ Note: This method is exactly the hilbert function of the scipy module.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Signal.log_sweep">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">log_sweep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">44100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dur</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freqs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[20.0,</span> <span class="pre">20000.0]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dbfs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.log_sweep" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">log_sweep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">44100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dur</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freqs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[20.0,</span> <span class="pre">20000.0]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dbfs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">desc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.log_sweep" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
@@ -974,10 +987,10 @@ Note: This method is exactly the hilbert function of the scipy module.</p>
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">max</span></span><a class="headerlink" href="#measpy.signal.Signal.max" title="Permalink to this definition"></a></dt>
 <dd><p>Max value of a signal</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Max value</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>unyt.array.unyt_quantity</p>
 </dd>
 </dl>
@@ -988,10 +1001,10 @@ Note: This method is exactly the hilbert function of the scipy module.</p>
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">min</span></span><a class="headerlink" href="#measpy.signal.Signal.min" title="Permalink to this definition"></a></dt>
 <dd><p>Min value of a signal</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Min value</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>unyt.array.unyt_quantity</p>
 </dd>
 </dl>
@@ -999,7 +1012,7 @@ Note: This method is exactly the hilbert function of the scipy module.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Signal.noise">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">noise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">44100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dur</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freqs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[20.0,</span> <span class="pre">20000.0]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dbfs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.noise" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">noise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">44100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dur</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freqs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[20.0,</span> <span class="pre">20000.0]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dbfs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">desc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.noise" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1007,10 +1020,10 @@ Note: This method is exactly the hilbert function of the scipy module.</p>
 <span class="sig-name descname"><span class="pre">normalize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.normalize" title="Permalink to this definition"></a></dt>
 <dd><p>Normalize a signal</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Dimensionless normalized signal</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>measpy.Signal</p>
 </dd>
 </dl>
@@ -1037,7 +1050,7 @@ Optional arguments are the same as the welch function
 in scipy.signal</p>
 <p>Optional arguments are the same as scipy.welch()</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>window</strong> (<em>str</em><em>, </em><em>optional</em>) – Window function type, default ‘hann’</p></li>
 <li><p><strong>nperseg</strong> (<em>int</em><em>, </em><em>optional</em>) – Length of each segment. Defaults to the power of two closest to one second duration, so that the frequency spacing is approx. 1Hz.</p></li>
@@ -1064,10 +1077,10 @@ in scipy.signal</p>
 <span class="sig-name descname"><span class="pre">real</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.real" title="Permalink to this definition"></a></dt>
 <dd><p>Real part of the signal, calibrations applied</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The real part of the signal</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>measpy.signal</p>
 </dd>
 </dl>
@@ -1078,13 +1091,13 @@ in scipy.signal</p>
 <span class="sig-name descname"><span class="pre">resample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.resample" title="Permalink to this definition"></a></dt>
 <dd><p>Changes sampling rate of the signal</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>fs</strong> (<em>float</em>) – Desired sampling rate</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A resampled signal</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#measpy.signal.Signal" title="measpy.signal.Signal">measpy.signal.Signal</a></p>
 </dd>
 </dl>
@@ -1102,10 +1115,10 @@ Returns a Spectral object. Unit is preserved during the process.</p>
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rms</span></span><a class="headerlink" href="#measpy.signal.Signal.rms" title="Permalink to this definition"></a></dt>
 <dd><p>Compute the RMS of the complete Signal</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A quantity</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>unyt.Quantity</p>
 </dd>
 </dl>
@@ -1117,13 +1130,13 @@ Returns a Spectral object. Unit is preserved during the process.</p>
 <dd><p>Compute the RMS of the Signal over windows
 of width nperseg samples</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>nperseg</strong> (<em>int</em><em>, </em><em>optionnal</em>) – Window size, defaults to 512</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A resampled signal</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#measpy.signal.Signal" title="measpy.signal.Signal">measpy.signal.Signal</a></p>
 </dd>
 </dl>
@@ -1136,7 +1149,7 @@ of width nperseg samples</p>
 with properties changed as specified
 by the optional arguments.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>fs</strong> (<em>int</em><em>, </em><em>optional</em>) – Sampling frequency</p></li>
 <li><p><strong>desc</strong> (<em>str</em><em>, </em><em>optional</em>) – Description</p></li>
@@ -1148,10 +1161,10 @@ by the optional arguments.</p>
 <li><p><strong>raw</strong> (<em>numpy.array</em><em>, </em><em>optional</em>) – Signal values given as raw samples</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A signal</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#measpy.signal.Signal" title="measpy.signal.Signal">measpy.signal.Signal</a></p>
 </dd>
 </dl>
@@ -1164,7 +1177,7 @@ only volts is taken into account.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Signal.sine">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">44100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dur</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dbfs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.sine" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">44100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dur</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dbfs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">desc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.sine" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1173,13 +1186,13 @@ only volts is taken into account.</p>
 <dd><p>Compute the RMS of the Signal over windows
 of width nperseg samples</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>nperseg</strong> (<em>int</em><em>, </em><em>optionnal</em>) – Window size, defaults to 512</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A resampled signal</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#measpy.signal.Signal" title="measpy.signal.Signal">measpy.signal.Signal</a></p>
 </dd>
 </dl>
@@ -1200,6 +1213,12 @@ of width nperseg samples</p>
 - ax : an axes object</p>
 </dd></dl>
 
+<dl class="py property">
+<dt class="sig sig-object py" id="measpy.signal.Signal.t0">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">t0</span></span><a class="headerlink" href="#measpy.signal.Signal.t0" title="Permalink to this definition"></a></dt>
+<dd><p>Time shifting of the signal (reads the t0 value if ot exists, else 0)</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Signal.tfe_farina">
 <span class="sig-name descname"><span class="pre">tfe_farina</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">freqs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.tfe_farina" title="Permalink to this definition"></a></dt>
@@ -1212,7 +1231,7 @@ where x is a log sweep of same duration between freqs[0] and freqs[1]</p>
 <span class="sig-name descname"><span class="pre">tfe_welch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.tfe_welch" title="Permalink to this definition"></a></dt>
 <dd><p>Compute transfer function between signal x and the actual signal. Optional parameters are the same as scipy.signal.csd or scipy.signal.welch</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>x</strong> (<a class="reference internal" href="#measpy.signal.Signal" title="measpy.signal.Signal"><em>measpy.signal.Signal</em></a>) – Other signal from which the transfert function is computed</p></li>
 <li><p><strong>window</strong> (<em>str</em><em>, </em><em>optional</em>) – Window function type, default ‘hann’</p></li>
@@ -1225,7 +1244,7 @@ where x is a log sweep of same duration between freqs[0] and freqs[1]</p>
 <li><p><strong>average</strong> (<em>str</em><em>, </em><em>optional</em>) – Method to use when averaging periodograms. Defaults to ‘mean’.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A Spectral object</p>
 </dd>
 </dl>
@@ -1244,7 +1263,7 @@ where x is a log sweep of same duration between freqs[0] and freqs[1]</p>
 by computing the time at maximum cross-correlation between
 the two signals.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>x</strong> (<a class="reference internal" href="#measpy.signal.Signal" title="measpy.signal.Signal"><em>measpy.signal.Signal</em></a>) – Other signal to compute the timelag with</p>
 </dd>
 </dl>
@@ -1255,10 +1274,10 @@ the two signals.</p>
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">tmax</span></span><a class="headerlink" href="#measpy.signal.Signal.tmax" title="Permalink to this definition"></a></dt>
 <dd><p>Time at max value of a signal</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Time of maximum</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>unyt.array.unyt_quantity</p>
 </dd>
 </dl>
@@ -1274,7 +1293,7 @@ the two signals.</p>
 </ul>
 <p>If the str parameter filename=’file’, the created files are file.csv and file.wav</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>filename</strong> (<em>str</em>) – string for the base file name</p></li>
 <li><p><strong>datatype</strong> (<em>str</em>) – string for the optionnal data format (defaults to ‘raw’)</p></li>
@@ -1294,7 +1313,7 @@ the two signals.</p>
 </ul>
 <p>If the str parameter filename=’file’, the created files are file.csv and file.wav</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>filename</strong> (<em>str</em>) – string for the base file name</p>
 </dd>
 </dl>
@@ -1305,16 +1324,16 @@ the two signals.</p>
 <span class="sig-name descname"><span class="pre">unit_to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">unit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.unit_to" title="Permalink to this definition"></a></dt>
 <dd><p>Change Signal unit</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>unit</strong> (<em>unyt.unit</em><em> or </em><em>str</em>) – Unit to convert to (has to be compatible)</p>
 </dd>
-<dt class="field-even">Raises</dt>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>Exception</strong> – ‘Incompatible units’</p>
 </dd>
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Signal converted to the new unit</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>measpy.Signal</p>
 </dd>
 </dl>
@@ -1325,10 +1344,10 @@ the two signals.</p>
 <span class="sig-name descname"><span class="pre">unit_to_std</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.unit_to_std" title="Permalink to this definition"></a></dt>
 <dd><p>Change Signal unit to the standard base equivalent</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Signal converted to the new unit</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>measpy.Signal</p>
 </dd>
 </dl>
@@ -1359,7 +1378,7 @@ densities, etc.</p>
 using sampling frequencies and length of the values array
 by calling the property freqs.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>fs</strong> (<em>int</em><em>, </em><em>optional</em>) – Sampling frequency, defaults to 1</p></li>
 <li><p><strong>desc</strong> (<em>str</em><em>, </em><em>optional</em>) – Description, defaults to ‘Spectral data’</p></li>
@@ -1377,13 +1396,13 @@ If dur is given, values are initialised at 0</p>
 <span class="sig-name descname"><span class="pre">angle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">unwrap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Spectral.angle" title="Permalink to this definition"></a></dt>
 <dd><p>Compute the angle of the spectrum</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>unwrap</strong> (<em>bool</em>) – If True, the angle data is unwrapped</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The angle part of the signal, unit=rad</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>measpy.signal</p>
 </dd>
 </dl>
@@ -1394,10 +1413,10 @@ If dur is given, values are initialised at 0</p>
 <span class="sig-name descname"><span class="pre">apply_dBA</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Spectral.apply_dBA" title="Permalink to this definition"></a></dt>
 <dd><p>Apply dBA weighting</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Weighted spectrum</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="#measpy.signal.Spectral" title="measpy.signal.Spectral">measpy.signal.Spectral</a></p>
 </dd>
 </dl>
@@ -1408,10 +1427,10 @@ If dur is given, values are initialised at 0</p>
 <span class="sig-name descname"><span class="pre">apply_dBC</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Spectral.apply_dBC" title="Permalink to this definition"></a></dt>
 <dd><p>Apply dBC weighting</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Weighted spectrum</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="#measpy.signal.Spectral" title="measpy.signal.Spectral">measpy.signal.Spectral</a></p>
 </dd>
 </dl>
@@ -1422,13 +1441,13 @@ If dur is given, values are initialised at 0</p>
 <span class="sig-name descname"><span class="pre">apply_weighting</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">w</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inverse</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Spectral.apply_weighting" title="Permalink to this definition"></a></dt>
 <dd><p>Applies weighting w to the spectral object</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>inverse</strong> (<em>Bool</em><em>, </em><em>optional</em>) – If true, applies division instead of multiplication. Defaults to False.</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>New spectral object (with new unit)</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#measpy.signal.Spectral" title="measpy.signal.Spectral">measpy.signal.Spectral</a></p>
 </dd>
 </dl>
@@ -1440,10 +1459,10 @@ If dur is given, values are initialised at 0</p>
 <dd><p>Convert to dB dBV
 Signal unit has to be compatible with Volts</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Weighted spectrum</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="#measpy.signal.Spectral" title="measpy.signal.Spectral">measpy.signal.Spectral</a></p>
 </dd>
 </dl>
@@ -1452,13 +1471,13 @@ Signal unit has to be compatible with Volts</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Spectral.dB_SPL">
 <span class="sig-name descname"><span class="pre">dB_SPL</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Spectral.dB_SPL" title="Permalink to this definition"></a></dt>
-<dd><p>Convert to dB SPL (20 log10 <a href="#id5"><span class="problematic" id="id6">|P|</span></a>/P0)
+<dd><p>Convert to dB SPL (20 log10 ||P||/P0)
 Signal unit has to be compatible with Pa</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Weighted spectrum</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="#measpy.signal.Spectral" title="measpy.signal.Spectral">measpy.signal.Spectral</a></p>
 </dd>
 </dl>
@@ -1467,13 +1486,13 @@ Signal unit has to be compatible with Pa</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Spectral.dB_SVL">
 <span class="sig-name descname"><span class="pre">dB_SVL</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Spectral.dB_SVL" title="Permalink to this definition"></a></dt>
-<dd><p>Convert to dB SVL (20 log10 <a href="#id7"><span class="problematic" id="id8">|V|</span></a>/V0)
+<dd><p>Convert to dB SVL (20 log10 ||V||/V0)
 Signal unit has to be compatible with m/s</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Weighted spectrum</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="#measpy.signal.Spectral" title="measpy.signal.Spectral">measpy.signal.Spectral</a></p>
 </dd>
 </dl>
@@ -1485,10 +1504,10 @@ Signal unit has to be compatible with m/s</p>
 <dd><p>Convert to dB dBu
 Signal unit has to be compatible with Volts</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Weighted spectrum</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="#measpy.signal.Spectral" title="measpy.signal.Spectral">measpy.signal.Spectral</a></p>
 </dd>
 </dl>
@@ -1499,10 +1518,10 @@ Signal unit has to be compatible with Volts</p>
 <span class="sig-name descname"><span class="pre">diff</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Spectral.diff" title="Permalink to this definition"></a></dt>
 <dd><p>Compute frequency derivative</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Frequency derivative of spectral (unit/Hz)</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="#measpy.signal.Spectral" title="measpy.signal.Spectral">measpy.signal.Spectral</a></p>
 </dd>
 </dl>
@@ -1532,10 +1551,10 @@ Returns a Spectral class object</p>
 <span class="sig-name descname"><span class="pre">group_delay</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Spectral.group_delay" title="Permalink to this definition"></a></dt>
 <dd><p>Compute group delay</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Group delay (s)</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="#measpy.signal.Spectral" title="measpy.signal.Spectral">measpy.signal.Spectral</a></p>
 </dd>
 </dl>
@@ -1553,10 +1572,10 @@ of the spectral data set</p>
 <span class="sig-name descname"><span class="pre">imag</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Spectral.imag" title="Permalink to this definition"></a></dt>
 <dd><p>Imaginary part</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Real part (same unit)</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="#measpy.signal.Spectral" title="measpy.signal.Spectral">measpy.signal.Spectral</a></p>
 </dd>
 </dl>
@@ -1582,17 +1601,17 @@ of the spectral data set</p>
 Works on real valued spectra. For complex values,
 use nth_oct_smooth_complex.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>n</strong> (<em>int</em><em>, </em><em>optionnal</em>) – Ratio of smoothing (1/nth smoothing), defaults to 3</p></li>
 <li><p><strong>fmin</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>optionnal</em>) – Min value of the output frequencies, defaults to 5</p></li>
 <li><p><strong>fmax</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>optionnal</em>) – Max value of the output frequencies, defaults to 20000</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A smoothed spectral object</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#measpy.signal.Spectral" title="measpy.signal.Spectral">measpy.signal.Spectral</a></p>
 </dd>
 </dl>
@@ -1604,17 +1623,17 @@ use nth_oct_smooth_complex.</p>
 <dd><p>Nth octave smoothing
 Complex signal version</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>n</strong> (<em>int</em><em>, </em><em>optionnal</em>) – Ratio of smoothing (1/nth smoothing), defaults to 3</p></li>
 <li><p><strong>fmin</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>optionnal</em>) – Min value of the output frequencies, defaults to 5</p></li>
 <li><p><strong>fmax</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>optionnal</em>) – Max value of the output frequencies, defaults to 20000</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A smoothed spectral object</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#measpy.signal.Spectral" title="measpy.signal.Spectral">measpy.signal.Spectral</a></p>
 </dd>
 </dl>
@@ -1631,7 +1650,7 @@ use nth_oct_smooth_to_weight_complex.</p>
 with a corresponding complex value, expressed as
 amplitude and phase)</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>n</strong> (<em>int</em><em>, </em><em>optionnal</em>) – Ratio of smoothing (1/nth smoothing), defaults to 3</p></li>
 <li><p><strong>fmin</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>optionnal</em>) – Min value of the output frequencies, defaults to 5</p></li>
@@ -1646,17 +1665,17 @@ amplitude and phase)</p>
 <span class="sig-name descname"><span class="pre">nth_oct_smooth_to_weight_complex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20000</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Spectral.nth_oct_smooth_to_weight_complex" title="Permalink to this definition"></a></dt>
 <dd><p>Nth octave smoothing, complex version</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>n</strong> (<em>int</em><em>, </em><em>optionnal</em>) – Ratio of smoothing (1/nth smoothing), defaults to 3</p></li>
 <li><p><strong>fmin</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>optionnal</em>) – Min value of the output frequencies, defaults to 5</p></li>
 <li><p><strong>fmax</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>optionnal</em>) – Max value of the output frequencies, defaults to 20000</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A weighting object</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#measpy.signal.Weighting" title="measpy.signal.Weighting">measpy.signal.Weighting</a></p>
 </dd>
 </dl>
@@ -1667,7 +1686,7 @@ amplitude and phase)</p>
 <span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dby</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_phase</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unwrap_phase</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Spectral.plot" title="Permalink to this definition"></a></dt>
 <dd><p>Plot spectral data</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>ax</strong> (<em>Axis type</em><em>, </em><em>optional</em>) – Axis where to plot the data, defaults to None</p></li>
 <li><p><strong>logx</strong> (<em>bool</em><em>, </em><em>optional</em>) – If true, the frequency axis is in log scale, defaults to True</p></li>
@@ -1676,10 +1695,10 @@ amplitude and phase)</p>
 <li><p><strong>unwrap_phase</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, phase is unwrapped, defaults to True</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>An axes type object if plotphase is False, a list of two axes objects if plotphase is True</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>axes, or list of axes</p>
 </dd>
 </dl>
@@ -1690,10 +1709,10 @@ amplitude and phase)</p>
 <span class="sig-name descname"><span class="pre">real</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Spectral.real" title="Permalink to this definition"></a></dt>
 <dd><p>Real part</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Real part (same unit)</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="#measpy.signal.Spectral" title="measpy.signal.Spectral">measpy.signal.Spectral</a></p>
 </dd>
 </dl>
@@ -1714,7 +1733,7 @@ by the optionnal arguments.</p>
 <p>It is possible to construct a new Spectral object
 by interpolating a Weighting object (parameter w)</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>fs</strong> (<em>int</em><em>, </em><em>optional</em>) – Sampling frequency</p></li>
 <li><p><strong>desc</strong> (<em>str</em><em>, </em><em>optional</em>) – Description</p></li>
@@ -1723,10 +1742,10 @@ by interpolating a Weighting object (parameter w)</p>
 <li><p><strong>w</strong> (<a class="reference internal" href="#measpy.signal.Weighting" title="measpy.signal.Weighting"><em>measpy.signal.Weighting</em></a><em>, </em><em>optionnal</em>) – A Weighting object from which the spectrum is constructed by interpolation</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A Spectral object</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#measpy.signal.Spectral" title="measpy.signal.Spectral">measpy.signal.Spectral</a></p>
 </dd>
 </dl>
@@ -1737,16 +1756,16 @@ by interpolating a Weighting object (parameter w)</p>
 <em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">tfe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Spectral.tfe" title="Permalink to this definition"></a></dt>
 <dd><p>Initializes a spectral object by computing the transfer function between two signals of same sampling frequency and length. Optional arguments are the same as measpy.Signal.tfe_welch</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>x</strong> (<em>measpy.Signal.signal</em>) – Input signal</p></li>
 <li><p><strong>y</strong> (<em>measpy.Signal.signal</em>) – Output signal</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A spectral object</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>measpy.Signal.spectral</p>
 </dd>
 </dl>
@@ -1757,10 +1776,10 @@ by interpolating a Weighting object (parameter w)</p>
 <span class="sig-name descname"><span class="pre">unit_to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">unit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Spectral.unit_to" title="Permalink to this definition"></a></dt>
 <dd><p>Converts to a new compatible unit</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>New spectral object (with new unit)</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="#measpy.signal.Spectral" title="measpy.signal.Spectral">measpy.signal.Spectral</a></p>
 </dd>
 </dl>
@@ -1790,31 +1809,76 @@ given frequencies, using interpolation
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Class for weighting functions</p>
 <p>Amplitudes are stored as absolute values and phase (in radians)</p>
+<p>A Weighting object stores:</p>
+<ul class="simple">
+<li><p>A list of frequencies (numpy.array)</p></li>
+<li><p>Corresponding amplitudes (numpy.array)</p></li>
+<li><p>Corresponding phases in radians (numpy.array)</p></li>
+<li><p>A descriptor (string)</p></li>
+</ul>
 <dl class="py property">
 <dt class="sig sig-object py" id="measpy.signal.Weighting.acomplex">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">acomplex</span></span><a class="headerlink" href="#measpy.signal.Weighting.acomplex" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Weighting values represented as a complex number</p>
+</dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="measpy.signal.Weighting.adb">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">adb</span></span><a class="headerlink" href="#measpy.signal.Weighting.adb" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Amplitude in dB
+Computes 20 log10 of the modulus of the amplitude</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Weighting.from_csv">
 <em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_csv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">asdB</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">asradians</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Weighting.from_csv" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Loads a weighting object from a csv file
+The file must contain three columns:</p>
+<ul class="simple">
+<li><p>One frequency column</p></li>
+<li><p>One amplitude column (linear or as dB, which must be specified in the asdB boolean optional argument)</p></li>
+<li><p>One phase column (as radians or degree, which must be specified in the asradians boolean optional argument)</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<em>str</em>) – File name of the csv file to load</p></li>
+<li><p><strong>asdB</strong> (<em>bool</em>) – Specifies if the amplitude is given in dB or not</p></li>
+<li><p><strong>asradians</strong> (<em>bool</em>) – Specifies if the phase is given in radians or degrees</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A Weighting object</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>measpy.weighting.Weighting</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Weighting.to_csv">
 <span class="sig-name descname"><span class="pre">to_csv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">asdB</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">asradians</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Weighting.to_csv" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Saves a weighting object to a csv file
+The file then contains three columns:</p>
+<ul class="simple">
+<li><p>One frequency column</p></li>
+<li><p>One amplitude column (linear or as dB, which must be specified in the asdB boolean optional argument)</p></li>
+<li><p>One phase column (as radians or degree, which must be specified in the asradians boolean optional argument)</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<em>str</em>) – File name of the csv file to load</p></li>
+<li><p><strong>asdB</strong> (<em>bool</em>) – Specifies if the amplitude is given in dB or not</p></li>
+<li><p><strong>asradians</strong> (<em>bool</em>) – Specifies if the phase is given in radians or degrees</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
-</section>
-<section id="module-measpy">
-<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-measpy" title="Permalink to this heading"></a></h2>
 </section>
 </section>
 
@@ -1822,7 +1886,7 @@ given frequencies, using interpolation
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="4_spectrum_smoothing_and_weighting.html" class="btn btn-neutral float-left" title="Tutorial 4: The measpy.Weighting class" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="2_spectral_data.html" class="btn btn-neutral float-left" title="Tutorial 2: measpy.Spectral class" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>
