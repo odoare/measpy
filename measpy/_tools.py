@@ -93,22 +93,22 @@ def apply_fades(s,fades):
         s[-fades[1]:] = s[-fades[1]:] *  ((np.cos(np.arange(fades[1])/fades[1]*np.pi)+1) / 2)
     return s
 
-def noise(fs, dur, out_amp, freqs):
+def noise(fs, dur, out_amp, freq_min, freq_max):
     """ Create band-limited noise """
     leng = int(dur*fs)
     lengs2 = int(np.ceil(leng/2))
     f = fs*np.arange(lengs2+1, dtype=float)/leng
-    amp = ((f > freqs[0]) & (f < freqs[1]))*np.sqrt(leng)
+    amp = ((f > freq_min) & (f < freq_max))*np.sqrt(leng)
     phase = 2*np.pi*(np.random.rand(lengs2+1)-0.5)
     fftx = amp*np.exp(1j*phase)
     s = out_amp*np.fft.irfft(fftx, leng)
     return s
 
-def log_sweep(fs, dur, out_amp, freqs):
+def log_sweep(fs, dur, out_amp, freq_min, freq_max):
     """ Create log sweep """
-    L = (dur-1/fs)/np.log(freqs[1]/freqs[0])
+    L = (dur-1/fs)/np.log(freq_max/freq_min)
     t = create_time(fs, dur=dur)
-    s = np.sin(2*np.pi*freqs[0]*L*np.exp(t/L))
+    s = np.sin(2*np.pi*freq_min*L*np.exp(t/L))
     return out_amp*s
 
 def sine(fs, dur, out_amp, freq):
