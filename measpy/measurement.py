@@ -213,6 +213,11 @@ class Daqtask:
     # -----------------------
     def to_dir(self,dirname):
         """ Writes the parameters and signals in a directory"""
+        if os.path.exists(dirname):
+            i = 1
+            while os.path.exists(dirname+'('+str(i)+')'):
+                i+=1
+            dirname = dirname+'('+str(i)+')'
         os.mkdir(dirname)
         self._params_to_csv(dirname+"/params.csv")
         if type(self.in_sig)!=type(None):
