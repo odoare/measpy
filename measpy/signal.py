@@ -1501,7 +1501,7 @@ class Signal:
                     out += arg+"="+str(self.__dict__[arg])+",\n"
         out += ')'
         return out
-
+ 
     def timelag(self, x):
         """ Estimate the time delay between two correlated signals,
             by computing the time at maximum cross-correlation between
@@ -1600,7 +1600,7 @@ class Spectral:
         values = kwargs.setdefault("values", None)
         fs = kwargs.setdefault("fs", 1)
         desc = kwargs.setdefault("desc", 'Spectral data')
-        unit = kwargs.setdefault("unit", '1')
+        unit = kwargs.setdefault("unit", None)
         full = kwargs.setdefault("full", False)
         norm = kwargs.setdefault("norm", "backward")
         odd = kwargs.setdefault("odd", False)
@@ -1614,7 +1614,7 @@ class Spectral:
         else:
             self._values = values
         self.desc = desc
-        self.unit = Unit(unit)
+        self.unit = unit
         self.fs = fs
         self.full = full
         self.norm = norm
@@ -2270,6 +2270,27 @@ class Spectral:
         Duration of the signal in time domain that corresponds to this spectral object.
         """
         return self.sample_number/self.fs
+    
+    @property
+    def unit(self):
+        if hasattr(self,'_unit'):
+            return self._unit
+        else:
+            return Unit('1')   
+    @unit.setter
+    def unit(self,val):
+        if val==None:
+            try:
+                del(self._unit)
+            except:
+                pass
+        elif Unit(val)==Unit('1'):
+            try:
+                del(self._unit)
+            except:
+                pass
+        else:
+            self._unit = Unit(val)
 
     #####################################################################
     # Other methods
@@ -2363,6 +2384,19 @@ class Spectral:
             if logx:
                 ax[1].set_xscale('log')
         return ax
+    
+    def __repr__(self):
+        out = "measpy.Spectral("
+        for arg in self.__dict__.keys():
+            if arg == '_unit':
+                out += 'unit='+str(self.__dict__[arg])+",\n"
+            else:
+                if type(self.__dict__[arg]) == str:
+                    out += arg+"='"+self.__dict__[arg]+"',\n"
+                else:
+                    out += arg+"="+str(self.__dict__[arg])+",\n"
+        out += ')'
+        return out
 
     #  END of Spectral
 
