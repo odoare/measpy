@@ -846,8 +846,7 @@ class Signal:
         if hasattr(self,'_unit'):
             return self._unit
         else:
-            return Unit('1')
-    
+            return Unit('1')   
     @unit.setter
     def unit(self,val):
         if val==None:
@@ -871,8 +870,7 @@ class Signal:
         if hasattr(self,'_dbfs'):
             return self._dbfs
         else:
-            return 1.0
-    
+            return 1.0   
     @dbfs.setter
     def dbfs(self,val):
         if val==None:
@@ -891,8 +889,7 @@ class Signal:
         if hasattr(self,'_cal'):
             return self._cal
         else:
-            return 1.0
-    
+            return 1.0    
     @cal.setter
     def cal(self,val):
         if val==None:
@@ -911,8 +908,7 @@ class Signal:
         if hasattr(self,'_invcal'):
             return self._invcal
         else:
-            return 1.0
-  
+            return 1.0 
     @invcal.setter
     def invcal(self,val):
         if val==None:
@@ -929,7 +925,6 @@ class Signal:
         Raw values as 1D numpy array
         """
         return self._rawvalues
-
     @raw.setter
     def raw(self, val):
         self._rawvalues = val
@@ -949,7 +944,6 @@ class Signal:
             return d['y']
         else:
             print('cal property not recognized')
-
     @values.setter
     def values(self, val):
         if isinstance(self.cal, (int, float)):
@@ -969,7 +963,6 @@ class Signal:
         Volt values as 1D numpy array
         """
         return self.raw*self.dbfs
-
     @volts.setter
     def volts(self, val):
         self.raw = val/self.dbfs
@@ -980,6 +973,9 @@ class Signal:
         Time values of the signal as 1D numpy array
         """
         return create_time(self.fs, length=len(self._rawvalues))+self.t0
+    @time.setter
+    def time(self,val):
+        raise AttributeError("Property 'time' cannot be set")
 
     @property
     def t0(self):
@@ -1007,6 +1003,9 @@ class Signal:
         Length of the signal (number of samples)
         """
         return len(self.raw)
+    @length.setter
+    def length(self,val):
+        raise AttributeError("Property 'length' cannot be set")
 
     @property
     def dur(oeuf):
@@ -1025,8 +1024,10 @@ class Signal:
         :return: Max value
         :rtype: unyt.array.unyt_quantity
         """
-
         return max(self.values)*unyt.Unit(self.unit)
+    @max.setter
+    def max(self,val):
+        raise AttributeError("Property 'max' cannot be set")
 
     @property
     def tmax(self):
@@ -1035,8 +1036,10 @@ class Signal:
         :return: Time of maximum
         :rtype: unyt.array.unyt_quantity
         """
-
         return self.time[argmax(self.values)]*unyt.Unit('s')
+    @tmax.setter
+    def tmax(self,val):
+        raise AttributeError("Property 'tmax' cannot be set")
 
     @property
     def min(self):
@@ -1045,8 +1048,10 @@ class Signal:
         :return: Min value
         :rtype: unyt.array.unyt_quantity
         """
-
-        return max(self.values)*unyt.Unit(self.unit)
+        return min(self.values)*unyt.Unit(self.unit)
+    @min.setter
+    def min(self,val):
+        raise AttributeError("Property 'min' cannot be set")
 
     @property
     def rms(self):
@@ -1056,6 +1061,9 @@ class Signal:
             :rtype: unyt.Quantity      
         """
         return np.sqrt(np.mean(self.values**2))*self.unit
+    @rms.setter
+    def rms(self,val):
+        raise AttributeError("Property 'rms' cannot be set")
 
     # #################################################################
     # Operators
