@@ -129,14 +129,8 @@ class Signal:
 
         if 'fs' not in kwargs:
             self.fs = 1.0
-        if 'cal' not in kwargs:
-            self.cal = 1.0
-        if 'dbfs' not in kwargs:
-            self.dbfs = 1.0
         if 'desc' not in kwargs:
             self.desc = 'A signal'
-        if 'unit' not in kwargs:
-            self.unit = Unit('1')
 
         # We have to make sure that properties such as dbfs
         # and cal are the correct ones BEFORE values are calculated
@@ -150,9 +144,15 @@ class Signal:
             elif arg == 'raw':
                 pass
             elif arg == 'unit':
-                self.unit = Unit(kwargs[arg])
+                self.unit = kwargs[arg]
             elif arg == 't0':
-                self._t0 = kwargs[arg]    
+                self.t0 = kwargs[arg]
+            elif arg == 'dbfs':
+                self.dbfs = kwargs[arg]    
+            elif arg == 'cal':
+                self.cal = kwargs[arg]   
+            elif arg == 'dur':
+                raise AttributeError("Property 'dur' cannot be set")
             else:
                 self.__dict__[arg] = kwargs[arg]
 
@@ -211,9 +211,13 @@ class Signal:
             elif arg == 'raw':
                 pass
             elif arg == 'unit':
-                out.unit = Unit(kwargs[arg])
+                out.unit = kwargs[arg]  
             elif arg == 't0':
-                out._t0 = kwargs[arg]    
+                out.t0 = kwargs[arg]
+            elif arg == 'dbfs':
+                out.dbfs = kwargs[arg]
+            elif arg == 'cal':
+                out.cal = kwargs[arg]
             else:
                 out.__dict__[arg] = kwargs[arg]
         for arg in kwargs:
@@ -238,8 +242,8 @@ class Signal:
             values=np.sqrt(smooth(self.values**2, nperseg)),
             desc=add_step(self.desc, 'RMS smoothed on ' +
                           str(nperseg)+' data points'),
-            cal=1.0,
-            dbfs=1.0
+            cal=None,
+            dbfs=None
         )
     
     def smooth(self, nperseg=512):
@@ -255,8 +259,8 @@ class Signal:
             values=smooth(self.values, nperseg),
             desc=add_step(self.desc, 'Smoothed on ' +
                           str(nperseg)+' data points'),
-            cal=1.0,
-            dbfs=1.0
+            cal=None,
+            dbfs=None
         )
 
     def dB(self, ref):
@@ -277,8 +281,8 @@ class Signal:
         ref.convert_to_units(self.unit)
         return self.similar(
             raw=20*np.log10(self.values*self.unit/ref),
-            dbfs=1.0,
-            cal=1.0,
+            dbfs=None,
+            cal=None,
             unit=Unit('decibel'),
             desc=add_step(
                 self.desc,
@@ -447,7 +451,7 @@ class Signal:
         :rtype: measpy.signal.Signal
         """
 
-        return self.similar(unit='V', cal=1.0, dbfs=1.0, raw=self.volts, desc=add_step(self.desc, 'Voltage'))
+        return self.similar(unit='V', cal=None, dbfs=None, raw=self.volts, desc=add_step(self.desc, 'Voltage'))
 
     def as_raw(self):
         """
@@ -456,7 +460,7 @@ class Signal:
         :return: A signal
         :rtype: measpy.signal.Signal
         """
-        return self.similar(unit='1', cal=1.0, dbfs=1.0, raw=self.raw, desc=add_step(self.desc, 'Raw data'))
+        return self.similar(unit='1', cal=None, dbfs=None, raw=self.raw, desc=add_step(self.desc, 'Raw data'))
 
     def unit_to(self, unit):
         """
@@ -477,8 +481,8 @@ class Signal:
             a[1] = 0
         return self.similar(
             values=a[0]*self.values-a[1],
-            cal=1.0,
-            dbfs=1.0,
+            cal=None,
+            dbfs=None,
             unit=unit,
             desc=add_step(self.desc, 'Unit to '+str(unit))
         )
@@ -506,7 +510,7 @@ class Signal:
         :return: Time derivative of signal (unit/s)
         :rtype: measpy.signal
         """
-        return self.similar(values=np.diff(self.values)*self.fs, unit=self.unit/Unit('s'), desc=add_step(self.desc, 'diff'), cal=1.0, dbfs=1.0)
+        return self.similar(values=np.diff(self.values)*self.fs, unit=self.unit/Unit('s'), desc=add_step(self.desc, 'diff'), cal=None, dbfs=None)
 
     def real(self):
         """ Real part of the signal, calibrations applied
@@ -550,8 +554,8 @@ class Signal:
             values=vals,
             desc=desc,
             unit='rad',
-            cal=1.0,
-            dbfs=1.0
+            cal=None,
+            dbfs=None
         )
     
     def convolve(self,other,**kwargs):
@@ -565,8 +569,8 @@ class Signal:
             values = convolve(self.values,other.values),
             desc = self.desc+' convolved with '+other.desc,
             unit = self.unit*other.unit,
-            cal = 1.0,
-            dbfs = 1.0
+            cal = None,
+            dbfs = None
         )
 
 
@@ -744,7 +748,7 @@ class Signal:
     #####################################################################
 
     @classmethod
-    def noise(cls, fs=44100, dur=2.0, amp=1.0, freq_min = 20.0, freq_max=20000.0, unit='1', cal=1.0, dbfs=1.0, desc=None):
+    def noise(cls, fs=44100, dur=2.0, amp=1.0, freq_min = 20.0, freq_max=20000.0, unit=None, cal=None, dbfs=None, desc=None):
         if desc==None:
             desc = 'Noise '+str(freq_min)+'-'+str(freq_max)+'Hz'
         return cls(
@@ -759,7 +763,7 @@ class Signal:
         )
 
     @classmethod
-    def log_sweep(cls, fs=44100, dur=2.0, amp=1.0, freq_min = 20.0, freq_max=20000.0, unit='1', cal=1.0, dbfs=1.0, desc=None):
+    def log_sweep(cls, fs=44100, dur=2.0, amp=1.0, freq_min = 20.0, freq_max=20000.0, unit=None, cal=None, dbfs=None, desc=None):
         if desc==None:
             desc = 'Logsweep '+str(freq_min)+'-'+str(freq_max)+'Hz'
         return cls(
@@ -774,7 +778,7 @@ class Signal:
         )
 
     @classmethod
-    def sine(cls, fs=44100, dur=2.0, amp=1.0, freq=1000.0, unit='1', cal=1.0, dbfs=1.0, desc=None):
+    def sine(cls, fs=44100, dur=2.0, amp=1.0, freq=1000.0, unit=None, cal=None, dbfs=None, desc=None):
         if desc==None:
             desc = 'Sine '+str(freq)+'Hz'
         return cls(
@@ -823,16 +827,101 @@ class Signal:
         """
 
         desc = kwargs.setdefault("desc", filename)
-        unit = kwargs.setdefault("unit", "1")
-        cal = kwargs.setdefault("cal", 1.0)
-        dbfs = kwargs.setdefault("dbfs", 1.0)
+        unit = kwargs.setdefault("unit", None)
+        cal = kwargs.setdefault("cal", None)
+        dbfs = kwargs.setdefault("dbfs", None)
         out = cls(desc=desc, unit=unit, cal=cal, dbfs=dbfs)
-        out.fs, out._rawvalues = wav.read(filename)
+        out.fs, out.raw = wav.read(filename)
         return out
 
     #######################################################################
     # Properties
     #####################################################################
+
+    @property
+    def unit(self):
+        """
+        Physical unit of the signal
+        """
+        if hasattr(self,'_unit'):
+            return self._unit
+        else:
+            return Unit('1')
+    
+    @unit.setter
+    def unit(self,val):
+        if val==None:
+            try:
+                del(self._unit)
+            except:
+                pass
+        elif Unit(val)==Unit('1'):
+            try:
+                del(self._unit)
+            except:
+                pass
+        else:
+            self._unit = Unit(val)
+
+    @property
+    def dbfs(self):
+        """
+        dbfs properties specifies the ratio between voltage signal and actual recorded signal
+        """
+        if hasattr(self,'_dbfs'):
+            return self._dbfs
+        else:
+            return 1.0
+    
+    @dbfs.setter
+    def dbfs(self,val):
+        if val==None:
+            try:
+                del(self._dbfs)
+            except:
+                pass
+        else:
+            self._dbfs = val
+
+    @property
+    def cal(self):
+        """
+        cal property the calibration data (a value, tuple of values or a string function)
+        """
+        if hasattr(self,'_cal'):
+            return self._cal
+        else:
+            return 1.0
+    
+    @cal.setter
+    def cal(self,val):
+        if val==None:
+            try:
+                del(self._cal)
+            except:
+                pass
+        else:
+            self._cal = val
+
+    @property
+    def invcal(self):
+        """
+        invcal property the calibration data
+        """
+        if hasattr(self,'_invcal'):
+            return self._invcal
+        else:
+            return 1.0
+  
+    @invcal.setter
+    def invcal(self,val):
+        if val==None:
+            try:
+                del(self._invcal)
+            except:
+                pass
+        else:
+            self._invcal = val
 
     @property
     def raw(self):
@@ -879,11 +968,11 @@ class Signal:
         """
         Volt values as 1D numpy array
         """
-        return self._rawvalues*self.dbfs
+        return self.raw*self.dbfs
 
     @volts.setter
     def volts(self, val):
-        self._rawvalues = val/self.dbfs
+        self.raw = val/self.dbfs
 
     @property
     def time(self):
@@ -903,7 +992,13 @@ class Signal:
             return 0
     @t0.setter
     def t0(self,val):
-        self._t0 = val
+        if val==None:
+            try:
+                del(self._t0)
+            except:
+                pass
+        else:
+            self._t0 = val
 
 
     @property
@@ -911,14 +1006,17 @@ class Signal:
         """
         Length of the signal (number of samples)
         """
-        return len(self._rawvalues)
+        return len(self.raw)
 
     @property
     def dur(oeuf):
         """
         Duration of the signal
         """
-        return len(oeuf._rawvalues)/oeuf.fs
+        return len(oeuf.raw)/oeuf.fs
+    @dur.setter
+    def dur(oeuf,val):
+        raise AttributeError("Property 'dur' cannot be set")
 
     @property
     def max(self):
@@ -982,8 +1080,8 @@ class Signal:
 
         return self.similar(
             values=self.values+other.unit_to(self.unit).values,
-            cal=1.0,
-            dbfs=1.0,
+            cal=None,
+            dbfs=None,
             desc=self.desc+'\n + '+other.desc
         )
 
@@ -1076,8 +1174,8 @@ class Signal:
         return self.similar(
             raw=self.values*other.values,
             unit=self.unit*other.unit,
-            cal=1.0,
-            dbfs=1.0,
+            cal=None,
+            dbfs=None,
             desc=self.desc+'\n * '+other.desc
         )
 
@@ -1098,8 +1196,8 @@ class Signal:
                 self.similar(
                     raw=np.ones_like(self.raw)*other.v,
                     unit=other.units,
-                    cal=1.0,
-                    dbfs=1.0,
+                    cal=None,
+                    dbfs=None,
                     desc=str(other)
                 )
             )
@@ -1107,9 +1205,9 @@ class Signal:
             return self._mul(
                 self.similar(
                     raw=other,
-                    unit='1',
-                    cal=1.0,
-                    dbfs=1.0,
+                    unit=None,
+                    cal=None,
+                    dbfs=None,
                     desc='array'
                 )
             )
@@ -1140,8 +1238,8 @@ class Signal:
         return self.similar(
             values=self.values**(-1),
             unit=1/self.unit,
-            cal=1.0,
-            dbfs=1.0,
+            cal=None,
+            dbfs=None,
             desc='1/'+self.desc
         )
 
@@ -1157,8 +1255,8 @@ class Signal:
         return self.similar(
             raw=self.values/other.values,
             unit=self.unit/other.unit,
-            cal=1.0,
-            dbfs=1.0,
+            cal=None,
+            dbfs=None,
             desc=self.desc+' / '+other.desc
         )
 
@@ -1182,8 +1280,8 @@ class Signal:
                 self.similar(
                     raw=np.ones_like(self.raw)*other.v,
                     unit=other.units,
-                    cal=1.0,
-                    dbfs=1.0,
+                    cal=None,
+                    dbfs=None,
                     desc=str(other)
                 )
             )
@@ -1382,10 +1480,17 @@ class Signal:
     def __repr__(self):
         out = "measpy.Signal("
         for arg in self.__dict__.keys():
-            if type(self.__dict__[arg]) == str:
-                out += arg+"='"+self.__dict__[arg]+"',\n"
+            if arg == '_unit':
+                out += 'unit='+str(self.__dict__[arg])+",\n"
+            elif arg == '_cal':
+                out += 'cal='+str(self.__dict__[arg])+",\n"
+            elif arg == '_dbfs':
+                out += 'dbfs='+str(self.__dict__[arg])+",\n"
             else:
-                out += arg+"="+str(self.__dict__[arg])+",\n"
+                if type(self.__dict__[arg]) == str:
+                    out += arg+"='"+self.__dict__[arg]+"',\n"
+                else:
+                    out += arg+"="+str(self.__dict__[arg])+",\n"
         out += ')'
         return out
 
