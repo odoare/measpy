@@ -988,7 +988,7 @@ class Signal:
             return 0
     @t0.setter
     def t0(self,val):
-        if val==None:
+        if val==None or val==0:
             try:
                 del(self._t0)
             except:
