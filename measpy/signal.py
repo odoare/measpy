@@ -55,39 +55,88 @@ from ._tools import (add_step,
 class Signal:
     """ Signal definition class
 
-    The class signal describes a sampled data, its sampling
-    frequency, its unit, the calibration and dbfs used for
-    data acquisition. Methods are provided to analyse and
-    transform the data.
+    The class signal encapsulates all the data describing
+    the data acquisition of a physical signal:
 
-    :param raw: raw data of the signal, defaults to array(None)
-    :type raw: 1D numpy array, optional
-    :param volts: raw data of the signal
-    :type volts: 1D numpy array, optional
-    :param values: raw data of the signal
-    :type values: 1D numpy array, optional
+    - the actual data as a numpy array (``_rawvalues``)
+    - the sampling frequency (``fs``)
+    - a descriptor string (``desc``)
+    - the physical unit (``unit``, optional, dimensionless if not specified)
+    - the calibration information, that allows to convert the data in volts to the actual physical unit (``cal``, optional, unitary if not specified)
+    - an additionnal conversion factor used if the acquired data is proportionnal but not equal to the actual volts going into the AD converted, typically for soundcards (``dbfs``, optional, unitary if not specified)
+    - any additionnal user property (string, float, int)
+
+    The class defines methods for signal processing, saving,
+    restoring the data, plotting, etc. Most of the signal processing
+    methods internally call numpy/scipy functions.
+
+    Examples of signal creation:
+
+    - An empty signal of unit Pascals, and sampling frequency 48kHz :
+
+    .. highlight:: python
+    .. code-block:: python
+
+        import measpy as mp
+        pa = mp.Signal(fs=48000, unit='Pa')
+
+    - A signal of unit Pascals, and sampling frequency 48kHz,
+      filled with 1000 random values, followed by a plot:
+
+    .. highlight:: python
+    .. code-block:: python
+    
+        import measpy as mp
+        import numpy as np
+        pa = mp.Signal(fs=48000, unit='Pa', values=np.random.rand(1000))
+        pa.plot()
+
+    - To generate some standard signals, there are some classical waveform creation methods.
+      For example a five seconds logarithmic sweep from 20Hz to 20kHz, of dimension volts:
+
+    .. highlight:: python
+    .. code-block:: python
+    
+        import measpy as mp
+        pa = mp.Signal.log_sweep(freq_min=20,freq_max=20,dur=5,unit='V)
+        pa.plot()
+
+    Other examples and tutorials are found in the example folder of measpy project.
+
+    At creation, the following parameters can be given
+    (transmitted to the __init__ function of the class Signal):
+
     :param desc: Description of the signal, defaults to 'A signal'
     :type desc: str, optional
     :param fs: Sampling frequency, defaults to 1
-    :type fs: int, optional
-    :param unit: Unit of the signal given as a string that pint can understand, defaults to '1'
-    :type unit: str, optional
+    :type fs: float, optional
+    :param unit: Unit of the signal given as a string that unyt can understand, defaults to None
+    :type unit: str or None, optional
     :param cal: calibration in V/unit, defaults to 1.0
     :type cal: float, optional
     :param dbfs: dbfs of the input data acquisition card, defaults to 1.0
     :type dbfs: float, optional
+    :param raw: raw data of the signal, defaults to array(None)
+    :type raw: 1D numpy array, optional
+    :param volts: data of the signal given in volts
+    :type volts: 1D numpy array, optional
+    :param values: data of the signal givent in its physical units
+    :type values: 1D numpy array, optional
+    :param any: Any other parameter can be given. They are stored as a new property for a user-personalized use. For instance, the log_sweep creation method introduced above stores the low and high frequencies in the properties freq_min and freq_max, as it can be useful to keep track of these values for later signal processing.
 
-    A signal is a temporal series of values.
-    The object has the following properties:
+    Some defined properties are calculated on demand when called. For instance, the duration of the signal depends on the number of samples and sampling frequency.
 
-    * desc : The description of the signal (string)
-    * unit : The physical unit (unyt.Unit)
-    * cal : The calibration (in V/unit)
-    * dbfs : The input voltage for a raw value of 1
-    * fs : The sampling frequency
-    * _rawvalues : A numpy array of raw values
+    .. highlight:: python
+    .. code-block:: python
+    
+        import measpy as mp
+        pa = mp.Signal(fs=48000, unit='Pa', values=np.random.rand(1000))
+        # show duration
+        print(pa.dur)
+        # show the corresponding time vector (numpy array)
+        print(pa.time)     
 
-    Setters and getters properties:
+    The following properties are implemented:
 
     * values (values expressed in unit, calibrations applied)
     * volts (only dbfs applied)
@@ -95,7 +144,13 @@ class Signal:
     * length (data length)
     * dur (duration in seconds)
     * time (time array)
+    * max, min : max value, min value
+    * tmax, tmin : time at max or min value
+    * rms : Root mean square of the signal
+
+    ------------------------------------------------------------
     """
+
     # #################################################################
     # Methods returning a signal
     # #################################################################
@@ -187,6 +242,10 @@ class Signal:
             :type volts: numpy.array, optional
             :param raw: Signal values given as raw samples
             :type raw: numpy.array, optional
+            :param t0: Timeshift of the signal
+            :type t0: float, optional
+            :param any: Any other parameter can be specified
+            :type any: float, int, string
             :return: A signal
             :rtype: measpy.signal.Signal
 
@@ -293,6 +352,7 @@ class Signal:
     def dB_SPL(self):
         """ Computes 20*log10(self.values/PREF).
             PREF is the reference pressure in air (20e-6 Pa)
+
             :return: Signal of unit dB
             :rtype: measpy.signal.Signal
         """
@@ -301,6 +361,7 @@ class Signal:
     def dB_SVL(self):
         """ Computes 20*log10(self.values/VREF).
             VREF is the reference particle velocity (5e-8 m/s)
+            
             :return: Signal of unit dB
             :rtype: measpy.signal.Signal
         """
@@ -561,6 +622,18 @@ class Signal:
     def convolve(self,other,**kwargs):
         """
         Convolution of two signals
+
+        Optional arguments are that of the scipy.signal.convolve function.
+        
+        :param other: Other signal to convolve with
+        :type other: meapsy.signal.Signal
+        :param mode: A tring indicating the size of the output. Optional. See scipy docs for details
+        :type mode: str, {'full', 'valid', 'same'}
+        :param method: A string indicating which method to use to calculate the convolution. Optional. See scipy docs for details
+        :type method: str {'auto', 'direct', 'fft'}
+        :return: A signal representing the linear convolution of the two signals.
+        :rtype: measpy.signal.Signal
+
         """
         if self.fs != other.fs:
             raise Exception(
@@ -1301,8 +1374,11 @@ class Signal:
         return self.__invert__().__mul__(other)
 
     def abs(self):
-        """ Absolute value
-            Returns a Signal class object
+        """
+        Absolute value
+        
+        :return: Another signal with the absolute values
+        :rtype: measpy.signal.Signal
         """
         return self.similar(
             raw=np.abs(self.raw),
@@ -1321,6 +1397,11 @@ class Signal:
     def __matmul__(self, other):
         """
         @ (matmul) operator convolves two signals
+
+        :param other: other signal
+        :type other: Signal
+        :return: Another signal with the convolved signals
+        :rtype: measpy.signal.Signal
         """
         return self.convolve(other)
 
@@ -1589,7 +1670,8 @@ class Spectral:
         :param full: If true, the full spectrum is given, from 0 to fs, if false, only up to fs/2
         :type full: bool, optionnal
         :param norm: Type of normalization "backward", "ortho" or "full". See numpy.fft doc.
-        :type norm: string, optionnal        
+        :type norm: string, optionnal    
+
         values and dur cannot be both specified.
         If dur is given, values are initialised at 0 
     """
