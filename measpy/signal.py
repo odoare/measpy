@@ -1459,7 +1459,7 @@ class Signal:
                             "' is not a possible choice for datatype option")
         if includetime:
             outdata = np.concatenate((self.time[:, None], outdata), 1)
-        np.savetxt(filename+'.txt', outdata)
+        np.savetxt(filename+'_'+datatype+'.txt', outdata)
 
     def harmonic_disto(self, nh=4, freqs=(20, 20000), delay=None, l=2**15, nsmooth=24, debug_plot=False):
         """Compute the harmonic distorsion of an in/out system
