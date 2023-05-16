@@ -1,16 +1,16 @@
-# Signals tutorial
+# Tutorial 1 : The Signal class
 
 The ```measpy.signal.Signal``` class describes a sampled temporal signal. It is at the core of the ```measpy.Measurement``` class, which helps in performing data acquisition with various daq cards.
 
 An object of the class ```Signal``` is described by the following properties:
 
 - A sampling frequency ```fs```
-- A physical unit ```unit```
-- A calibration ```cal``` in unit per Volt (if the signal comes from an DAQ acquisition)
-- A multiplicative constant ```dbfs``` which express the voltage amplitude for which the acquired data equals 1 (one). This is a classical quantity when acquiring signals with audio cards, but can be ignored and kept at 1.0 with most data acquisition cards.
+- A physical unit ```unit``` (optionnal)
+- A calibration ```cal``` in unit per Volt (if the signal comes from an DAQ acquisition) (optionnal)
+- A multiplicative constant ```dbfs``` which express the voltage amplitude for which the acquired data equals 1 (one). This is a classical quantity when acquiring signals with audio cards, but can be ignored and kept at 1.0 with most data acquisition cards. (optionnal)
 - A numpy array ```_rawvalues```, which corresponds to the raw data given by the digital acquisition process.
 - A description ```desc``` (a string that describes the signal)
-- A time shift ```_t0```
+- A time shift ```t0``` (optionnal)
 - Any other property can be added to a ```Signal``` object. It is saved and restored by the file management methods of this class.
 
 Let's first import the measpy module, as well as numpy:
@@ -38,14 +38,11 @@ print(S)
 print(S._rawvalues)
 ```
 
-    measpy.Signal(cal=1.0,
-    dbfs=1.0,
-    desc='A signal',
-    unit=dimensionless,
+    measpy.Signal(desc='A signal',
     fs=44100,
-    _rawvalues=None,
+    _rawvalues=[],
     )
-    None
+    []
 
 
 As such, the above signal isn't very useful. Let us give to it some content, for instance a sinusoid at the frequency 100Hz of duration 1 second. ```raw``` property is a shortcut (@setter,@getter) for the property ```_rawvalues```.
@@ -70,27 +67,19 @@ Now that it contains data, the signal can be plotted.
 
 
 ```python
-
-```
-
-
-
-
-
-```python
 S.plot()
 ```
 
 
 
 
-    <AxesSubplot: xlabel='Time (s)'>
+    <Axes: xlabel='Time (s)'>
 
 
 
 
     
-![png](1_signals_tutorial_files/1_signals_tutorial_9_1.png)
+![png](1_signal_tutorial_files/1_signal_tutorial_7_1.png)
     
 
 
@@ -106,13 +95,13 @@ S.plot()
 
 
 
-    <AxesSubplot: xlabel='Time (s)'>
+    <Axes: xlabel='Time (s)'>
 
 
 
 
     
-![png](1_signals_tutorial_files/1_signals_tutorial_11_1.png)
+![png](1_signal_tutorial_files/1_signal_tutorial_9_1.png)
     
 
 
@@ -163,13 +152,13 @@ power.plot()
 
 
 
-    <AxesSubplot: xlabel='Time (s)'>
+    <Axes: xlabel='Time (s)'>
 
 
 
 
     
-![png](1_signals_tutorial_files/1_signals_tutorial_21_1.png)
+![png](1_signal_tutorial_files/1_signal_tutorial_19_1.png)
     
 
 
@@ -183,11 +172,10 @@ print(power)
 
     measpy.Signal(fs=44100,
     unit=W,
-    cal=1.0,
-    dbfs=1.0,
     desc='20Hz sinusoidal force
      * 20Hz sinusoidal velocity
      -->Unit to W',
+    freq=20.0,
     _rawvalues=[0.00000000e+00 8.11972599e-06 3.24786402e-05 ... 7.30759516e-05
      3.24786402e-05 8.11972599e-06],
     )
@@ -203,9 +191,8 @@ print(power)
 
     measpy.Signal(fs=44100,
     unit=W,
-    cal=1.0,
-    dbfs=1.0,
     desc='The power given to the system',
+    freq=20.0,
     _rawvalues=[0.00000000e+00 8.11972599e-06 3.24786402e-05 ... 7.30759516e-05
      3.24786402e-05 8.11972599e-06],
     )
@@ -223,40 +210,40 @@ forcesig+velsig
 
     Exception                                 Traceback (most recent call last)
 
-    /home/doare/Documents/python/measpy/examples/1_signals_tutorial.ipynb Cell 28 in 1
-    ----> <a href='vscode-notebook-cell:/home/doare/Documents/python/measpy/examples/1_signals_tutorial.ipynb#X32sZmlsZQ%3D%3D?line=0'>1</a> forcesig+velsig
+    Cell In[13], line 1
+    ----> 1 forcesig+velsig
 
 
-    File ~/Documents/python/measpy/examples/../measpy/signal.py:988, in Signal.__add__(self, other)
-        982 """Add something to the signal
-        983 
-        984 :param other: Something to add to
-        985 :type other: Signal, float, int, scalar quantity
-        986 """
-        987 if type(other) == Signal:
-    --> 988     return self._add(other)
-        990 if (type(other) == float) or (type(other) == int) or (type(other) == complex) or isinstance(other, numbers.Number):
-        991     # print('Add with a number without unit, it is considered to be of same unit')
-        992     return self._add(
-        993         self.similar(
-        994             values=np.ones_like(self.values)*other,
-        995             desc=str(other)
-        996         )
-        997     )
+    File ~/Documents/python/measpy/examples/../measpy/signal.py:1176, in Signal.__add__(self, other)
+       1170 """Add something to the signal
+       1171 
+       1172 :param other: Something to add to
+       1173 :type other: Signal, float, int, scalar quantity
+       1174 """
+       1175 if type(other) == Signal:
+    -> 1176     return self._add(other)
+       1178 if (type(other) == float) or (type(other) == int) or (type(other) == complex) or isinstance(other, numbers.Number):
+       1179     # print('Add with a number without unit, it is considered to be of same unit')
+       1180     return self._add(
+       1181         self.similar(
+       1182             values=np.ones_like(self.values)*other,
+       1183             desc=str(other)
+       1184         )
+       1185     )
 
 
-    File ~/Documents/python/measpy/examples/../measpy/signal.py:967, in Signal._add(self, other)
-        958 """Add two signals
-        959 
-        960 :param other: Other signal to add
+    File ~/Documents/python/measpy/examples/../measpy/signal.py:1155, in Signal._add(self, other)
+       1146 """Add two signals
+       1147 
+       1148 :param other: Other signal to add
        (...)
-        963 :rtype: Signal
-        964 """
-        966 if not self.unit.same_dimensions_as(other.unit):
-    --> 967     raise Exception('Incompatible units in addition of sginals')
-        968 if self.fs != other.fs:
-        969     raise Exception(
-        970         'Incompatible sampling frequencies in addition of signals')
+       1151 :rtype: Signal
+       1152 """
+       1154 if not self.unit.same_dimensions_as(other.unit):
+    -> 1155     raise Exception('Incompatible units in addition of sginals')
+       1156 if self.fs != other.fs:
+       1157     raise Exception(
+       1158         'Incompatible sampling frequencies in addition of signals')
 
 
     Exception: Incompatible units in addition of sginals
@@ -275,13 +262,13 @@ distancetot.plot()
 
 
 
-    <AxesSubplot: xlabel='Time (s)'>
+    <Axes: xlabel='Time (s)'>
 
 
 
 
     
-![png](1_signals_tutorial_files/1_signals_tutorial_29_1.png)
+![png](1_signal_tutorial_files/1_signal_tutorial_27_1.png)
     
 
 
@@ -296,13 +283,13 @@ distancetot.plot()
 
 
 
-    <AxesSubplot: xlabel='Time (s)'>
+    <Axes: xlabel='Time (s)'>
 
 
 
 
     
-![png](1_signals_tutorial_files/1_signals_tutorial_31_1.png)
+![png](1_signal_tutorial_files/1_signal_tutorial_29_1.png)
     
 
 
@@ -316,13 +303,13 @@ distancetot.unit_to('mm').plot()
 
 
 
-    <AxesSubplot: xlabel='Time (s)'>
+    <Axes: xlabel='Time (s)'>
 
 
 
 
     
-![png](1_signals_tutorial_files/1_signals_tutorial_33_1.png)
+![png](1_signal_tutorial_files/1_signal_tutorial_31_1.png)
     
 
 
@@ -340,37 +327,37 @@ forcetot = forcesig+forcesig2
 
     Exception                                 Traceback (most recent call last)
 
-    /home/doare/Documents/python/measpy/examples/1_signals_tutorial.ipynb Cell 36 in 3
-          <a href='vscode-notebook-cell:/home/doare/Documents/python/measpy/examples/1_signals_tutorial.ipynb#X43sZmlsZQ%3D%3D?line=0'>1</a> samplingfreq2=48000
-          <a href='vscode-notebook-cell:/home/doare/Documents/python/measpy/examples/1_signals_tutorial.ipynb#X43sZmlsZQ%3D%3D?line=1'>2</a> forcesig2 = mp.Signal.sine(fs=samplingfreq2,freq=20.0,dur=1.0,desc='100Hz sinusoidal force at fs=48000Hz',unit='N')
-    ----> <a href='vscode-notebook-cell:/home/doare/Documents/python/measpy/examples/1_signals_tutorial.ipynb#X43sZmlsZQ%3D%3D?line=2'>3</a> forcetot = forcesig+forcesig2
+    Cell In[17], line 3
+          1 samplingfreq2=48000
+          2 forcesig2 = mp.Signal.sine(fs=samplingfreq2,freq=20.0,dur=1.0,desc='100Hz sinusoidal force at fs=48000Hz',unit='N')
+    ----> 3 forcetot = forcesig+forcesig2
 
 
-    File ~/Documents/python/measpy/examples/../measpy/signal.py:988, in Signal.__add__(self, other)
-        982 """Add something to the signal
-        983 
-        984 :param other: Something to add to
-        985 :type other: Signal, float, int, scalar quantity
-        986 """
-        987 if type(other) == Signal:
-    --> 988     return self._add(other)
-        990 if (type(other) == float) or (type(other) == int) or (type(other) == complex) or isinstance(other, numbers.Number):
-        991     # print('Add with a number without unit, it is considered to be of same unit')
-        992     return self._add(
-        993         self.similar(
-        994             values=np.ones_like(self.values)*other,
-        995             desc=str(other)
-        996         )
-        997     )
+    File ~/Documents/python/measpy/examples/../measpy/signal.py:1176, in Signal.__add__(self, other)
+       1170 """Add something to the signal
+       1171 
+       1172 :param other: Something to add to
+       1173 :type other: Signal, float, int, scalar quantity
+       1174 """
+       1175 if type(other) == Signal:
+    -> 1176     return self._add(other)
+       1178 if (type(other) == float) or (type(other) == int) or (type(other) == complex) or isinstance(other, numbers.Number):
+       1179     # print('Add with a number without unit, it is considered to be of same unit')
+       1180     return self._add(
+       1181         self.similar(
+       1182             values=np.ones_like(self.values)*other,
+       1183             desc=str(other)
+       1184         )
+       1185     )
 
 
-    File ~/Documents/python/measpy/examples/../measpy/signal.py:969, in Signal._add(self, other)
-        967     raise Exception('Incompatible units in addition of sginals')
-        968 if self.fs != other.fs:
-    --> 969     raise Exception(
-        970         'Incompatible sampling frequencies in addition of signals')
-        971 if self.length != other.length:
-        972     raise Exception('Incompatible signal lengths')
+    File ~/Documents/python/measpy/examples/../measpy/signal.py:1157, in Signal._add(self, other)
+       1155     raise Exception('Incompatible units in addition of sginals')
+       1156 if self.fs != other.fs:
+    -> 1157     raise Exception(
+       1158         'Incompatible sampling frequencies in addition of signals')
+       1159 if self.length != other.length:
+       1160     raise Exception('Incompatible signal lengths')
 
 
     Exception: Incompatible sampling frequencies in addition of signals
@@ -387,13 +374,13 @@ forcetot.plot()
 
 
 
-    <AxesSubplot: xlabel='Time (s)'>
+    <Axes: xlabel='Time (s)'>
 
 
 
 
     
-![png](1_signals_tutorial_files/1_signals_tutorial_37_1.png)
+![png](1_signal_tutorial_files/1_signal_tutorial_35_1.png)
     
 
 
@@ -469,13 +456,13 @@ velsig.plot()
 
 
 
-    <AxesSubplot:xlabel='Time (s)'>
+    <Axes: xlabel='Time (s)'>
 
 
 
 
     
-![png](1_signals_tutorial_files/1_signals_tutorial_46_2.png)
+![png](1_signal_tutorial_files/1_signal_tutorial_44_2.png)
     
 
 
@@ -490,13 +477,11 @@ velsig.as_volts()
 
 
     measpy.Signal(fs=44100,
-    unit=V,
-    cal=1.0,
-    dbfs=1.0,
-    desc='20Hz sinusoidal velocity
+    desc='100Hz sinusoidal velocity
      -->Voltage',
-    _rawvalues=[ 0.          0.00284951  0.005699   ... -0.00854845 -0.005699
-     -0.00284951],
+    unit=V,
+    _rawvalues=[ 0.          0.07123552  0.14245658 ... -0.21364872 -0.14245658
+     -0.07123552],
     )
 
 
@@ -523,16 +508,29 @@ vel.plot()
 ```
 
 
+    ---------------------------------------------------------------------------
+
+    AttributeError                            Traceback (most recent call last)
+
+    Cell In[25], line 2
+          1 vel = mp.Signal.from_csvwav('velocity')
+    ----> 2 vel.plot()
 
 
-    <AxesSubplot:xlabel='Time (s)'>
+    File ~/Documents/python/measpy/examples/../measpy/signal.py:1629, in Signal.plot(self, ax, **kwargs)
+       1618 def plot(self, ax=None, **kwargs):
+       1619     """ Basic plotting of the signal
+       1620         Optionnal arguments:
+       1621 
+       (...)
+       1626         - ax : an axes object
+       1627     """
+    -> 1629     kwargs.setdefault("label", self.desc+' ['+str(self.unit.units)+']')
+       1631     if ax == None:
+       1632         _, ax = plt.subplots(1)
 
 
-
-
-    
-![png](1_signals_tutorial_files/1_signals_tutorial_53_1.png)
-    
+    AttributeError: 'str' object has no attribute 'units'
 
 
 There is also a ```from_wav``` @classmethod which allows to import a WAV file. As only the data and the sampling frequency are stored in a WAV file, the other properties have to be specified as optionnal named parameters if necessary (unit,calibrations, etc.)
@@ -540,9 +538,4 @@ There is also a ```from_wav``` @classmethod which allows to import a WAV file. A
 
 ```python
 vel = mp.Signal.from_wav('velocity.wav',unit='m/s',desc='This is a velocity')
-```
-
-
-```python
-
 ```
