@@ -1460,6 +1460,27 @@ class Signal:
         if includetime:
             outdata = np.concatenate((self.time[:, None], outdata), 1)
         np.savetxt(filename+'_'+datatype+'.txt', outdata)
+    
+    def to_csv(self,filename, datatype='raw', includetime=False):
+        if datatype == 'raw':
+            outdata = self.raw[:, None]
+        elif datatype == 'volts':
+            outdata = self.volts[:, None]
+        elif datatype == 'values':
+            outdata = self.values[:, None]
+        else:
+            raise Exception("'"+str(datatype) +
+                            "' is not a possible choice for datatype option")
+        if includetime:
+            outdata = np.concatenate((self.time[:, None], outdata), 1)
+        with open(filename+'.csv', 'w', newline='') as file:
+            writer = csv.writer(file)
+            for arg in self.__dict__.keys():
+                if arg != '_rawvalues':
+                    writer.writerow([arg, self.__dict__[arg]])
+            if includetime:
+                writer.writerow(['First column is time in seconds'])
+            writer.writerows(outdata)
 
     def harmonic_disto(self, nh=4, freqs=(20, 20000), delay=None, l=2**15, nsmooth=24, debug_plot=False):
         """Compute the harmonic distorsion of an in/out system
@@ -2406,7 +2427,7 @@ class Spectral:
         :rtype: axes, or list of axes
         """
 
-        kwargs.setdefault("label", self.desc+' ['+str(self.unit.units)+']')
+        kwargs.setdefault("label", self.desc+' ['+str(Unit(self.unit))+']')
 
         if type(ax) == type(None):
             if plot_phase:
