@@ -52,7 +52,7 @@ def ni_run_task(M):
         print("Warning: no input range specified, changing to the max value of "+M.in_device+" -> "+str(val))
         M.in_range = list(val for b in M.in_map)
 
-    if M.out_sig!=None:
+    if hasattr(M, 'out_sig') and M.out_sig!=None:
         outx = siglist_to_array(M.out_sig)
         tmin = t_min(M.out_sig)
         if M.out_device=='':
