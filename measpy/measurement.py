@@ -8,18 +8,16 @@ from .signal import Signal
 
 from ._tools import (csv_to_dict, 
                      convl, 
-                     convl1, 
-                     sine, 
-                     log_sweep, 
-                     noise, 
-                     calc_dur_siglist)
+                     convl1,  
+                     calc_dur_siglist,
+                     picv)
 
 from ._version import VERSION
 
 import numpy as np
 import matplotlib.pyplot as plt
 
-from copy import copy
+from copy import copy,deepcopy
 
 import scipy.io.wavfile as wav
 import csv
@@ -157,6 +155,17 @@ class Measurement:
             self.in_range = params.setdefault("in_range",list('10V' for b in self.in_map))
             self.upsampling_factor = params.setdefault("upsampling_factor",1)
             self.in_coupling = params.setdefault("in_coupling",list('dc' for b in self.in_map))
+            self.sig_gen = params.setdefault("sig_gen",False)
+            if self.sig_gen != None:
+                self.offset = params.setdefault("offset",0.0)
+                self.wave = params.setdefault("wave",0)
+                self.amp = params.setdefault("amp",1.0)
+                self.freq_start = params.setdefault("freq_start",20)
+                self.freq_stop = params.setdefault("freq_start",20_000)
+                self.freq_change = params.setdefault("freq_change",10)
+                self.freq_int = params.setdefault("freq_int",0.01)
+                self.sweep_dir = params.setdefault("sweep_dir",0)
+                self.sweep_number = params.setdefault("sweep_number",100)
         if self.device_type=='ni':
             self.in_range = params.setdefault("in_range",None)
             self.out_range = params.setdefault("out_range",None)
