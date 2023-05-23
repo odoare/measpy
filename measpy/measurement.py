@@ -291,3 +291,43 @@ class Measurement:
             f.write('Created with measpy version '+VERSION)
             f.write('\n')
             f.write('https://github.com/odoare/measpy')
+
+
+    def peak_sync_prepare(self,out_chan=0):
+        osig = self.out_sig[out_chan]
+        osigpeak = osig.similar(
+            values=np.stack((picv(long=2*M.fs),osig.values)),
+            t0=osig.t0-2)
+        del(osig)
+        M1 = deepcopy(self)
+        M1.out_sig[out_chan]=osigpeak
+        return M1
+
+    def peak_sync_render(self,in_chan=0):
+        isig = self.in_sig[in_chan]
+        posmax = int( np.argmax(isig.values[int(0.25*M.fs*2):int(0.75*M.fs*2)]) + 0.75*M.fs*2 )
+        print(posmax)
+        for i,s in enumerate(M1.in_sig):
+            s.values = s.values[posmax:posmax+M.fs*M.dur]
+        return M1
+        del(M1)
+        
+
+# def peak_sync_prepare(M,out_chan=0,in_chan=0):
+#     def inner(*args,**kwargs):
+#         osig = M.out_sig[out_chan]
+#         osigpeak = osig.similar(
+#             values=np.stack((picv(long=2*M.fs),osig.values)),
+#             t0=osig.t0-2)
+#         M1 = copy(M)
+#         M1.out_sig[out_chan]=osigpeak
+#         func(M1)
+#         isig = M1.in_sig[in_chan]
+#         posmax = int( np.argmax(isig.values[int(0.25*M.fs*2):int(0.75*M.fs*2)]) + 0.75*M.fs*2 )
+#         print(posmax)
+#         for i,s in enumerate(M1.in_sig):
+#             s.values = s.values[posmax:posmax+M.fs*M.dur]
+#         M=M1
+#         del(M1)
+#     return inner
+
