@@ -877,7 +877,7 @@ class Signal:
         with open(filename+'.csv', 'r') as file:
             reader = csv.reader(file)
             for row in reader:
-                if row[0] == 'unit':
+                if row[0] == '_unit' or romw[0] == 'unit':
                     out.__dict__[row[0]] = Unit(row[1])
                 elif len(row) < 3:
                     try:
