@@ -30,8 +30,9 @@ def _callback(task_handle, every_n_samples_event_type,
 
     return 0
 
-def ni_run_task(M):
+def ni_run_measurement(M):
     system = nidaqmx.system.System.local()
+    nsamps = int(round(M.dur*M.fs))
 
     if M.device_type!='ni':
         print("Warning: deviceType != 'ni'. Changing to 'ni'.")
@@ -90,7 +91,7 @@ def ni_run_task(M):
         intask.timing.cfg_samp_clk_timing(
             rate=M.fs,
             sample_mode=niconst.AcquisitionType.CONTINUOUS,
-            samps_per_chan=M.dur*M.fs)
+            samps_per_chan=nsamps)
 
     # Set up the write tasks
     if M.out_sig!=None:
@@ -141,7 +142,7 @@ def ni_run_task(M):
         outtask.start() # Start the write task first, waiting for the analog input sample clock
 
     if M.in_sig!=None:
-        y = intask.read(M.fs*M.dur,timeout=M.dur+10) # Start the read task
+        y = intask.read(nsamps,timeout=M.dur+10) # Start the read task
         intask.close()
     else:
         sleep(M.dur+10)
@@ -150,7 +151,8 @@ def ni_run_task(M):
         outtask.close()
 
     if M.in_sig!=None:
-        # y=np.array(y).T
+        y=np.array(y).T
+        print(y.shape)
         # if len(M.in_map)==1:
         #     M.data[M.in_name[0]].raw = y
         # else:
@@ -159,10 +161,11 @@ def ni_run_task(M):
         #         M.data[s].raw = y[:,n]
         #         n+=1
         for i,s in enumerate(M.in_sig):
-            s.raw = np.array(y[:,i])
+            #print(y)
+            s.raw = y[:,i]
             s.t0 = tmin
 
-def ni_run_measurement(M):
+def ni_run_measurement2(M):
     """
     Runs a measurement defined in the object of
     the class measpy.measurement.Measurement given
