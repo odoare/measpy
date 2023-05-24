@@ -444,7 +444,7 @@ class Signal:
     def add_silence(self, extrat=(0, 0)):
         """Add zeros at the begining and the end of the signal
 
-        :param extrat: number of samples before and after the original signal, defaults to [0,0]
+        :param extrat: time in seconds before and after the original signal, defaults to [0,0]
         :type extrat: tuple, optional
         :return: New signal
         :rtype: measpy.signal.Signal
@@ -646,7 +646,8 @@ class Signal:
             dbfs = None
         )
 
-
+    def delay(self,dt):
+        return self.similar(t0=self.t0+dt)
 
     # #################################################################
     # Methods that return an object of type Spectral
