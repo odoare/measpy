@@ -18,6 +18,7 @@ from numpy.matlib import repmat
 
 from datetime import datetime
 from time import sleep
+from copy import deepcopy
 
 def _n_to_ain(n):
     return 'ai'+str(n-1)
@@ -31,6 +32,21 @@ def _callback(task_handle, every_n_samples_event_type,
     return 0
 
 def ni_run_measurement(M):
+    """
+    Runs a measurement defined in the object of
+    the class measpy.measurement.Measurement given
+    as argument.
+
+    Once the data acquisition process is terminated,
+    the measurement object given in argument contains
+    a property in_sig consisting of a list of signals.
+
+    :param M: The measurement object that defines the measurement properties
+    :type M: measpy.measurement.Measurement
+
+    :return: Nothing, the measurement passed as argument is modified in place.
+
+    """
     system = nidaqmx.system.System.local()
     nsamps = int(round(M.dur*M.fs))
 
@@ -159,6 +175,29 @@ def ni_run_measurement(M):
             for i,s in enumerate(M.in_sig):
                 s.raw = y[:,i]
                 s.t0 = tmin
+
+def ni_run_synced_measurement(M,in_chan=0,out_chan=0,added_time=1):
+    """
+    Before running a measurement, added_time second of silence
+    is added at the begining and end of the selected output channel.
+    The measurement is then run, and the time lag between
+    a selected acquired signal and the output signal is computed
+    from cross-correlation calculation.
+    All the acquired signals are then re-synced from the time lag value.
+
+    :param M: The measurement object
+    :type M: measpy.measurement.Measurement
+    :param out_chan: The selected output channel for synchronization. It is the index of the selected output signal in the list ``M.out_sig``
+    :type out_chan: int
+    :param in_chan: The selected input channel for synchronization. It is the index of the selected input signal in the list ``M.in_sig``
+    :type in_chan: int
+    :param added_time: Duration of silence added before and after the selected output signal
+    :type added_time: float
+
+    """
+    M=M.sync_prepare(in_chan=in_chan,added_time=added_time)
+    ni_run_measurement(M)
+    M=M.sync_render(in_chan=in_chan,out_chan=out_chan,added_time=added_time)
 
 def ni_run_measurement2(M):
     """
