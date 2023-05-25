@@ -177,7 +177,7 @@ class Measurement:
 
     # -----------------
     def __repr__(self):
-        out = "measpy.Daqtask("
+        out = "measpy.Measurement("
         out += "fs="+str(self.fs)
         out += ",\n dur="+str(self.dur)
         out += ",\n device_type='"+str(self.device_type)+"'"
@@ -292,26 +292,33 @@ class Measurement:
             f.write('\n')
             f.write('https://github.com/odoare/measpy')
 
+    def sync_prepare(self,out_chan=0,added_time=1):
+        """
+        Prepare measurement for synchronization
 
-    def peak_sync_prepare(self,out_chan=0):
-        osig = self.out_sig[out_chan]
-        osigpeak = osig.similar(
-            values=np.stack((picv(long=2*M.fs),osig.values)),
-            t0=osig.t0-2)
-        del(osig)
+        :param out_chan: The selected output channel for synchronization. It is the index of the selected output signal in the list ``M.out_sig``
+        :type out_chan: int
+        :param in_chan: The selected input channel for synchronization. It is the index of the selected input signal in the list ``M.in_sig``
+        :type in_chan: int
+        :param added_time: Duration of silence added before and after the selected output signal
+        :type added_time: float
+        """        
+        osig = self.out_sig[out_chan].add_silence((added_time,added_time)).delay(-added_time)
         M1 = deepcopy(self)
-        M1.out_sig[out_chan]=osigpeak
+        M1.dur = self.dur+2*added_time
+        M1.out_sig[out_chan]=osig
         return M1
 
-    def peak_sync_render(self,in_chan=0):
-        isig = self.in_sig[in_chan]
-        posmax = int( np.argmax(isig.values[int(0.25*M.fs*2):int(0.75*M.fs*2)]) + 0.75*M.fs*2 )
-        print(posmax)
+    def sync_render(self,out_chan=0,in_chan=0,added_time=1):
+        d = self.in_sig[in_chan].timelag(self.out_sig[out_chan])
+        print("delay: "+str(d)+"s")
+        M1 = deepcopy(self)
+        M1.dur = self.dur-2*added_time
+        M1.out_sig[out_chan] = self.out_sig[out_chan].cut(dur=(added_time,added_time+M1.dur)).delay(added_time)
         for i,s in enumerate(M1.in_sig):
-            s.values = s.values[posmax:posmax+M.fs*M.dur]
+            M1.in_sig[i] = s.cut(dur=(1+d,1+d+M1.dur))
+            M1.in_sig[i].t0 = M1.out_sig[out_chan].t0
         return M1
-        del(M1)
-        
 
 # def peak_sync_prepare(M,out_chan=0,in_chan=0):
 #     def inner(*args,**kwargs):
@@ -331,3 +338,21 @@ class Measurement:
 #         del(M1)
 #     return inner
 
+    # def peak_sync_prepare(self,out_chan=0):
+    #     osig = self.out_sig[out_chan]
+    #     osigpeak = osig.similar(
+    #         values=np.stack((picv(long=2*M.fs),osig.values)),
+    #         t0=osig.t0-2)
+    #     del(osig)
+    #     M1 = deepcopy(self)
+    #     M1.out_sig[out_chan]=osigpeak
+    #     return M1
+
+    # def peak_sync_render(self,in_chan=0):
+    #     isig = self.in_sig[in_chan]
+    #     posmax = int( np.argmax(isig.values[int(0.25*M.fs*2):int(0.75*M.fs*2)]) + 0.75*M.fs*2 )
+    #     print(posmax)
+    #     for i,s in enumerate(M1.in_sig):
+    #         s.values = s.values[posmax:posmax+M.fs*M.dur]
+    #     return M1
+    #     del(M1)
