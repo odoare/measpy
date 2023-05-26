@@ -11,13 +11,10 @@
 
 import sounddevice as sd
 
-from ._tools import picv, siglist_to_array,t_min
+from ._tools import siglist_to_array, t_min
 
 import numpy as np
 from numpy.matlib import repmat
-
-import tkinter.ttk as ttk
-import tkinter as tk
 
 from datetime import datetime
 from time import time, sleep
