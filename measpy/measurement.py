@@ -600,15 +600,15 @@ class Measurement:
         if limit!=None:
             plt.plot(self.t,limit*np.ones_like(self.t),':',color='grey')
             plt.plot(self.t,-1*limit*np.ones_like(self.t),':',color='grey')
-        plt.xlabel('Time(s)')
+        plt.xlabel('Time (s)')
         legende = []
         for ii in range(self.y.shape[1]):
             if ytype=='values':
-                legende+=[self.in_name[ii]+'('+self.in_unit[ii]+')']
+                legende+=[self.in_name[ii]+' ('+self.in_unit[ii]+')']
             if ytype=='volts':
-                legende+=[self.in_name[ii]+'(volts)']
+                legende+=[self.in_name[ii]+' (volts)']
             if ytype=='raw':
-                legende+=[self.in_name[ii]+'(-)']            
+                legende+=[self.in_name[ii]+' (-)']            
         legende+=['limits']
         plt.legend(legende)
         plt.title('Measurement date: '+str(self.date)+"   "+str(self.time))
