@@ -10,7 +10,13 @@
 
 from .signal import Signal
 
-from ._tools import csv_to_dict, convl, convl1, sine, log_sweep, noise
+from ._tools import (csv_to_dict,
+                        convl,
+                        convl1,
+                        sine,
+                        log_sweep,
+                        noise,
+                        create_time)
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -687,7 +693,7 @@ class Measurement:
     @property
     def t(self):
         """ Time array """
-        return ms.create_time(self.fs,dur=self.dur+self.extrat[0]+self.extrat[1])
+        return create_time(self.fs,dur=self.dur+self.extrat[0]+self.extrat[1])
 
     # Old tfe function (deprecated)
     def tfeb(self,nperseg=2**16,noverlap=None,plotH=False):
