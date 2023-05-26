@@ -1,8 +1,12 @@
-# measurement.py
-# 
-# A class for measurement management with data acquisition devices
+# measpy/measurement.py
 #
-# OD - 2021
+# ----------------------------
+# Measurement class definition
+# ----------------------------
+#
+# Part of measpy package for signal acquisition and processing
+# (c) OD - 2021 - 2023
+# https://github.com/odoare/measpy
 
 from .signal import Signal
 
