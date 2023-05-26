@@ -1,16 +1,19 @@
-# measurement.py
-# 
-# A class for measurement management with data acquisition devices
+# measpy/measurement.py
 #
-# OD - 2021
+# ------------------------------------------------------
+# Measuremnt class definition for data acquisition tasks
+# ------------------------------------------------------
+#
+# Part of measpy package for signal acquisition and processing
+# (c) OD - 2021 - 2023
+# https://github.com/odoare/measpy
 
 from .signal import Signal
 
 from ._tools import (csv_to_dict, 
                      convl, 
                      convl1,  
-                     calc_dur_siglist,
-                     picv)
+                     calc_dur_siglist)
 
 from ._version import VERSION
 from copy import copy,deepcopy
