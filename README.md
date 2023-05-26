@@ -12,6 +12,9 @@ The base classes defined by ```measpy``` are:
 - ```Measurement``` : A class that describe a data acquisition process, its outputs (Signal objects), its inputs (Signal objects)...
 - ```Weighting``` : A weighting class holds complex values for a list of frequencies, and methods to to smoothing, interpolation, etc.
 
+_Warning: Important change between v0.0.x and v0.1:_
+The ```Measurement``` class has been reworked. This breaks compatibility in many aspects. Measurement definition and data saving approaches are different. In order to work with data saved before v0.1, there is the branch pre0.1, which will be updaed only if bugs need to be fixed.
+
 For now, data acquisition with these daq devices are implemented :
 - Audio cards, via the ```sounddevice``` package,
 - NI DAQ cards, via the ```nidaqmx``` package.
