@@ -263,6 +263,57 @@ class Measurement:
         else:
             self.out_sig = None
 
+        # Picoscope specifics
+        if self.device_type == 'pico':
+            try:
+                self.in_range = convl(str,task_dict['in_range'])
+            except:
+                pass
+            try:
+                self.in_coupling = convl(str,task_dict['in_coupling'])
+            except:
+                pass
+            try:
+                self.upsampling_factor = convl1(int,task_dict['upsampling_factor'])
+            except:
+                pass
+            try:
+                self.sig_gen = convl1(bool,task_dict['sig_gen'])
+            except:
+                pass
+            try:
+                self.offset = convl1(float,task_dict['offset'])
+            except:
+                pass
+            try:
+                self.wave = convl1(int,task_dict['wave'])
+            except:
+                pass
+            try:
+                self.freq_start = convl1(float,task_dict['freq_start'])
+            except:
+                pass
+            try:
+                self.freq_stop = convl1(float,task_dict['freq_stop'])
+            except:
+                pass
+            try:
+                self.freq_change = convl1(float,task_dict['freq_change'])
+            except:
+                pass
+            try:
+                self.freq_int = convl1(float,task_dict['freq_int'])
+            except:
+                pass
+            try:
+                self.sweep_dir = convl1(int,task_dict['sweep_dir'])
+            except:
+                pass
+            try:
+                self.sweep_number = convl1(float,task_dict['sweep_number'])
+            except:
+                pass
+
         return self
 
     # --------------------------------
