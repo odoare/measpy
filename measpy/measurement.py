@@ -213,7 +213,11 @@ class Measurement:
 
     # -----------------------
     def to_dir(self,dirname):
-        """ Writes the parameters and signals in a directory"""
+        """ Stores the parameters and signals in a directory
+
+            :param dirname: Name of the directory, a (1), (2)... is added to the name if directory exists
+            :type dirname: str                
+        """
         if os.path.exists(dirname):
             i = 1
             while os.path.exists(dirname+'('+str(i)+')'):
@@ -232,11 +236,10 @@ class Measurement:
     # ------------------------
     @classmethod
     def from_dir(cls,dirname):
-        """ Load a measurement object from a set of files
+        """ Load a measurement object from a directory
 
-            * filebase : string from which two file names are created
-            * filebase+'.csv' : All measurement parameters
-            * filebase+'.wav' : all input and out channels + time (32 bit float WAV at fs)
+            :param dirname: Name of the directory
+            :type dirname: str                
         """
         self=cls()
         task_dict = csv_to_dict(dirname+'/params.csv')
