@@ -1070,6 +1070,12 @@ class Signal:
         else:
             self._t0 = val
 
+    @property
+    def mean(self):
+        """
+        Mean value
+        """
+        return np.mean(self.values)*Unit(self.unit)
 
     @property
     def length(self):
