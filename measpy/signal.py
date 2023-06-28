@@ -1483,14 +1483,14 @@ class Signal:
                 writer.writerow(['First column is time in seconds'])
             writer.writerows(outdata)
 
-    def harmonic_disto(self, nh=4, freqs=(20, 20000), delay=None, l=2**15, nsmooth=24, debug_plot=False):
+    def harmonic_disto(self, nh=4, freq_min=20.0, freq_max=20000.0, delay=None, win_max_length=2**15, prop_before=0.1, nsmooth=24, debug_plot=False):
         """Compute the harmonic distorsion of an in/out system
         using the method proposed by Farina (2000) and adapted by
         Novak et al. (2015) to correctly estimate the phase of the
         higher harmonics.
 
         The signal object (```self```) is the response of a
-        system to a logarithmic sweep created with the
+        nonlinear system to a logarithmic sweep created with the
         ```Signal.log_sweep``` method.
 
         :param nh: number of harmonics, including harmonic 0 (the linear part of the response), defaults to 4
@@ -1499,8 +1499,10 @@ class Signal:
         :type freqs: tuple, optional
         :param delay: the mean delay between output and input, defaults to None. If None, the delay is estimated looking at the max value of the cross correlation of the signal with the input logarithmic sweep.
         :type delay: float, optional
-        :param l: Window length for each harmonic Fourier analysis in number of samples. Has to be even. Defaults to 2**15
-        :type l: int
+        :param win_max_length: Maximum window length for each harmonic Fourier analysis in number of samples. Has to be even. Defaults to 2**15. When treating higher harmonics, the window can be shortened so that there is no overlapping with the next window.
+        :type delay: float, optional
+        :param prop_before: Proportion of the window that is before the peak center for each harmonic content. Defaults to 0.1 (10% of the window is before the harmonic peak)
+        :type prop_before: float, optionnal
         :param nsmooth: Parameter for 1/nsmooth smoothing before Weighting conversion, defaults to 12
         :type nsmooth: int
         :param debug_plot: Specifies if debugging plots are shown during the process, defaults to False
@@ -1514,7 +1516,7 @@ class Signal:
         """
 
         # Compute transfer function using Farina's method
-        sp = self.tfe_farina(freqs)
+        sp = self.tfe_farina((freq_min,freq_max))
 
         # Delay calculation based on group delay (less robust)
         # if type(delay)==type(None):
@@ -1527,10 +1529,12 @@ class Signal:
 
         # print (delay)
 
+        l = win_max_length
+
         # dl is the window shift for each Fourier transform computation
-        # of the harmonic peaks l/2 is a standard value that center the
-        # windows around each peaks
-        dl = l/2
+        # of the harmonic peaks l/8 is a standard value that keeps a part
+        # of the signal before the peak itself
+        dl = prop_before*l
 
         # Compute delay from cross correlation
         # (timelag method)
@@ -1538,28 +1542,39 @@ class Signal:
             delay = self.timelag(Signal.log_sweep(
                 fs=self.fs,
                 dur=self.dur,
-                freqs=freqs))
+                freq_min=freq_min,
+                freq_max=freq_max))
 
         # Green's function from Farina's spectrum
         G = sp.irfft()
 
         # Center positions of harmonics in the time signal G
         # and time shifting for phase reconstruction
-        L = (self.dur-1/self.fs)/np.log(freqs[1]/freqs[0])
+        L = (self.dur-1/self.fs)/np.log(freq_max/freq_min)
         dt = L*np.log(np.arange(nh)+1)
         decal = dt*G.fs-np.ceil(dt*G.fs)
         ns = np.round((G.dur-dt+delay)*G.fs)-dl
 
         if debug_plot:
             ts = np.take(G.time, list(map(int, list(ns))), mode='wrap')
-            tf = ts+l/sp.fs
+            print(ts)
+            tf=ts.copy()
+            for i,t in enumerate(ts):
+                if i==0:
+                    tf[i] = t+l/sp.fs
+                else:
+                    tf[i] = min(t+l/sp.fs,ts[i-1])
+            # tf = ts+l/sp.fs
+            print(tf)
             maxG = np.max(np.abs(G.values))
             axG = G.plot(label="IFFT of Farina's spectrum")
             for ii in range(nh):
-                axG.plot([ts[ii], ts[ii]], [-maxG/10, maxG/10], lw=1, c='k')
-                axG.plot([tf[ii], tf[ii]], [-maxG/10, maxG/10], lw=1, c='k')
-                axG.plot([ts[ii], tf[ii]], [maxG/10, maxG/10], lw=1, c='k')
-                axG.plot([ts[ii], tf[ii]], [-maxG/10, -maxG/10], lw=1, c='k')
+                amp = (ii+1)/nh+1
+                mG = maxG*amp
+                axG.plot([ts[ii], ts[ii]], [-mG/10, mG/10], lw=1, c='k')
+                axG.plot([tf[ii], tf[ii]], [-mG/10, mG/10], lw=1, c='k')
+                axG.plot([ts[ii], tf[ii]], [mG/10, mG/10], lw=1, c='k')
+                axG.plot([ts[ii], tf[ii]], [-mG/10, -mG/10], lw=1, c='k')
 
         Hnl = {}
         Wnl = {}
@@ -1567,7 +1582,9 @@ class Signal:
         if debug_plot:
             a1 = sp.plot(plot_phase=False, label="Full spectrum")
         for ii in range(nh):
-            Hnl[ii] = G.cut(pos=(int(ns[ii]), int(ns[ii]+l))).rfft()
+            #Hnl[ii] = G.cut(pos=(int(ns[ii]), int(ns[ii]+l))).rfft()
+            print(l/self.fs+ts[ii]-tf[ii])
+            Hnl[ii] = G.cut(dur=(ts[ii], tf[ii])).add_silence((0,l/self.fs+ts[ii]-tf[ii])).rfft()
             Hnl[ii] = Hnl[ii].similar(
                 values=Hnl[ii].values*np.exp(-1j*Hnl[ii].freqs*2*np.pi*(dl+decal[ii])/Hnl[ii].fs))
             Wnl[ii] = Hnl[ii].nth_oct_smooth_to_weight_complex(nsmooth)
@@ -1583,7 +1600,7 @@ class Signal:
                 thd += abs(Hfr[ii])
         if debug_plot:
             thd.plot(ax=a1, plot_phase=False, label='THD')
-            a1.set_xlim(freqs)
+            a1.set_xlim((freq_min,freq_max))
             a1.legend()
 
         return (Hnl, Hfr, thd, delay)
