@@ -1611,14 +1611,19 @@ class Signal:
             if debug_plot:
                 Hfr[ii].plot(ax=a1, plot_phase=False,
                              label='Harmonic '+str(ii))
+            # THD computation
+            # THD = 100 * sqrt ( sum(squared nl harmonics)/sum(squared all harmonics))
             if ii == 1:
-                thd = abs(Hfr[ii])
+                thd = abs(Hfr[ii])**2
             elif ii > 1:
-                thd += abs(Hfr[ii])
+                thd += abs(Hfr[ii])**2
+        thd = (thd**(1/2)*(abs(Hfr[0])**2+thd)**(-1/2))*100
         if debug_plot:
-            thd.plot(ax=a1, plot_phase=False, label='THD')
+            a2=thd.plot(plot_phase=False, dby=False,label='THD')
             a1.set_xlim((freq_min,freq_max))
             a1.legend()
+            a2.set_xlim((freq_min,freq_max))
+            a2.legend()
 
         return (Hnl, Hfr, thd, delay)
 
