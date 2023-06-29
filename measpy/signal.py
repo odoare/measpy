@@ -1588,15 +1588,26 @@ class Signal:
         if debug_plot:
             a1 = sp.plot(plot_phase=False, label="Full spectrum")
         for ii in range(nh):
-            #Hnl[ii] = G.cut(pos=(int(ns[ii]), int(ns[ii]+l))).rfft()
-            print(l/self.fs+ts[ii]-tf[ii])
+
+            # We extract each harmonic peak
+            # Silence is added so that all windows are the same length
+            # Then all specra have the same characteristics
             Hnl[ii] = G.cut(dur=(ts[ii], tf[ii])).add_silence((0,l/self.fs+ts[ii]-tf[ii])).rfft()
+
+            # Phase of spectra are adjusted to compensate for various delays
             Hnl[ii] = Hnl[ii].similar(
                 values=Hnl[ii].values*np.exp(-1j*Hnl[ii].freqs*2*np.pi*(dl+decal[ii])/Hnl[ii].fs))
+
+            # We create a weighting for each spectra
             Wnl[ii] = Hnl[ii].nth_oct_smooth_to_weight_complex(nsmooth)
+
+            # Frequency alignment of higher harmonics
             Wnl[ii].freqs = Wnl[ii].freqs/(ii+1)
+
+            # We create a spectrum from weighting
             Hfr[ii] = Spectral(
                 fs=Hnl[ii].fs, dur=Hnl[ii].dur).similar(w=Wnl[ii])
+
             if debug_plot:
                 Hfr[ii].plot(ax=a1, plot_phase=False,
                              label='Harmonic '+str(ii))
@@ -2328,6 +2339,12 @@ class Spectral:
     def __abs__(self):
         """Absolute value """
         return self._abs()
+    
+    def __pow__(self,number):
+        return self.similar(values=self.values**number,
+                            unit=self.unit**number,
+                            cal=1.0,
+                            desc=add_step(self.desc, "**"+str(number)))
 
     #####################################################################
     # Classmethods
