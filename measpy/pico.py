@@ -727,7 +727,7 @@ def ps4000_plot(M,plotbuffersize=2000,updatetime=0.1):
             # again.
             time.sleep(0.01)
 
-    print("Done grabbing values.")
+    print("Done.")
 
     # # Convert ADC counts data to mV
     # if enabledA:
@@ -945,13 +945,36 @@ def ps4000_run_measurement(M):
         nextSample += noOfSamples
         if autoStop:
             autoStopOuter = True
+            print("auto")
 
+    # if M.sig_gen:
+    #     res=ps4000.ps4000SetSigGenBuiltIn(chandle,
+    #             int(M.offset*1e6),      # offset voltage in uV
+    #             int(M.amp/2*1e6),       # peak-to-peak votage in uV
+    #             M.wave,                 # type of waveform (0 = sine wave)
+    #             M.freq_start,           # start frequency in Hz
+    #             M.freq_stop,            # stop frequency in Hz
+    #             M.freq_change,          # frequency change per interval in Hz
+    #             M.freq_int,             # interval of frequency change in seconds
+    #             M.sweep_dir,            # sweep direction (0 = up)
+    #             0,
+    #             1,
+    #             0,
+    #             0,
+    #             0,
+    #             0
+    #         )
+        
+    #     print("config")
+    #     assert_pico_ok(res)
+    #     print("fin assert")
+    # print("suite")
 
     # Convert the python function into a C function pointer.
     cFuncPtr = ps4000.StreamingReadyType(streaming_callback)
 
     # Fetch data from the driver in a loop, copying it out of the registered buffers and into our complete one.
-    while nextSample < totalSamples and not autoStopOuter:
+    while nextSample < totalSamples:  #and not autoStopOuter:
         wasCalledBack = False
         status["getStreamingLastestValues"] = ps4000.ps4000GetStreamingLatestValues(chandle, cFuncPtr, None)
         if not wasCalledBack:
@@ -959,7 +982,7 @@ def ps4000_run_measurement(M):
             # again.
             time.sleep(0.01)
 
-    print("Done grabbing values.")
+    print("Done.")
 
     # Find maximum ADC count value
     # handle = chandle
@@ -987,13 +1010,13 @@ def ps4000_run_measurement(M):
 
     for i in range(len(M.in_map)):
         if M.in_map[i] == 1:
-            M.data[M.in_name[i]].raw = decimate(np.double(adc2mVChAMax[0:round(M.dur*effective_fs)])/1000,M.upsampling_factor)
+            M.in_sig[i].raw = decimate(np.double(adc2mVChAMax[0:round(M.dur*effective_fs)])/1000,M.upsampling_factor)
         elif M.in_map[i] == 2:
-            M.data[M.in_name[i]].raw = decimate(np.double(adc2mVChBMax[0:round(M.dur*effective_fs)])/1000,M.upsampling_factor)
+            M.in_sig[i].raw = decimate(np.double(adc2mVChBMax[0:round(M.dur*effective_fs)])/1000,M.upsampling_factor)
 
     if M.fs!=effective_fs/M.upsampling_factor:
         M.fs = effective_fs/M.upsampling_factor
         print('Warning : Sampling frequency fs changed to nearest possible value of '+str(M.fs)+' Hz')
-        for i in range(len(M.in_map)):
-            M.data[M.in_name[i]].fs = M.fs
+        for i,s in enumerate(M.in_sig):
+            s.fs = M.fs
     

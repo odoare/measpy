@@ -1,31 +1,23 @@
-# measurement.py
-# 
-# A class for measurement management with data acquisition devices
+# measpy/measurement.py
 #
-# OD - 2021
+# ------------------------------------------------------
+# Measuremnt class definition for data acquisition tasks
+# ------------------------------------------------------
+#
+# Part of measpy package for signal acquisition and processing
+# (c) OD - 2021 - 2023
+# https://github.com/odoare/measpy
 
 from .signal import Signal
 
 from ._tools import (csv_to_dict, 
                      convl, 
                      convl1,  
-                     calc_dur_siglist,
-                     picv)
+                     calc_dur_siglist)
 
 from ._version import VERSION
-
-import numpy as np
-import matplotlib.pyplot as plt
-
 from copy import copy,deepcopy
-
-import scipy.io.wavfile as wav
 import csv
-import pickle
-import json
-
-from unyt import Unit
-
 import os
 
 class Measurement:
@@ -177,7 +169,7 @@ class Measurement:
 
     # -----------------
     def __repr__(self):
-        out = "measpy.Daqtask("
+        out = "measpy.Measurement("
         out += "fs="+str(self.fs)
         out += ",\n dur="+str(self.dur)
         out += ",\n device_type='"+str(self.device_type)+"'"
@@ -221,7 +213,11 @@ class Measurement:
 
     # -----------------------
     def to_dir(self,dirname):
-        """ Writes the parameters and signals in a directory"""
+        """ Stores the parameters and signals in a directory
+
+            :param dirname: Name of the directory, a (1), (2)... is added to the name if directory exists
+            :type dirname: str                
+        """
         if os.path.exists(dirname):
             i = 1
             while os.path.exists(dirname+'('+str(i)+')'):
@@ -240,11 +236,10 @@ class Measurement:
     # ------------------------
     @classmethod
     def from_dir(cls,dirname):
-        """ Load a measurement object from a set of files
+        """ Load a measurement object from a directory
 
-            * filebase : string from which two file names are created
-            * filebase+'.csv' : All measurement parameters
-            * filebase+'.wav' : all input and out channels + time (32 bit float WAV at fs)
+            :param dirname: Name of the directory
+            :type dirname: str                
         """
         self=cls()
         task_dict = csv_to_dict(dirname+'/params.csv')
@@ -271,6 +266,57 @@ class Measurement:
         else:
             self.out_sig = None
 
+        # Picoscope specifics
+        if self.device_type == 'pico':
+            try:
+                self.in_range = convl(str,task_dict['in_range'])
+            except:
+                pass
+            try:
+                self.in_coupling = convl(str,task_dict['in_coupling'])
+            except:
+                pass
+            try:
+                self.upsampling_factor = convl1(int,task_dict['upsampling_factor'])
+            except:
+                pass
+            try:
+                self.sig_gen = convl1(bool,task_dict['sig_gen'])
+            except:
+                pass
+            try:
+                self.offset = convl1(float,task_dict['offset'])
+            except:
+                pass
+            try:
+                self.wave = convl1(int,task_dict['wave'])
+            except:
+                pass
+            try:
+                self.freq_start = convl1(float,task_dict['freq_start'])
+            except:
+                pass
+            try:
+                self.freq_stop = convl1(float,task_dict['freq_stop'])
+            except:
+                pass
+            try:
+                self.freq_change = convl1(float,task_dict['freq_change'])
+            except:
+                pass
+            try:
+                self.freq_int = convl1(float,task_dict['freq_int'])
+            except:
+                pass
+            try:
+                self.sweep_dir = convl1(int,task_dict['sweep_dir'])
+            except:
+                pass
+            try:
+                self.sweep_number = convl1(float,task_dict['sweep_number'])
+            except:
+                pass
+
         return self
 
     # --------------------------------
@@ -292,26 +338,33 @@ class Measurement:
             f.write('\n')
             f.write('https://github.com/odoare/measpy')
 
+    def sync_prepare(self,out_chan=0,added_time=1):
+        """
+        Prepare measurement for synchronization
 
-    def peak_sync_prepare(self,out_chan=0):
-        osig = self.out_sig[out_chan]
-        osigpeak = osig.similar(
-            values=np.stack((picv(long=2*M.fs),osig.values)),
-            t0=osig.t0-2)
-        del(osig)
+        :param out_chan: The selected output channel for synchronization. It is the index of the selected output signal in the list ``M.out_sig``
+        :type out_chan: int
+        :param in_chan: The selected input channel for synchronization. It is the index of the selected input signal in the list ``M.in_sig``
+        :type in_chan: int
+        :param added_time: Duration of silence added before and after the selected output signal
+        :type added_time: float
+        """        
+        osig = self.out_sig[out_chan].add_silence((added_time,added_time)).delay(-added_time)
         M1 = deepcopy(self)
-        M1.out_sig[out_chan]=osigpeak
+        M1.dur = self.dur+2*added_time
+        M1.out_sig[out_chan]=osig
         return M1
 
-    def peak_sync_render(self,in_chan=0):
-        isig = self.in_sig[in_chan]
-        posmax = int( np.argmax(isig.values[int(0.25*M.fs*2):int(0.75*M.fs*2)]) + 0.75*M.fs*2 )
-        print(posmax)
+    def sync_render(self,out_chan=0,in_chan=0,added_time=1):
+        d = self.in_sig[in_chan].timelag(self.out_sig[out_chan])
+        print("delay: "+str(d)+"s")
+        M1 = deepcopy(self)
+        M1.dur = self.dur-2*added_time
+        M1.out_sig[out_chan] = self.out_sig[out_chan].cut(dur=(added_time,added_time+M1.dur)).delay(added_time)
         for i,s in enumerate(M1.in_sig):
-            s.values = s.values[posmax:posmax+M.fs*M.dur]
+            M1.in_sig[i] = s.cut(dur=(1+d,1+d+M1.dur))
+            M1.in_sig[i].t0 = M1.out_sig[out_chan].t0
         return M1
-        del(M1)
-        
 
 # def peak_sync_prepare(M,out_chan=0,in_chan=0):
 #     def inner(*args,**kwargs):
@@ -331,3 +384,21 @@ class Measurement:
 #         del(M1)
 #     return inner
 
+    # def peak_sync_prepare(self,out_chan=0):
+    #     osig = self.out_sig[out_chan]
+    #     osigpeak = osig.similar(
+    #         values=np.stack((picv(long=2*M.fs),osig.values)),
+    #         t0=osig.t0-2)
+    #     del(osig)
+    #     M1 = deepcopy(self)
+    #     M1.out_sig[out_chan]=osigpeak
+    #     return M1
+
+    # def peak_sync_render(self,in_chan=0):
+    #     isig = self.in_sig[in_chan]
+    #     posmax = int( np.argmax(isig.values[int(0.25*M.fs*2):int(0.75*M.fs*2)]) + 0.75*M.fs*2 )
+    #     print(posmax)
+    #     for i,s in enumerate(M1.in_sig):
+    #         s.values = s.values[posmax:posmax+M.fs*M.dur]
+    #     return M1
+    #     del(M1)

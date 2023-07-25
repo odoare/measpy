@@ -12,6 +12,9 @@ The base classes defined by ```measpy``` are:
 - ```Measurement``` : A class that describe a data acquisition process, its outputs (Signal objects), its inputs (Signal objects)...
 - ```Weighting``` : A weighting class holds complex values for a list of frequencies, and methods to to smoothing, interpolation, etc.
 
+_Warning: Important change between v0.0.x and v0.1:_
+The ```Measurement``` class has been reworked. This breaks compatibility in many aspects. Measurement definition and data saving approaches are different. In order to work with data saved before v0.1, there is the branch pre0.1, which will be updaed only if bugs need to be fixed.
+
 For now, data acquisition with these daq devices are implemented :
 - Audio cards, via the ```sounddevice``` package,
 - NI DAQ cards, via the ```nidaqmx``` package.
@@ -93,10 +96,9 @@ The measurement can be saved in a directory:
 ```
 M1.to_dir('my_measurement')
 ```
-The created directory contains the measurement parameters in a file params.csv, individual signals as pairs of csv and wav files, one for each signal. The csv contains the signal parameters, the wav file contains the raw data points.
+The created directory contains the measurement parameters in a file params.csv, individual signals as pairs of csv and wav files, one pair for each signal. The csv contains the signal parameters, the wav file contains the raw data points.
 
 The measurement can then be restored using:
-Load a measurement file into the Measurement object M2:
 ```python
 M2=mp.Measurement.from_dir('my_measurement')
 ```
@@ -118,11 +120,11 @@ G = H.irfft()
 
 ## Functional programing paradigm
 
-Most signal processing methods of ```Signal``` and ```Spectral``` classes return a ```Signal``` or ```Spectral``` object. This allows to write signal processing scripts by chaining these methods. For instance the impulse respnse calculation above can be done in one step:
+Most signal processing methods of ```Signal``` and ```Spectral``` classes return a ```Signal``` or ```Spectral``` object. This allows to write signal processing scripts by chaining these methods. For instance the impulse response calculation above can be done in one step:
 ```python
 G = M2.in_sig[0].tfe_welch(M2.out_sig[0]).irfft()
 ```
-We might want to remove frequencies below 20Hz and above 20kHz before computing the impulse. This can be done in the same step, in the functional programing way:
+We might want to remove frequencies below 20Hz and above 20kHz before computing the impulse. This can be done in the same line of code, in the functional programing way:
 ```python
 G = M2.in_sig[0].tfe_welch(M2.out_sig[0]).filter_out([20,20000]).irfft()
 ```
@@ -137,4 +139,4 @@ should give something like pascal * second**2 / m
 
 ## Documentation
 
-Additionnal documentation and examples can be found in the ./doc and ./examples directories of the project.
+Additionnal documentation and examples can be found in the ./docs and ./examples directories of the project.

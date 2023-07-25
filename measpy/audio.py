@@ -11,18 +11,32 @@
 
 import sounddevice as sd
 
-from ._tools import picv, siglist_to_array,t_min
+from ._tools import siglist_to_array, t_min
 
 import numpy as np
 from numpy.matlib import repmat
-
-import tkinter.ttk as ttk
-import tkinter as tk
 
 from datetime import datetime
 from time import time, sleep
 
 def audio_run_measurement(M):
+    """
+    Runs a measurement defined in the object of
+    the class measpy.measurement.Measurement given
+    as argument.
+
+    Once the data acquisition process is terminated,
+    the measurement object given in argument contains
+    a property in_sig consisting of a list of signals.
+
+    :param M: The measurement object that defines the measurement properties
+
+    :type M: measpy.measurement.Measurement
+
+    :return: Nothing, the measurement passed as argument is modified in place.
+
+    """
+
     if M.device_type!='audio':
         print("Warning: deviceType != 'audio'. Changing to 'audio'.")
         M.device_type='audio'
@@ -79,6 +93,28 @@ def audio_run_measurement(M):
         for i,s in enumerate(M.in_sig):
             s.raw = np.array(y[:,i])
             s.t0 = tmin
+
+def audio_run_synced_measurement(M,in_chan=0,out_chan=0):
+    """
+    Before running a measurement, one second of silence
+    is added at the begining and end of the selected output channel.
+    The measurement is then run, and the time lag between
+    a selected acquired signal and the output signal is computed
+    from cross-correlation calculation.
+    All the acquired signals are then re-synced from the time lag value.
+
+    :param M: The measurement object
+    :type M: measpy.measurement.Measurement
+    :param out_chan: The selected output channel for synchronization. It is the index of the selected output signal in the list ``M.out_sig``
+    :type out_chan: int
+    :param in_chan: The selected input channel for synchronization. It is the index of the selected input signal in the list ``M.in_sig``
+    :type in_chan: int
+
+    """
+    M=M.sync_prepare(out_chan=out_chan)
+    audio_run_measurement(M)
+    M=M.sync_render(out_chan=out_chan,in_chan=in_chan)
+    return M
 
 def audio_get_devices():
    """

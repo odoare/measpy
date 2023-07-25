@@ -34,7 +34,7 @@ outdev = 'default'
 
 #%% Define and run an audio measurement
 #
-# This is an example of typical audio measurement:
+# This is an example of dynamic measurement using an audio card:
 #
 # Outputs a logarithmic sweep at output 1 of 5 seconds duration
 # (with a fade in and out of 10 samples at begining and end)
@@ -43,49 +43,51 @@ outdev = 'default'
 # and an acceleration at input 2 (accelerometer)
 #
 # Pressure calibration is 2V/Pa
-# Acceleration calibration is 01.V/Pa
+# Acceleration calibration is 0.1V/(m/s^2)
 #
-# When 5V is sent to the line input of the soundcard, the collected sample value = 1
-# Hence the 0dBFS (zero dB full scale) is equal to 5V
+# When 1.4V is sent to the line input of the soundcard, the collected sample value = 1
+# Hence the 0dBFS (zero dB full scale) is equal to 1.4
 # This has to be measured for instance by sending a known signal
 # to the inputs with an external signal generator
 
-M = mp.Measurement(out_sig='logsweep',
-                   device_type='audio',
+# We first create the output signal
+so = mp.Signal.log_sweep(fs=44100,freq_min=20,freq_max=20000,dur=5)
+
+# Two (empty) input signals are then created
+si1 = mp.Signal(unit='Pa',cal=2,dbfs=1.4,desc='Pressure here')
+si2 = mp.Signal(unit='m/s**2',cal=0.1,dbfs=1.4, desc='Acceleration there')
+
+M = mp.Measurement( device_type='audio',
                     fs = 44100,
                     out_map=[1],
-                    out_desc=['Out1'],
-                    out_dbfs=[1.0],
                     in_map=[1,2],
-                    in_desc=['Pressure here','Acceleration there'],
-                    in_cal=[2.0,0.1],
-                    in_unit=['Pa','meter/second**2'],
-                    in_dbfs=[5.0,5.0],
-                    extrat=[0,0],
-                    out_sig_fades=[10,10],
                     dur=5,
                     in_device=indev,
-                    out_device=outdev,
-                    io_sync=0,
-                    out_amp=0.5)
+                    out_device=outdev)
 
 # Run the measurement
 audio_run_measurement(M)
 
-# Save the measurement as a pair of .csv (with properties) and .wav (with data) files
-M.to_csvwav('my_pico_measurement')
+# Save the measurement as directory containing all data
+# This command creates the directory containing:
+#   - A README file indicating the measpy version
+#   - A params.csv containing the measurement info
+#   - Pairs of csv/wav files for each signal (output and inputs)
 
-# Load the measurement
-M1 = mp.Measurement.from_csvwav('my_pico_measurement')
+M.to_dir('my_audio_measurement')
 
-# Plot the acquired data
-M1.plot()
+# Load the measurement into the Measurement object M1
+M1 = mp.Measurement.from_dir('my_audio_measurement')
+
+# Plot the acquired signals on the same graph
+a = M1.in_sig[0].plot()
+M1.in_sig[1].plot(ax=a)
 
 # Plot an individual signal (channel 1)
 M1.data['In1'].plot()
 
 # Plot the Power spectral density of channel 2 signal 
 # (Welch's method with windows of 2**14 points)
-M1.data['In2'].psd(nperseg=2**14).plot()
+M1.in_sig[1].psd(nperseg=2**14).plot()
 
-# %%
+
