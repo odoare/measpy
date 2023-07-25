@@ -152,9 +152,13 @@ def ni_run_measurement(M):
 
     if M.in_sig!=None:
         y=np.array(y).T
-        for i,s in enumerate(M.in_sig):
-            s.raw = y[:,i]
-            s.t0 = tmin
+        if len(M.in_map)==1:
+            M.in_sig[0].raw = y
+            M.in_sig[0].t0 = tmin
+        else:
+            for i,s in enumerate(M.in_sig):
+                s.raw = y[:,i]
+                s.t0 = tmin
 
 def ni_run_measurement2(M):
     """
