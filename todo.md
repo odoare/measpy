@@ -1,21 +1,21 @@
 
 # Before v0.1
 
-- [] Signal.classmethods : change freqs list to fmin fmax
+- [x] Signal.classmethods : change freqs list to freq_min & freq_max
 
-- [] Convert cal, dbfs to _cal, _dbfs optional properties
+- [x] Convert cal, dbfs to _cal, _dbfs optional properties
 
-- [] Signal.to_csv
+- [x] Signal.to_csv
 
 - [] Measurement -> new oldbranch
 
-- [] Daqtask -> Measurement
+- [x] Daqtask -> Measurement
 
 - [] Continuous integration : tests
 
 - [] Continuous integration : pip publication
 
-- [] to_dir when dir exists
+- [x] to_dir when dir exists
 
 - [] neperseg defaults ?
 

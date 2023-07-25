@@ -18,40 +18,35 @@
 import measpy as mp
 from measpy.pico import ps4000_run_measurement
 
-# Define the measurement
-M = mp.Measurement( device_type='pico',
-                    fs = 10000, # Sampling frequency
-                    out_sig=None,   # We don't send any output, only recording
-                    in_map=[1,2],   # Channel A is first input, channel B 2nd
-                    in_desc=['Voltage input A','Voltage input B'], # Input descriptions
-                    in_cal=[1.0,1.0], # Input calibrations
-                    in_unit=['V','V'], # Input units
-                    in_dbfs=[1.0,1.0], # Input dbfs (in general, should be 1.0 except for soundcard inputs)
-                    extrat=[0,0], # No extra time before and after measurement
-                    dur=2, # Measurement duration
-                    in_device='default', #Not used with ps4000
-                    out_device='default', # Not used with ps4000
-                    in_range=['2V','2V'], # Select card input ranges
-                    upsampling_factor=20, # The actual recording is made at higher frequency, befor decimation
-                    in_coupling=['dc','dc']) # Input coupling calibrations
+#%%
+s1=mp.Signal(unit='Pa')
+s2=mp.Signal(unit='Pa')
+M = mp.Measurement(in_sig=[s1,s2],
+                   fs=48000,
+                   in_map=[1,2],
+                   device_type='pico',
+                   dur=2)
+
+run(M)
+
+M.to_dir('test')
 
 # Run the measurement
 ps4000_run_measurement(M)
 
 # Save the measurement as a pair of .csv (with properties) and .wav (with data) files
-M.to_csvwav('my_pico_measurement')
+M.to_dir('my_pico_measurement')
 
 # Load the measurement
-M1 = mp.Measurement.from_csvwav('my_pico_measurement')
+M1 = mp.Measurement.from_dir('my_pico_measurement')
 
-# Plot the acquired data
-M1.plot()
+# Plot the acquired signals on the same graph
+a = M1.in_sig[0].plot()
+M1.in_sig[1].plot(ax=a)
 
 # Plot an individual signal (channel 1)
 M1.data['In1'].plot()
 
 # Plot the Power spectral density of channel 2 signal 
 # (Welch's method with windows of 2**14 points)
-M1.data['In2'].psd(nperseg=2**14).plot()
-
-# %%
+M1.in_sig[1].psd(nperseg=2**14).plot()

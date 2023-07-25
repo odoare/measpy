@@ -1516,7 +1516,7 @@ class Signal:
         :return: A four element tuple containing:
             - A dictionary of Spectral objects representing the different harmonics as function of the frequency, not frequency aligned
             - A dictionnary of Spectral objects, representing the different harmonics, smoothed and frequency aligned
-            - The total harmonic distortion (THD)
+            - The total harmonic distortion (THD) (Spectral object)
             - The delay between output (sent signal) and input (measure signal)
         :rtype: tuple
         """
