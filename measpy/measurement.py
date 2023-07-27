@@ -317,6 +317,18 @@ class Measurement:
             except:
                 pass
 
+        # NI specifics
+        if self.device_type == 'ni':
+            try:
+                self.in_range = convl1(float,task_dict['in_range'])
+            except:
+                pass
+            try:
+                self.out_range = convl1(float,task_dict['out_range'])
+            except:
+                pass
+
+
         return self
 
     # --------------------------------
@@ -350,21 +362,19 @@ class Measurement:
         :type added_time: float
         """        
         osig = self.out_sig[out_chan].add_silence((added_time,added_time)).delay(-added_time)
-        M1 = deepcopy(self)
-        M1.dur = self.dur+2*added_time
-        M1.out_sig[out_chan]=osig
-        return M1
+        self.dur = self.dur+2*added_time
+        self.out_sig[out_chan]=osig
 
     def sync_render(self,out_chan=0,in_chan=0,added_time=1):
         d = self.in_sig[in_chan].timelag(self.out_sig[out_chan])
-        print("delay: "+str(d)+"s")
-        M1 = deepcopy(self)
-        M1.dur = self.dur-2*added_time
-        M1.out_sig[out_chan] = self.out_sig[out_chan].cut(dur=(added_time,added_time+M1.dur)).delay(added_time)
-        for i,s in enumerate(M1.in_sig):
-            M1.in_sig[i] = s.cut(dur=(1+d,1+d+M1.dur))
-            M1.in_sig[i].t0 = M1.out_sig[out_chan].t0
-        return M1
+        dt = 1/self.fs
+        # print("delay: "+str(d)+"s")
+        self.dur = self.dur-2*added_time
+        self.out_sig[out_chan] = self.out_sig[out_chan].cut(dur=(added_time,added_time+self.dur)).delay(added_time)
+        for i,s in enumerate(self.in_sig):
+            self.in_sig[i] = s.cut(dur=(1+d+dt,1+d+dt+self.dur))
+            self.in_sig[i].t0 = self.out_sig[out_chan].t0
+        return d
 
 # def peak_sync_prepare(M,out_chan=0,in_chan=0):
 #     def inner(*args,**kwargs):

@@ -193,9 +193,10 @@ def ni_run_synced_measurement(M,in_chan=0,out_chan=0,added_time=1):
     :type added_time: float
 
     """
-    M=M.sync_prepare(in_chan=in_chan,added_time=added_time)
+    M.sync_prepare(out_chan=out_chan,added_time=added_time)
     ni_run_measurement(M)
-    M=M.sync_render(in_chan=in_chan,out_chan=out_chan,added_time=added_time)
+    d = M.sync_render(in_chan=in_chan,out_chan=out_chan,added_time=added_time)
+    return d
 
 def ni_get_devices():
     """
