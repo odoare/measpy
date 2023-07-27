@@ -51,7 +51,6 @@ class TestSignal(unittest.TestCase):
 
     def test_fft(self):
         for s in (s1,sp1):
-            print (s)
             self.assertEqual(s.fft().dur,dur,"Calculation of Spectral.dur is wrong ?")
             self.assertEqual(s.rfft().dur,dur,"Calculation of Spectral.dur is wrong ?")
             self.assertEqual(s.fft().freqs[1],1/s.dur,"Calculation of frequency vector is wrong ?")
