@@ -116,7 +116,7 @@ class Measurement:
                 print(self.in_map)
 
         self.in_device = params.setdefault("in_device",'')
-        self.out_device = params.setdefault("in_device",'')
+        self.out_device = params.setdefault("out_device",'')
 
         # Check durations
         if 'dur' in params:
@@ -173,7 +173,9 @@ class Measurement:
         out += "fs="+str(self.fs)
         out += ",\n dur="+str(self.dur)
         out += ",\n device_type='"+str(self.device_type)+"'"
-        out += ',\n in_map='+str(self.in_map)
+        if self.in_sig!=None:
+            out += ',\n in_device='+str(self.in_device)
+            out += ',\n in_map='+str(self.in_map)
         try:
             out += ",\n date='"+self.date+"'"
             out += ",\n time='"+self.time+"'"
@@ -182,7 +184,6 @@ class Measurement:
         if self.out_sig!=None:
             out += ",\n out_device='"+str(self.out_device)+"'"
             out += ',\n out_map='+str(self.out_map)
-            #out += ", out_sig='"+str(self.out_sig)+"'"
             out += ',\n out_sig=list of '+str(len(self.out_sig))+' measpy.signal.Signal'
             out += ",\n io_sync="+str(self.io_sync)
         if self.device_type=='pico':
@@ -216,7 +217,9 @@ class Measurement:
         """ Stores the parameters and signals in a directory
 
             :param dirname: Name of the directory, a (1), (2)... is added to the name if directory exists
-            :type dirname: str                
+            :type dirname: str
+            :return dirname: Actual name to the saved folder (if name conflit is detected)
+            :rtype dirname: str                            
         """
         if os.path.exists(dirname):
             i = 1
@@ -232,6 +235,7 @@ class Measurement:
             for i,s in enumerate(self.out_sig):
                 s.to_csvwav(dirname+"/out_sig_"+str(i))
         self._write_readme(dirname+"/README")
+        return dirname
     
     # ------------------------
     @classmethod
@@ -327,7 +331,6 @@ class Measurement:
                 self.out_range = convl1(float,task_dict['out_range'])
             except:
                 pass
-
 
         return self
 
