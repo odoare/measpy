@@ -2,9 +2,11 @@
 (c) 2021-2023 Olivier Doaré
 Contact: olivier.doare@ensta-paris.fr
 
-measpy is a set of classes and methods that serves these two main purposes:
-- Allow signal processing and analysis using rapid and compact Python scripting, thanks to the functional programming paradigm proposed by this package
-- Data acquisition with DAQ cards
+measpy is a set of classes and methods that
+- helps signal processing and analysis using rapid and compact Python scripting, thanks to the functional programming paradigm proposed by this package,
+- ease and unify the data acquisition process with various DAQ cards
+
+*WARNING: major incompatible changes have been made to the measurement class for v0.1, if backward compatibility is needed, the old measurement class system is kept in the pre v0.1 branch. Changes in this branch will only concern eventual bug fixing.*
 
 The base classes defined by ```measpy``` are:
 - ```Signal```: This is the core class of the package. It defines a signal through a sampling frequency, a physical unit and a list of samples and a description. Additional properties can be defined in order to take into account calibration or time shifting of the signal with respect to a reference time.
