@@ -33,14 +33,15 @@ The `measpy` package is a Python library for signal processing and data acquisit
 
 At the core of the package, there is the Signal class, which describes a physical sampled time series as a 1D numpy array, a sampling frequency, a physical unit, thanks to the `unyt` package, and eventual calibration informations, plus any user properties. The spectral class describe signals in the spectral domain. Many implemented signal processing methods of these two base classes return either a Signal or a Spectral object, in a functionnal programming style. Most basic signal processing methods consist in an encapsulation of signal processing functions of the `scipy` package.
 
-In the `measpy` package, there is also the Measurement class, which defines a digital acquitition process (inputs, outputs, units, calibrations) and interfaces with data acquisition libraries supplied by hardware manufacturers.
+Additionnally `measpy` implements the Measurement class, which defines a digital acquitition process (inputs, outputs, units, calibrations) and interfaces with data acquisition libraries supplied by hardware manufacturers.
 
 # Statement of need
 
-In experimental acoustics, vibrations, more generally for dynamical systems analysis, in research teaching or industry, one of the main tasks consists of playing and recording analog voltage signals using DAQ cards. One has then to manage sampled data as well as sampling frequency, calibration data, measurement units. In Python, the `scipy.signal` package covers most common signal processing tools, whereas DAQ card manufacturers often provide a python package compatible with their drivers.
+In experimental acoustics, vibrations, more generally for dynamical systems analysis, in academic research, teaching or industry, one of the main tasks consists of outputing and recording analog voltage signals using DAQ cards. One has then to manage sampled data as well as sampling frequency, calibration data, measurement units. In Python, the `scipy.signal` package covers most common signal processing tools, whereas DAQ card manufacturers often provide a python package compatible with their drivers.
 
-The `measpy` package is built on top of that to provide a unified and quick way to do the data acquisition, data file operations, signal processing and analysis
+The `measpy` package is built on top of these packages to provide a unified and quick way to do the data acquisition, data file operations, signal processing and analysis.
 
+To 
 Functionnal programmming paradigm
 
 # Usage examples
