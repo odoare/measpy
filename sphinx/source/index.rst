@@ -14,9 +14,9 @@ Welcome to measpy's documentation!
    
    Copyright <copyright.rst>
 
-   Signal tutorial <1_signals_tutorial.md>
+   Signal tutorial <1_signal_tutorial.md>
    
-   Spectral tutorial <2_spectral_data.md>
+   Spectral tutorial <2_spectral_tutorial.md>
    
    measpy
 

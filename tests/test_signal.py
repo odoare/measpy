@@ -15,13 +15,13 @@ class TestSignal(unittest.TestCase):
     fs = 44100
 
     # A 3s signal with a even number of samples
-    s1 = mp.Signal.noise(fs=fs,dur=dur,amp=1.0,freqs=[20.0,20000.0],unit='1',cal=1.0,dbfs=1.0)
+    s1 = mp.Signal.noise(fs=fs,dur=dur,amp=1.0,freq_min=20.0,freq_max=20000.0,unit='1',cal=1.0,dbfs=1.0)
     
     # A 3s signal with an odd number of samples
-    sp1 = mp.Signal.noise(fs=fs+1,dur=dur,amp=1.0,freqs=[20.0,20000.0],unit='1',cal=1.0,dbfs=1.0)
+    sp1 = mp.Signal.noise(fs=fs+1,dur=dur,amp=1.0,freq_min=20.0,freq_max=20000.0,unit='1',cal=1.0,dbfs=1.0)
     s3 = mp.Signal.sine(fs=44100,freq=441,dur=1.0)
-    s4 = mp.Signal.log_sweep(fs=44100,freqs=[20,20000],dur=1.0)
-    s5 = mp.Signal.log_sweep(fs=48000,freqs=[20,20000],dur=1.0)
+    s4 = mp.Signal.log_sweep(fs=44100,freq_min=20.0,freq_max=20000.0,dur=1.0)
+    s5 = mp.Signal.log_sweep(fs=48000,freq_min=20.0,freq_max=20000.0,dur=1.0)
 
     def test_durations(self):
         for s in (s1,sp1):
@@ -51,7 +51,6 @@ class TestSignal(unittest.TestCase):
 
     def test_fft(self):
         for s in (s1,sp1):
-            print (s)
             self.assertEqual(s.fft().dur,dur,"Calculation of Spectral.dur is wrong ?")
             self.assertEqual(s.rfft().dur,dur,"Calculation of Spectral.dur is wrong ?")
             self.assertEqual(s.fft().freqs[1],1/s.dur,"Calculation of frequency vector is wrong ?")

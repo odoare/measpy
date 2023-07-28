@@ -1,5 +1,11 @@
 # Example of data acquisition task
-# with an audio soundcard
+# with a Native Instrument device
+#
+# Devices tested:
+# - 4461
+# - 4431
+# - 625x
+# - Mydaq
 #
 # Part of measpy package for signal acquisition and processing
 # (c) OD - 2021 - 2023
@@ -14,27 +20,21 @@
 # sys.path.insert(0, "..")
 
 import measpy as mp
-from measpy.audio import audio_run_measurement, audio_get_devices
+from measpy.ni import ni_run_measurement, ni_get_devices
 
-#%% Get the list of audio devices present on the system
-l=audio_get_devices()
-print(l)
+#%% List devices
+# This prints a list of identifiers for the devices present in the system
+sysdevs = ni_get_devices().device_names
+print(sysdevs)
 
-# measpy wants the input and output devices as strings
-# On Ubuntu, 'default' corresponds to the main input and output
-
-indev = 'default'
-outdev = 'default'
-
-# For example, if the card is a RME hdsp multiface card,
-# it should appear like that on Linux
-# indev = 'Analog (1+2) (Multiface Analog (1+2))'
-# outdev = 'Analog (1+2) (Multiface Analog (1+2))'
+# We choose the first fresent device
+indev=outdev=sysdevs[0]
 
 
-#%% Define and run an audio measurement
+
+#%% Define and run a measurement with NI cards
 #
-# This is an example of dynamic measurement using an audio card:
+# This is an example of dynamic measurement using a NI card:
 #
 # Outputs a logarithmic sweep at output 1 of 5 seconds duration
 # (with a fade in and out of 10 samples at begining and end)
@@ -45,19 +45,18 @@ outdev = 'default'
 # Pressure calibration is 2V/Pa
 # Acceleration calibration is 0.1V/(m/s^2)
 #
-# When 1.4V is sent to the line input of the soundcard, the collected sample value = 1
-# Hence the 0dBFS (zero dB full scale) is equal to 1.4
-# This has to be measured for instance by sending a known signal
-# to the inputs with an external signal generator
+# Contrary to audio cards, there is a 1/1 correspondence between
+# input volts and actual sample value. Hence dbfs is not necessary
+# It will there defaults to 1.
 
 # We first create the output signal
 so = mp.Signal.log_sweep(fs=44100,freq_min=20,freq_max=20000,dur=5)
 
 # Two (empty) input signals are then created
-si1 = mp.Signal(unit='Pa',cal=2,dbfs=1.4,desc='Pressure here')
-si2 = mp.Signal(unit='m/s**2',cal=0.1,dbfs=1.4, desc='Acceleration there')
+si1 = mp.Signal(unit='Pa',cal=2,desc='Pressure here')
+si2 = mp.Signal(unit='m/s**2',cal=0.1, desc='Acceleration there')
 
-M = mp.Measurement( device_type='audio',
+M = mp.Measurement(device_type='ni',
                     fs = 44100,
                     out_map=[1],
                     in_map=[1,2],
@@ -66,7 +65,7 @@ M = mp.Measurement( device_type='audio',
                     out_device=outdev)
 
 # Run the measurement
-audio_run_measurement(M)
+ni_run_measurement(M)
 
 # Save the measurement as directory containing all data
 # This command creates the directory containing:
