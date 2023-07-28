@@ -7,20 +7,16 @@ Welcome to measpy's documentation!
 ==================================
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 4
    :caption: Contents:
 
    Readme <README.md>
    
    Copyright <copyright.rst>
 
-   Signal tutorial <1_play_with_signals.md>
+   Signal tutorial <1_signals_tutorial.md>
    
    Spectral tutorial <2_spectral_data.md>
-   
-   Measurement tutorial <3_measurements.md>
-   
-   Weighting and smoothing tutorial <4_spectrum_smoothing_and_weighting.md>
    
    measpy
 

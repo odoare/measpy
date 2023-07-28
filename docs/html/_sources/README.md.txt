@@ -1,16 +1,18 @@
 # measpy - Measurements with Python
-(c) 2020-2023 Olivier Doaré
+(c) 2021-2023 Olivier Doaré
 Contact: olivier.doare@ensta-paris.fr
 
-measpy is a set of classes and methods to help data acquisition with DAQ cards or sound cards and analysis of signals. It is mainly acoustics and vibrations oriented.
+measpy is a set of classes and methods that serves these two main purposes:
+- Allow signal processing and analysis using rapid and compact Python scripting, thanks to the functional programming paradigm proposed by this package
+- Data acquisition with DAQ cards
 
-The base classes are:
-- ```Signal```: A class that contain a 1D numpy array, and a few other properties to describe the data as: sampling frequency, calibration and unit.
-- ```Spectral```: A spectral data class that contains the complex amplitudes as a 1D numpy array for frequencies up to the Nyquist frequency ot the sampling frequency, and some properties as sampling frequency, unit, description
+The base classes defined by ```measpy``` are:
+- ```Signal```: This is the core class of the package. It defines a signal through a sampling frequency, a physical unit and a list of samples and a description. Additional properties can be defined in order to take into account calibration or time shifting of the signal with respect to a reference time.
+- ```Spectral```: This class represents the signals in the Fourier space. A spectral object contains the complex amplitudes as a 1D numpy array for frequencies up to the Nyquist frequency or the sampling frequency, and some properties as sampling frequency, unit and description.
 - ```Measurement``` : A class that describe a data acquisition process, its outputs (Signal objects), its inputs (Signal objects)...
-- ```Weighting``` : A weighting class that holds complex values for a list of frequencies, and methods to to smoothing, interpolation, etc.
+- ```Weighting``` : A weighting class holds complex values for a list of frequencies, and methods to to smoothing, interpolation, etc.
 
-For now, these daq devices are implemented :
+For now, data acquisition with these daq devices are implemented :
 - Audio cards, via the ```sounddevice``` package,
 - NI DAQ cards, via the ```nidaqmx``` package.
 - Picoscope scopes, via the ```picosdk-python-wrappers``` package.
@@ -29,8 +31,16 @@ If it is a NI daq card:
 ```python
 from measpy.ni import ni_run_measurement
 ```
+If it is a Picoscope of the ps2000 series:
+```python
+from measpy.ps2000 import ps2000_run_measurement
+```
+If it is a Picoscope of the ps4000 series:
+```python
+from measpy.ps4000 import ps4000_run_measurement
+```
 
-In theses modules, there's also the ```audio_get_devices``` and ```ni_get_devices``` functions to get a liste of devices present in the system. To get the list of devices, do for example:
+In theses modules, there's also the ```audio_get_devices``` and ```ni_get_devices``` functions to get a list of devices present in the system. To get the list of devices, do for example:
 
 ```python
 from measpy.audio import audio_get_devices
@@ -41,9 +51,10 @@ print(l)
 ## TODO
 
 Things to improve, implement, fix:
-- New processing methods have to be implemented (e.g. FIR, convolution, etc.)
+- A few scipy.signal functions are wrapped in measpy methods. New processing methods could be implemented (e.g. FIR...)
 - Improve plotting methods
 - Other In/Out synchronization methods (for now a method using a peak sync before measurement is implemented)
+- hdf5 file format
 - More documentation
 - More testing scripts
 - GUI ?
@@ -89,25 +100,27 @@ To plot the resulting data:
 M1.plot()
 plt.show()
 ```
-
-Save Measurement object into a pickle file:
+It is possible to save measurements in different formats. For instance, this saves the data as a pair of 'file.csv' + 'file.wav' files:
 ```
-M1.to_pickle('file.mck')
+M1.to_csvwav('file')
 ```
+The CSV file then contains the measurement properties while the WAV file contains the actual data that has been acquired (as many channel as the number of inputs+outputs involved in the measurement)
 
 Load a measurement file into the Measurement object M2:
 ```python
-M2=mp.Measurement.from_pickle('file.mck')
+M2=mp.Measurement.from_csvwav('file')
 ```
-Other formats are possible : A combination of a cvs file and wave files, or a json+wave files. See from_csvwav() or from_jsonwav() methods.
+Other formats are possible : A pickle file, or a json+wave files. See from_pickle() or from_jsonwav() methods.
 
 Compute transfer functions:
 ```python
 sp = M1.tfe()
 ```
-This compute the transfer function between the output signal and all the input signals as a dict of ```Spectral``` objects. The method that is actually used depends on the output type, as specified in the out_sig property of the measurement object. If a 'noise' or '*wav' type signal is sent, Welch's method is used. If a 'logsweep' type is used, Farina's method is used. This basic helper function works only if there is a unique output.
+This computes the transfer function between the output signal and all the input signals as a dict of ```Spectral``` objects. The method that is actually used depends on the output type, as specified in the out_sig property of the measurement object. If a 'noise' or '*wav' type signal is sent, Welch's method is used. If a 'logsweep' type is used, Farina's method is used. This basic helper function works only if there is a unique output.
 
-In general is is preferable to work on individual signals. All the acquired and sent signals are stored into the data property. It is basically a dict of signals, the keys being set by the in_name and out_name arguments when measurement is called. To plot only the measured pressure:
+In general is is preferable to work on individual signals. All the acquired and sent signals are stored into the data property. It is basically a dict of signals, the keys being set by the in_name and out_name arguments when measurement is called. If these optional argument where not specified, then the keys are named by default In1, In2, ... and Out1, Out2, ... 
+
+For example, to plot only the measured pressure we can do:
 ```python
 a=M1.data['Press'].plot()
 ```
@@ -128,7 +141,7 @@ You might want to compute the transfer function between ```M1.data['Acc']``` and
 tfap = M1.data['Acc'].tfe_welch(M1.data['Press'],nperseg=2**12)
 ```
 
-And use this ```Spectral``` object to compute the impulse response:
+And use this ```Spectral``` object to compute an impulse response:
 ```python
 Gap = tfap.irfft()
 ```

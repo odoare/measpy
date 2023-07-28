@@ -2491,13 +2491,13 @@ class Spectral:
         if dby:
             if (self.unit == Unit("Pa")):
                 modulus_to_plot = self.dB_SPL().values
-                label = '20 Log |P|/P0'
+                label = r'20 Log $|P|/P_0$ (dB)'
             elif (self.unit == Unit("m/s")):
                 modulus_to_plot = self.dB_SVL().values
-                label = '20 Log |V|/V0'
+                label = r'20 Log $|V|/V_0$ (dB)'
             else:
                 modulus_to_plot = 20*np.log10(np.abs(self.values))
-                label = '20 Log |H|'
+                label = r'20 Log $|$H$|$ (-)'
 
             # Only keep finite values
             valid_indices = np.isfinite(modulus_to_plot)
@@ -2519,7 +2519,7 @@ class Spectral:
             phase_to_plot = np.angle(self.values)[valid_indices]
             if unwrap_phase:
                 phase_to_plot = np.unwrap(phase_to_plot)
-            label = '|H|'
+            label = r'$|$H$|$'
 
         ax_0.plot(frequencies_to_plot, modulus_to_plot, **kwargs)
         ax_0.set_xlabel('Freq (Hz)')
@@ -2528,7 +2528,7 @@ class Spectral:
             ax_0.set_xscale('log')
         if plot_phase:
             ax[1].plot(frequencies_to_plot, phase_to_plot, **kwargs)
-            ax[1].set_ylabel('Phase')
+            ax[1].set_ylabel('Phase (rad)')
             ax[1].set_xlabel('Freq (Hz)')
             if logx:
                 ax[1].set_xscale('log')

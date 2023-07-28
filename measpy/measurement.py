@@ -15,6 +15,11 @@ from ._tools import (csv_to_dict,
                      convl1,  
                      calc_dur_siglist)
 
+import numpy as np
+import matplotlib.pyplot as plt
+
+from copy import copy
+
 from ._version import VERSION
 from copy import copy,deepcopy
 import csv
@@ -415,3 +420,4 @@ class Measurement:
     #         s.values = s.values[posmax:posmax+M.fs*M.dur]
     #     return M1
     #     del(M1)
+

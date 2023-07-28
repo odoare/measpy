@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
@@ -10,10 +10,9 @@
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/doctools.js"></script>
         <script src="_static/sphinx_highlight.js"></script>
     <script src="_static/js/theme.js"></script>
@@ -27,27 +26,32 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="index.html" class="icon icon-home"> measpy
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            measpy
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+    
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="README.html">Readme</a></li>
 <li class="toctree-l1"><a class="reference internal" href="copyright.html">Copyright</a></li>
-<li class="toctree-l1"><a class="reference internal" href="1_play_with_signals.html">Signal tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="1_signals_tutorial.html">Signal tutorial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="2_spectral_data.html">Spectral tutorial</a></li>
-<li class="toctree-l1"><a class="reference internal" href="3_measurements.html">Measurement tutorial</a></li>
-<li class="toctree-l1"><a class="reference internal" href="4_spectrum_smoothing_and_weighting.html">Weighting and smoothing tutorial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="measpy.html">measpy package</a></li>
 </ul>
 
+    <a href="genindex.html">Index</a>
+  
         </div>
       </div>
     </nav>
@@ -61,7 +65,7 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
       <li class="breadcrumb-item active">Index</li>
       <li class="wy-breadcrumbs-aside">
       </li>
@@ -135,9 +139,9 @@
 <h2 id="C">C</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="measpy.html#measpy.ni.callback">callback() (in module measpy.ni)</a>
-</li>
       <li><a href="measpy.html#measpy.signal.Signal.coh">coh() (measpy.signal.Signal method)</a>
+</li>
+      <li><a href="measpy.html#measpy.signal.Signal.convolve">convolve() (measpy.signal.Signal method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -284,13 +288,6 @@
       <li><a href="measpy.html#measpy.signal.Signal.max">max (measpy.signal.Signal property)</a>
 </li>
       <li>
-    measpy
-
-      <ul>
-        <li><a href="measpy.html#module-measpy">module</a>
-</li>
-      </ul></li>
-      <li>
     measpy.audio
 
       <ul>
@@ -335,8 +332,6 @@
     module
 
       <ul>
-        <li><a href="measpy.html#module-measpy">measpy</a>
-</li>
         <li><a href="measpy.html#module-measpy.audio">measpy.audio</a>
 </li>
         <li><a href="measpy.html#module-measpy.measurement">measpy.measurement</a>
@@ -354,20 +349,16 @@
 <h2 id="N">N</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="measpy.html#measpy.ni.n_to_ain">n_to_ain() (in module measpy.ni)</a>
-</li>
-      <li><a href="measpy.html#measpy.ni.n_to_aon">n_to_aon() (in module measpy.ni)</a>
-</li>
       <li><a href="measpy.html#measpy.ni.ni_get_devices">ni_get_devices() (in module measpy.ni)</a>
 </li>
       <li><a href="measpy.html#measpy.ni.ni_run_measurement">ni_run_measurement() (in module measpy.ni)</a>
 </li>
       <li><a href="measpy.html#measpy.signal.Signal.noise">noise() (measpy.signal.Signal class method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="measpy.html#measpy.signal.Signal.normalize">normalize() (measpy.signal.Signal method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="measpy.html#measpy.signal.Spectral.nth_oct_smooth">nth_oct_smooth() (measpy.signal.Spectral method)</a>
 </li>
       <li><a href="measpy.html#measpy.signal.Spectral.nth_oct_smooth_complex">nth_oct_smooth_complex() (measpy.signal.Spectral method)</a>
@@ -461,6 +452,8 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="measpy.html#measpy.measurement.Measurement.t">t (measpy.measurement.Measurement property)</a>
+</li>
+      <li><a href="measpy.html#measpy.signal.Signal.t0">t0 (measpy.signal.Signal property)</a>
 </li>
       <li><a href="measpy.html#measpy.measurement.Measurement.tfe">tfe() (measpy.measurement.Measurement method)</a>
 
