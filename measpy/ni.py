@@ -106,6 +106,11 @@ def ni_run_measurement(M):
             rate=M.fs,
             sample_mode=niconst.AcquisitionType.CONTINUOUS,
             samps_per_chan=nsamps)
+        
+        for i,iepeval in enumerate(M.in_iepe):
+           if iepeval:
+                intask.ai_channels[i].ai_excit_val = 0.002
+                intask.ai_channels[i].ai_coupling = niconst.Coupling.AC
 
     # Set up the write tasks
     if M.out_sig!=None:
@@ -191,7 +196,8 @@ def ni_run_synced_measurement(M,in_chan=0,out_chan=0,added_time=1):
     :type in_chan: int
     :param added_time: Duration of silence added before and after the selected output signal
     :type added_time: float
-
+    :return: Measured delay between i/o sync channels
+    :rtype: float
     """
     M.sync_prepare(out_chan=out_chan,added_time=added_time)
     ni_run_measurement(M)

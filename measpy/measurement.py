@@ -166,6 +166,7 @@ class Measurement:
         if self.device_type=='ni':
             self.in_range = params.setdefault("in_range",None)
             self.out_range = params.setdefault("out_range",None)
+            self.in_iepe = params.setdefault("in_iepe",list(False for b in self.in_map))
         if type(self.out_sig)!=type(None):
             self.io_sync = params.setdefault('io_sync',0)
         elif 'io_sync' in params:
@@ -198,6 +199,7 @@ class Measurement:
         if self.device_type=='ni':
             out += ",\n in_range="+str(self.in_range)
             out += ",\n out_range="+str(self.out_range)
+            out += ",\n in_iepe="+str(self.in_iepe)            
         out += ',\n in_sig=list of '+str(len(self.in_sig))+' measpy.signal.Signal'
         out +=")"
         
@@ -334,6 +336,10 @@ class Measurement:
                 pass
             try:
                 self.out_range = convl1(float,task_dict['out_range'])
+            except:
+                pass
+            try:
+                self.in_iepe = convl(bool,task_dict['in_iepe'])
             except:
                 pass
 
