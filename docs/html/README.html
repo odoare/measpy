@@ -47,15 +47,15 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Readme</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#todo">TODO</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#usage-example">Usage example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#functional-programing-paradigm">Functional programing paradigm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#units">Units</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#documentation">Documentation</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="copyright.html">Copyright</a></li>
-<li class="toctree-l1"><a class="reference internal" href="1_signals_tutorial.html">Signal tutorial</a></li>
-<li class="toctree-l1"><a class="reference internal" href="2_spectral_data.html">Spectral tutorial</a></li>
-<li class="toctree-l1"><a class="reference internal" href="3_measurements.html">Measurement tutorial</a></li>
-<li class="toctree-l1"><a class="reference internal" href="4_spectrum_smoothing_and_weighting.html">Weighting and smoothing tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="1_signal_tutorial.html">Signal tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="2_spectral_tutorial.html">Spectral tutorial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="measpy.html">measpy package</a></li>
 </ul>
 
@@ -89,11 +89,12 @@
 <h1>measpy - Measurements with Python<a class="headerlink" href="#measpy-measurements-with-python" title="Permalink to this heading"></a></h1>
 <p>(c) 2021-2023 Olivier Doaré
 Contact: olivier.doare&#64;ensta-paris.fr</p>
-<p>measpy is a set of classes and methods that serves these two main purposes:</p>
+<p>measpy is a set of classes and methods that</p>
 <ul class="simple">
-<li><p>Allow signal processing and analysis using rapid and compact Python scripting, thanks to the functional programming paradigm proposed by this package</p></li>
-<li><p>Data acquisition with DAQ cards</p></li>
+<li><p>helps signal processing and analysis using rapid and compact Python scripting, thanks to the functional programming paradigm proposed by this package,</p></li>
+<li><p>ease and unify the data acquisition process with various DAQ cards</p></li>
 </ul>
+<p><strong>WARNING:</strong> <em>major incompatible changes have been made to the measurement class for v0.1, if backward compatibility is needed, the old measurement class system is kept in the pre v0.1 branch. Changes in this branch will only concern eventual bug fixing.</em></p>
 <p>The base classes defined by <code class="docutils literal notranslate"><span class="pre">measpy</span></code> are:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">Signal</span></code>: This is the core class of the package. It defines a signal through a sampling frequency, a physical unit and a list of samples and a description. Additional properties can be defined in order to take into account calibration or time shifting of the signal with respect to a reference time.</p></li>
@@ -134,19 +135,6 @@ Contact: olivier.doare&#64;ensta-paris.fr</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">l</span><span class="p">)</span>
 </pre></div>
 </div>
-<section id="todo">
-<h2>TODO<a class="headerlink" href="#todo" title="Permalink to this heading"></a></h2>
-<p>Things to improve, implement, fix:</p>
-<ul class="simple">
-<li><p>A few scipy.signal functions are wrapped in measpy methods. New processing methods could be implemented (e.g. FIR…)</p></li>
-<li><p>Improve plotting methods</p></li>
-<li><p>Other In/Out synchronization methods (for now a method using a peak sync before measurement is implemented)</p></li>
-<li><p>hdf5 file format</p></li>
-<li><p>More documentation</p></li>
-<li><p>More testing scripts</p></li>
-<li><p>GUI ?</p></li>
-</ul>
-</section>
 <section id="usage-example">
 <h2>Usage example<a class="headerlink" href="#usage-example" title="Permalink to this heading"></a></h2>
 <p>Consider the following experiment in which we want to record a pressure and an acceleration while we send a white noise at the sound card output (typical sound and vibration transfer function measurement):</p>
@@ -156,96 +144,81 @@ Contact: olivier.doare&#64;ensta-paris.fr</p>
 <li><p>an acceleration is acquired at input 2 (unit m/s^2)</p></li>
 <li><p>the sampling frequency is 44100Hz</p></li>
 <li><p>the calibration of signal conditionners are : 1V/pascal, 0.1V/(m/s^2)</p></li>
-<li><p>the soundcard input gain is such that for 5V at its inputs, the sample amplitude is 1.0 (input or output). This value is referred to as 0dB full scale (0dBFS)</p></li>
+<li><p>the soundcard input gain is such that for 5V at its inputs, the sample amplitude is 1.0 (input or output). This value is referred to as 0dB full scale (0dBFS). It given in the soundcard specifications or has to be calibrated using known signals.</p></li>
 <li><p>the duration of the measurement is 5s</p></li>
 <li><p>the soundcard name is ‘My card’, as given by measpy.audio.audio_get_devices()</p></li>
 </ul>
-<p>To setup and run the measurement, do:</p>
+<p>First step is to import the modules and prepare the signals. We create a five seconds noise signal for output, and two empty signals with the correct properties for the inputs.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">measpy</span> <span class="k">as</span> <span class="nn">mp</span>
 <span class="kn">from</span> <span class="nn">measpy.audio</span> <span class="kn">import</span> <span class="n">audio_run_measurement</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-
-<span class="n">M1</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Measurement</span><span class="p">(</span><span class="n">out_sig</span><span class="o">=</span><span class="s1">&#39;noise&#39;</span><span class="p">,</span>
+<span class="n">sout</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="o">.</span><span class="n">noise</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="mi">44100</span><span class="p">,</span> <span class="n">freq_min</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">freq_max</span><span class="o">=</span><span class="mi">20000</span><span class="p">,</span> <span class="n">dur</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">sin1</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="n">desc</span> <span class="o">=</span> <span class="s1">&#39;Pressure&#39;</span><span class="p">,</span> <span class="n">dbfs</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span> <span class="n">cal</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;Pa&#39;</span> <span class="p">)</span>
+<span class="n">sin2</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="n">desc</span> <span class="o">=</span> <span class="s1">&#39;Acceleration&#39;</span><span class="p">,</span> <span class="n">dbfs</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span> <span class="n">cal</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;m*s**(-2)&#39;</span> <span class="p">)</span>
+</pre></div>
+</div>
+<p>We then setup and run the measurement:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>
+<span class="n">M1</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Measurement</span><span class="p">(</span><span class="n">out_sig</span><span class="o">=</span><span class="p">[</span><span class="n">sout</span><span class="p">],</span>
                     <span class="n">out_map</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
-                    <span class="n">out_name</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Out1&#39;</span><span class="p">],</span>
-                    <span class="n">out_desc</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Output noise&#39;</span><span class="p">],</span>
-                    <span class="n">out_sig_freqs</span><span class="o">=</span><span class="p">[</span><span class="mf">20.0</span><span class="p">,</span><span class="mf">20000.0</span><span class="p">]</span>
+                    <span class="n">in_sig</span><span class="o">=</span><span class="p">[</span><span class="n">sin1</span><span class="p">,</span><span class="n">sin2</span><span class="p">],</span>
                     <span class="n">in_map</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span>
-                    <span class="n">in_name</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Press&#39;</span><span class="p">,</span><span class="s1">&#39;Acc&#39;</span><span class="p">]</span>
-                    <span class="n">in_desc</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Pressure at point A&#39;</span><span class="p">,</span><span class="s1">&#39;Acceleration at point B&#39;</span><span class="p">],</span>
-                    <span class="n">in_cal</span><span class="o">=</span><span class="p">[</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">0.1</span><span class="p">],</span>
-                    <span class="n">in_unit</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Pa&#39;</span><span class="p">,</span><span class="s1">&#39;m/s**2&#39;</span><span class="p">],</span>
-                    <span class="n">in_dbfs</span><span class="o">=</span><span class="p">[</span><span class="mf">5.0</span><span class="p">,</span><span class="mf">5.0</span><span class="p">],</span>
-                    <span class="n">out_dbfs</span><span class="o">=</span><span class="p">[</span><span class="mf">5.0</span><span class="p">,]</span>
                     <span class="n">dur</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
                     <span class="n">in_device</span><span class="o">=</span><span class="s1">&#39;My card&#39;</span><span class="p">,</span>
-                    <span class="n">out_device</span><span class="o">=</span><span class="s1">&#39;My card&#39;</span><span class="p">)</span>
+                    <span class="n">out_device</span><span class="o">=</span><span class="s1">&#39;My card&#39;</span><span class="p">,</span>
+                    <span class="n">device_type</span><span class="o">=</span><span class="s1">&#39;audio&#39;</span><span class="p">)</span>
 <span class="n">audio_run_measurement</span><span class="p">(</span><span class="n">M1</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>To plot the resulting data:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">M1</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<p>The data is stored in the list of <code class="docutils literal notranslate"><span class="pre">Signal</span></code> objects <code class="docutils literal notranslate"><span class="pre">M1.in_sig</span></code>. To plot the pressure:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">M1</span><span class="o">.</span><span class="n">in_sig</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
-<p>It is possible to save measurements in different formats. For instance, this saves the data as a pair of ‘file.csv’ + ‘file.wav’ files:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">M1</span><span class="o">.</span><span class="n">to_csvwav</span><span class="p">(</span><span class="s1">&#39;file&#39;</span><span class="p">)</span>
+<p>The measurement can be saved in a directory:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">M1</span><span class="o">.</span><span class="n">to_dir</span><span class="p">(</span><span class="s1">&#39;my_measurement&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>The CSV file then contains the measurement properties while the WAV file contains the actual data that has been acquired (as many channel as the number of inputs+outputs involved in the measurement)</p>
-<p>Load a measurement file into the Measurement object M2:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">M2</span><span class="o">=</span><span class="n">mp</span><span class="o">.</span><span class="n">Measurement</span><span class="o">.</span><span class="n">from_csvwav</span><span class="p">(</span><span class="s1">&#39;file&#39;</span><span class="p">)</span>
+<p>The created directory contains the measurement parameters in a file params.csv, individual signals as pairs of csv and wav files, one pair for each signal. The csv contains the signal parameters, the wav file contains the raw data points.</p>
+<p>The measurement can then be restored using:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">M2</span><span class="o">=</span><span class="n">mp</span><span class="o">.</span><span class="n">Measurement</span><span class="o">.</span><span class="n">from_dir</span><span class="p">(</span><span class="s1">&#39;my_measurement&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Other formats are possible : A pickle file, or a json+wave files. See from_pickle() or from_jsonwav() methods.</p>
-<p>Compute transfer functions:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sp</span> <span class="o">=</span> <span class="n">M1</span><span class="o">.</span><span class="n">tfe</span><span class="p">()</span>
+<p>An example of analysis consists in computing transfer function between sent signal and acquired signals. For instance, the Welch method can be implemented using:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">H</span><span class="o">=</span><span class="n">M2</span><span class="o">.</span><span class="n">in_sig</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tfe_welch</span><span class="p">(</span><span class="n">M2</span><span class="o">.</span><span class="n">out_sig</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 </pre></div>
 </div>
-<p>This computes the transfer function between the output signal and all the input signals as a dict of <code class="docutils literal notranslate"><span class="pre">Spectral</span></code> objects. The method that is actually used depends on the output type, as specified in the out_sig property of the measurement object. If a ‘noise’ or ‘*wav’ type signal is sent, Welch’s method is used. If a ‘logsweep’ type is used, Farina’s method is used. This basic helper function works only if there is a unique output.</p>
-<p>In general is is preferable to work on individual signals. All the acquired and sent signals are stored into the data property. It is basically a dict of signals, the keys being set by the in_name and out_name arguments when measurement is called. If these optional argument where not specified, then the keys are named by default In1, In2, … and Out1, Out2, …</p>
-<p>For example, to plot only the measured pressure we can do:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">a</span><span class="o">=</span><span class="n">M1</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Press&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<p>The output of <code class="docutils literal notranslate"><span class="pre">tfe_welch()</span></code> is an object of the <code class="docutils literal notranslate"><span class="pre">measpy.signal.Spectral</span></code> class. This class has also a plotting method:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">H</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
-<p>If no arguments are given, the <code class="docutils literal notranslate"><span class="pre">plot</span></code> method of signal objects creates a new figure, draw the signal with the correct dimension and put the correct labels on all axes. This methods returns an axes object that can be used later to plot new signals on the same figure.</p>
-<p>One may want to calculate the power spectral density of the pressure (Welch’s method on 2**12 points, 50% overlaping):</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">PressPSD</span> <span class="o">=</span> <span class="n">M1</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Press&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">psd</span><span class="p">(</span><span class="n">nperseg</span><span class="o">=</span><span class="mi">2</span><span class="o">**</span><span class="mi">12</span><span class="p">)</span>
+<p>This <code class="docutils literal notranslate"><span class="pre">Spectral</span></code> object can then be used to compute an impulse response:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">G</span> <span class="o">=</span> <span class="n">H</span><span class="o">.</span><span class="n">irfft</span><span class="p">()</span>
 </pre></div>
 </div>
-<p><code class="docutils literal notranslate"><span class="pre">PressPSD</span></code> is now a <code class="docutils literal notranslate"><span class="pre">Spectral</span></code> class object. It has its own methods. For instance, to plot the data:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">PressPSD</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</section>
+<section id="functional-programing-paradigm">
+<h2>Functional programing paradigm<a class="headerlink" href="#functional-programing-paradigm" title="Permalink to this heading"></a></h2>
+<p>Most signal processing methods of <code class="docutils literal notranslate"><span class="pre">Signal</span></code> and <code class="docutils literal notranslate"><span class="pre">Spectral</span></code> classes return a <code class="docutils literal notranslate"><span class="pre">Signal</span></code> or <code class="docutils literal notranslate"><span class="pre">Spectral</span></code> object. This allows to write signal processing scripts by chaining these methods. For instance the impulse response calculation above can be done in one step:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">G</span> <span class="o">=</span> <span class="n">M2</span><span class="o">.</span><span class="n">in_sig</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tfe_welch</span><span class="p">(</span><span class="n">M2</span><span class="o">.</span><span class="n">out_sig</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">irfft</span><span class="p">()</span>
 </pre></div>
 </div>
-<p>You might want to compute the transfer function between <code class="docutils literal notranslate"><span class="pre">M1.data['Acc']</span></code> and <code class="docutils literal notranslate"><span class="pre">M1.data['Press']</span></code>:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">tfap</span> <span class="o">=</span> <span class="n">M1</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Acc&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tfe_welch</span><span class="p">(</span><span class="n">M1</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Press&#39;</span><span class="p">],</span><span class="n">nperseg</span><span class="o">=</span><span class="mi">2</span><span class="o">**</span><span class="mi">12</span><span class="p">)</span>
+<p>We might want to remove frequencies below 20Hz and above 20kHz before computing the impulse. This can be done in the same line of code, in the functional programing way:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">G</span> <span class="o">=</span> <span class="n">M2</span><span class="o">.</span><span class="n">in_sig</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tfe_welch</span><span class="p">(</span><span class="n">M2</span><span class="o">.</span><span class="n">out_sig</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">filter_out</span><span class="p">([</span><span class="mi">20</span><span class="p">,</span><span class="mi">20000</span><span class="p">])</span><span class="o">.</span><span class="n">irfft</span><span class="p">()</span>
 </pre></div>
 </div>
-<p>And use this <code class="docutils literal notranslate"><span class="pre">Spectral</span></code> object to compute an impulse response:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Gap</span> <span class="o">=</span> <span class="n">tfap</span><span class="o">.</span><span class="n">irfft</span><span class="p">()</span>
-</pre></div>
-</div>
-<p>This could be done in one step:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Gap</span> <span class="o">=</span> <span class="n">M1</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Acc&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tfe_welch</span><span class="p">(</span><span class="n">M1</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Press&#39;</span><span class="p">],</span><span class="n">nperseg</span><span class="o">=</span><span class="mi">2</span><span class="o">**</span><span class="mi">12</span><span class="p">)</span><span class="o">.</span><span class="n">irfft</span><span class="p">()</span>
-</pre></div>
-</div>
-<p>To remove frequencies below 20Hz and above 20kHz before computing the impulse:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Gap</span> <span class="o">=</span> <span class="n">M1</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Acc&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tfe_welch</span><span class="p">(</span><span class="n">M1</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Press&#39;</span><span class="p">],</span><span class="n">nperseg</span><span class="o">=</span><span class="mi">2</span><span class="o">**</span><span class="mi">12</span><span class="p">)</span><span class="o">.</span><span class="n">filterout</span><span class="p">([</span><span class="mi">20</span><span class="p">,</span><span class="mi">20000</span><span class="p">])</span><span class="o">.</span><span class="n">irfft</span><span class="p">()</span>
-</pre></div>
-</div>
+</section>
+<section id="units">
+<h2>Units<a class="headerlink" href="#units" title="Permalink to this heading"></a></h2>
 <p>Units are preserved during the operations:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">Gap</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>should give something like pascal * second**2 / m</p>
-<p>Individual signals can also be saved as a pair of files: a .csv containing the metadata informations of the signal (sampling frequency, calibration informations, name…), and a .wav file, containing the actual data (dimensionless):</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">M1</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Press&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_csvwav</span><span class="p">(</span><span class="s1">&#39;Pressure&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>This will create Pressure.csv and Pressure.wav, that can be reloaded later with:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">press_sig</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="o">.</span><span class="n">from_csvwav</span><span class="p">(</span><span class="s1">&#39;Pressure&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
+</section>
+<section id="documentation">
+<h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this heading"></a></h2>
+<p>Additionnal documentation and examples can be found in the ./docs and ./examples directories of the project.</p>
 </section>
 </section>
 

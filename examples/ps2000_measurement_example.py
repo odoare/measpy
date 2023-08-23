@@ -27,25 +27,22 @@ M = mp.Measurement(in_sig=[s1,s2],
                    device_type='pico',
                    dur=2)
 
-run(M)
-
-M.to_dir('test')
-
 # Run the measurement
 ps2000_run_measurement(M)
 
-# Save the measurement as a pair of .csv (with properties) and .wav (with data) files
-M.to_dir('my_pico_measurement')
+# Save the measurement in a directory
+# If the directory exists, a renaming
+# strategy is adopted
+# The to_dir methods returns the actual
+# name of the directory
+d = M.to_dir('my_pico_measurement')
 
 # Load the measurement
-M1 = mp.Measurement.from_dir('my_pico_measurement')
+M1 = mp.Measurement.from_dir(d)
 
 # Plot the acquired signals on the same graph
 a = M1.in_sig[0].plot()
 M1.in_sig[1].plot(ax=a)
-
-# Plot an individual signal (channel 1)
-M1.data['In1'].plot()
 
 # Plot the Power spectral density of channel 2 signal 
 # (Welch's method with windows of 2**14 points)

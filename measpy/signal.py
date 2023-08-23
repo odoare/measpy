@@ -1656,14 +1656,13 @@ class Signal:
         return c.time[np.argmax(c.values)]
 
     def plot(self, ax=None, **kwargs):
-        """ Basic plotting of the signal
-            Optionnal arguments:
+        """ Plot the signal with axes captions and labels. Except the axis specifier ax, all other optionnal arguments are passed to the matplotlib plot function.
 
-            - ax : an axes object to plot on
-            - **kwargs : all the optionnal arguments of matplotlib.pyplot.line2D
+            :param ax: specifies an existing axis object to plot on. If not specified, a new one is created and returned
+            :type ax: matplotlib.axes._axes.Axes
 
-            Returns:
-            - ax : an axes object
+            :return: an axes object
+            :rtype: matplotlib.axes._axes.Axes
         """
 
         kwargs.setdefault("label", self.desc+' ['+str(self.unit.units)+']')
@@ -1685,10 +1684,10 @@ class Signal:
             :param ax: an axes object to plot on
             :type ax: axis type
 
-            Additionnal **kwargs arguments are all passed scipy.signal.spectrogram function
+            Additionnal kwargs arguments are all passed scipy.signal.spectrogram function
 
-            Returns:
-            - ax : an axes object
+            :return: an axes object
+            :rtype: matplotlib.axes._axes.Axes
         """
         f, t, Sxx = spectrogram(self.values, self.fs, **kwargs)
         if ax == None:

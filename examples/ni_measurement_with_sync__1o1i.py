@@ -16,8 +16,8 @@
 # Import Packages
 # Add to path the parent directory in order to use the local measpy 
 # Not needed if using the global version (e.g. via pip install)
-import sys
-sys.path.insert(0, "./measpy")
+# import sys
+# sys.path.insert(0, "./measpy")
 
 import measpy as mp
 from measpy.ni import ni_run_synced_measurement, ni_get_devices

@@ -2,9 +2,11 @@
 (c) 2021-2023 Olivier Doaré
 Contact: olivier.doare@ensta-paris.fr
 
-measpy is a set of classes and methods that serves these two main purposes:
-- Allow signal processing and analysis using rapid and compact Python scripting, thanks to the functional programming paradigm proposed by this package
-- Data acquisition with DAQ cards
+measpy is a set of classes and methods that
+- helps signal processing and analysis using rapid and compact Python scripting, thanks to the functional programming paradigm proposed by this package,
+- ease and unify the data acquisition process with various DAQ cards
+
+**WARNING:** *major incompatible changes have been made to the measurement class for v0.1, if backward compatibility is needed, the old measurement class system is kept in the pre v0.1 branch. Changes in this branch will only concern eventual bug fixing.*
 
 The base classes defined by ```measpy``` are:
 - ```Signal```: This is the core class of the package. It defines a signal through a sampling frequency, a physical unit and a list of samples and a description. Additional properties can be defined in order to take into account calibration or time shifting of the signal with respect to a reference time.
@@ -48,17 +50,6 @@ l = audio_get_devices()
 print(l)
 ```
 
-## TODO
-
-Things to improve, implement, fix:
-- A few scipy.signal functions are wrapped in measpy methods. New processing methods could be implemented (e.g. FIR...)
-- Improve plotting methods
-- Other In/Out synchronization methods (for now a method using a peak sync before measurement is implemented)
-- hdf5 file format
-- More documentation
-- More testing scripts
-- GUI ?
-
 ## Usage example
 
 Consider the following experiment in which we want to record a pressure and an acceleration while we send a white noise at the sound card output (typical sound and vibration transfer function measurement):
@@ -67,94 +58,77 @@ Consider the following experiment in which we want to record a pressure and an a
 - an acceleration is acquired at input 2 (unit m/s^2)
 - the sampling frequency is 44100Hz
 - the calibration of signal conditionners are : 1V/pascal, 0.1V/(m/s^2)
-- the soundcard input gain is such that for 5V at its inputs, the sample amplitude is 1.0 (input or output). This value is referred to as 0dB full scale (0dBFS)
+- the soundcard input gain is such that for 5V at its inputs, the sample amplitude is 1.0 (input or output). This value is referred to as 0dB full scale (0dBFS). It given in the soundcard specifications or has to be calibrated using known signals.
 - the duration of the measurement is 5s
 - the soundcard name is 'My card', as given by measpy.audio.audio_get_devices()
 
-To setup and run the measurement, do:
+First step is to import the modules and prepare the signals. We create a five seconds noise signal for output, and two empty signals with the correct properties for the inputs.
 ```python
 import measpy as mp
 from measpy.audio import audio_run_measurement
-import matplotlib.pyplot as plt
+sout = mp.Signal.noise(fs=44100, freq_min=20, freq_max=20000, dur=5)
+sin1 = mp.Signal(desc = 'Pressure', dbfs=5.0, cal=1.0, unit='Pa' )
+sin2 = mp.Signal(desc = 'Acceleration', dbfs=5.0, cal=0.1, unit='m*s**(-2)' )
+```
 
-M1 = mp.Measurement(out_sig='noise',
+We then setup and run the measurement:
+```python
+
+M1 = mp.Measurement(out_sig=[sout],
                     out_map=[1],
-                    out_name=['Out1'],
-                    out_desc=['Output noise'],
-                    out_sig_freqs=[20.0,20000.0]
+                    in_sig=[sin1,sin2],
                     in_map=[1,2],
-                    in_name=['Press','Acc']
-                    in_desc=['Pressure at point A','Acceleration at point B'],
-                    in_cal=[1.0,0.1],
-                    in_unit=['Pa','m/s**2'],
-                    in_dbfs=[5.0,5.0],
-                    out_dbfs=[5.0,]
                     dur=5,
                     in_device='My card',
-                    out_device='My card')
+                    out_device='My card',
+                    device_type='audio')
 audio_run_measurement(M1)
 ```
 
-To plot the resulting data:
+The data is stored in the list of ```Signal``` objects ```M1.in_sig```. To plot the pressure:
 ```python
-M1.plot()
+M1.in_sig[0].plot()
 plt.show()
 ```
-It is possible to save measurements in different formats. For instance, this saves the data as a pair of 'file.csv' + 'file.wav' files:
-```
-M1.to_csvwav('file')
-```
-The CSV file then contains the measurement properties while the WAV file contains the actual data that has been acquired (as many channel as the number of inputs+outputs involved in the measurement)
 
-Load a measurement file into the Measurement object M2:
+The measurement can be saved in a directory:
+```
+M1.to_dir('my_measurement')
+```
+The created directory contains the measurement parameters in a file params.csv, individual signals as pairs of csv and wav files, one pair for each signal. The csv contains the signal parameters, the wav file contains the raw data points.
+
+The measurement can then be restored using:
 ```python
-M2=mp.Measurement.from_csvwav('file')
+M2=mp.Measurement.from_dir('my_measurement')
 ```
-Other formats are possible : A pickle file, or a json+wave files. See from_pickle() or from_jsonwav() methods.
 
-Compute transfer functions:
+An example of analysis consists in computing transfer function between sent signal and acquired signals. For instance, the Welch method can be implemented using:
 ```python
-sp = M1.tfe()
+H=M2.in_sig[0].tfe_welch(M2.out_sig[0])
 ```
-This computes the transfer function between the output signal and all the input signals as a dict of ```Spectral``` objects. The method that is actually used depends on the output type, as specified in the out_sig property of the measurement object. If a 'noise' or '*wav' type signal is sent, Welch's method is used. If a 'logsweep' type is used, Farina's method is used. This basic helper function works only if there is a unique output.
-
-In general is is preferable to work on individual signals. All the acquired and sent signals are stored into the data property. It is basically a dict of signals, the keys being set by the in_name and out_name arguments when measurement is called. If these optional argument where not specified, then the keys are named by default In1, In2, ... and Out1, Out2, ... 
-
-For example, to plot only the measured pressure we can do:
+The output of ```tfe_welch()``` is an object of the ```measpy.signal.Spectral``` class. This class has also a plotting method:
 ```python
-a=M1.data['Press'].plot()
-```
-If no arguments are given, the ```plot``` method of signal objects creates a new figure, draw the signal with the correct dimension and put the correct labels on all axes. This methods returns an axes object that can be used later to plot new signals on the same figure.
-
-One may want to calculate the power spectral density of the pressure (Welch's method on 2**12 points, 50% overlaping):
-```python
-PressPSD = M1.data['Press'].psd(nperseg=2**12)
+H.plot()
+plt.show()
 ```
 
-```PressPSD``` is now a ```Spectral``` class object. It has its own methods. For instance, to plot the data:
+This ```Spectral``` object can then be used to compute an impulse response:
 ```python
-PressPSD.plot()
+G = H.irfft()
 ```
 
-You might want to compute the transfer function between ```M1.data['Acc']``` and ```M1.data['Press']```:
+## Functional programing paradigm
+
+Most signal processing methods of ```Signal``` and ```Spectral``` classes return a ```Signal``` or ```Spectral``` object. This allows to write signal processing scripts by chaining these methods. For instance the impulse response calculation above can be done in one step:
 ```python
-tfap = M1.data['Acc'].tfe_welch(M1.data['Press'],nperseg=2**12)
+G = M2.in_sig[0].tfe_welch(M2.out_sig[0]).irfft()
+```
+We might want to remove frequencies below 20Hz and above 20kHz before computing the impulse. This can be done in the same line of code, in the functional programing way:
+```python
+G = M2.in_sig[0].tfe_welch(M2.out_sig[0]).filter_out([20,20000]).irfft()
 ```
 
-And use this ```Spectral``` object to compute an impulse response:
-```python
-Gap = tfap.irfft()
-```
-
-This could be done in one step:
-```python
-Gap = M1.data['Acc'].tfe_welch(M1.data['Press'],nperseg=2**12).irfft()
-```
-
-To remove frequencies below 20Hz and above 20kHz before computing the impulse:
-```python
-Gap = M1.data['Acc'].tfe_welch(M1.data['Press'],nperseg=2**12).filterout([20,20000]).irfft()
-```
+## Units
 
 Units are preserved during the operations:
 ```python
@@ -162,11 +136,6 @@ print(Gap.unit)
 ```
 should give something like pascal * second**2 / m
 
-Individual signals can also be saved as a pair of files: a .csv containing the metadata informations of the signal (sampling frequency, calibration informations, name...), and a .wav file, containing the actual data (dimensionless):
-```python
-M1.data['Press'].to_csvwav('Pressure')
-```
-This will create Pressure.csv and Pressure.wav, that can be reloaded later with:
-```python
-press_sig = mp.Signal.from_csvwav('Pressure')
-```
+## Documentation
+
+Additionnal documentation and examples can be found in the ./docs and ./examples directories of the project.

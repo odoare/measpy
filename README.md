@@ -6,16 +6,13 @@ measpy is a set of classes and methods that
 - helps signal processing and analysis using rapid and compact Python scripting, thanks to the functional programming paradigm proposed by this package,
 - ease and unify the data acquisition process with various DAQ cards
 
-*WARNING: major incompatible changes have been made to the measurement class for v0.1, if backward compatibility is needed, the old measurement class system is kept in the pre v0.1 branch. Changes in this branch will only concern eventual bug fixing.*
+**WARNING:** *major incompatible changes have been made to the measurement class for v0.1, if backward compatibility is needed, the old measurement class system is kept in the pre v0.1 branch. Changes in this branch will only concern eventual bug fixing.*
 
 The base classes defined by ```measpy``` are:
 - ```Signal```: This is the core class of the package. It defines a signal through a sampling frequency, a physical unit and a list of samples and a description. Additional properties can be defined in order to take into account calibration or time shifting of the signal with respect to a reference time.
 - ```Spectral```: This class represents the signals in the Fourier space. A spectral object contains the complex amplitudes as a 1D numpy array for frequencies up to the Nyquist frequency or the sampling frequency, and some properties as sampling frequency, unit and description.
 - ```Measurement``` : A class that describe a data acquisition process, its outputs (Signal objects), its inputs (Signal objects)...
 - ```Weighting``` : A weighting class holds complex values for a list of frequencies, and methods to to smoothing, interpolation, etc.
-
-_Warning: Important change between v0.0.x and v0.1:_
-The ```Measurement``` class has been reworked. This breaks compatibility in many aspects. Measurement definition and data saving approaches are different. In order to work with data saved before v0.1, there is the branch pre0.1, which will be updaed only if bugs need to be fixed.
 
 For now, data acquisition with these daq devices are implemented :
 - Audio cards, via the ```sounddevice``` package,

@@ -7,19 +7,17 @@
 
 - [x] Signal.to_csv
 
-- [] Measurement -> new oldbranch
+- [x] Measurement -> new oldbranch
 
 - [x] Daqtask -> Measurement
 
-- [] Continuous integration : tests
-
-- [] Continuous integration : pip publication
-
 - [x] to_dir when dir exists
 
-- [] neperseg defaults ?
+- [x] neperseg defaults ?
 
 # Long term todo
 - [] HDF5
 - [] Pandas
 - [] Units everywhere ?
+- [] Continuous integration : tests
+- [] Continuous integration : pip publication
