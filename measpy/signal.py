@@ -44,7 +44,9 @@ from ._tools import (add_step,
                            apply_fades,
                            sine,
                            noise,
-                           log_sweep)
+                           log_sweep,
+                           unwrap_around_index,
+                           get_index)
 
 ##################
 ##              ##
@@ -1489,7 +1491,7 @@ class Signal:
                 writer.writerow(['First column is time in seconds'])
             writer.writerows(outdata)
 
-    def harmonic_disto(self, nh=4, freq_min=20.0, freq_max=20000.0, delay=None, win_max_length=2**15, prop_before=0.1, nsmooth=24, debug_plot=False):
+    def harmonic_disto(self, nh=4, freq_min=20.0, freq_max=20000.0, delay=None, win_max_length=2**15, prop_before=0.25, nsmooth=24, debug_plot=False):
         """Compute the harmonic distorsion of an in/out system
         using the method proposed by Farina (2000) and adapted by
         Novak et al. (2015) to correctly estimate the phase of the
@@ -1507,7 +1509,7 @@ class Signal:
         :type delay: float, optional
         :param win_max_length: Maximum window length for each harmonic Fourier analysis in number of samples. Has to be even. Defaults to 2**15. When treating higher harmonics, the window can be shortened so that there is no overlapping with the next window.
         :type delay: float, optional
-        :param prop_before: Proportion of the window that is before the peak center for each harmonic content. Defaults to 0.1 (10% of the window is before the harmonic peak)
+        :param prop_before: Proportion of the window that is before the peak center for each harmonic content. Defaults to 0.25 (1/4th of the window is before the harmonic peak)
         :type prop_before: float, optionnal
         :param nsmooth: Parameter for 1/nsmooth smoothing before Weighting conversion, defaults to 12
         :type nsmooth: int
@@ -1524,21 +1526,10 @@ class Signal:
         # Compute transfer function using Farina's method
         sp = self.tfe_farina((freq_min,freq_max))
 
-        # Delay calculation based on group delay (less robust)
-        # if type(delay)==type(None):
-        #     # Estimate the delay by calculating the mean value of
-        #     # the group delay
-        #     gd = sp.group_delay()
-        #     delay = np.mean(
-        #         gd.values[(gd.freqs > freqs[0])&(gd.freqs < freqs[1])]
-        #     ) - 0.5*l/sp.fs
-
-        # print (delay)
-
         l = win_max_length
 
         # dl is the window shift for each Fourier transform computation
-        # of the harmonic peaks l/8 is a standard value that keeps a part
+        # of the harmonic peaks l/4 is a standard value that keeps a part
         # of the signal before the peak itself
         dl = prop_before*l
 
@@ -1551,6 +1542,16 @@ class Signal:
                 freq_min=freq_min,
                 freq_max=freq_max))
 
+        # Delay calculation based on group delay (less robust)
+        # if type(delay)==type(None):
+        #     # Estimate the delay by calculating the mean value of
+        #     # the group delay
+        #     gd = sp.group_delay()
+        #     delay = np.mean(
+        #         gd.values[(gd.freqs > freqs[0])&(gd.freqs < freqs[1])]
+        #     ) - 0.5*l/sp.fs
+        # print (delay)
+
         # Green's function from Farina's spectrum
         G = sp.irfft()
 
@@ -1559,19 +1560,25 @@ class Signal:
         L = (self.dur-1/self.fs)/np.log(freq_max/freq_min)
         dt = L*np.log(np.arange(nh)+1)
         decal = dt*G.fs-np.ceil(dt*G.fs)
+        # print("dt")
+        # print(dt)
+        # print("decal")
+        # print(decal)
         ns = np.round((G.dur-dt+delay)*G.fs)-dl
 
+        ts = np.take(G.time, list(map(int, list(ns))), mode='wrap')
+        # print("ts")
+        # print(ts)
+        tf=ts.copy()
+        for i,t in enumerate(ts):
+            if i==0:
+                tf[i] = t+l/sp.fs
+            else:
+                tf[i] = min(t+l/sp.fs,ts[i-1])
+
         if debug_plot:
-            ts = np.take(G.time, list(map(int, list(ns))), mode='wrap')
-            print(ts)
-            tf=ts.copy()
-            for i,t in enumerate(ts):
-                if i==0:
-                    tf[i] = t+l/sp.fs
-                else:
-                    tf[i] = min(t+l/sp.fs,ts[i-1])
-            # tf = ts+l/sp.fs
-            print(tf)
+            # print("tf")
+            # print(tf)
             maxG = np.max(np.abs(G.values))
             axG = G.plot(label="IFFT of Farina's spectrum")
             for ii in range(nh):
@@ -1596,7 +1603,7 @@ class Signal:
 
             # Phase of spectra are adjusted to compensate for various delays
             Hnl[ii] = Hnl[ii].similar(
-                values=Hnl[ii].values*np.exp(-1j*Hnl[ii].freqs*2*np.pi*(dl+decal[ii])/Hnl[ii].fs))
+                values=Hnl[ii].values*np.exp(-1j*Hnl[ii].freqs*2*np.pi*(-dl+decal[ii])/Hnl[ii].fs))
 
             # We create a weighting for each spectra
             Wnl[ii] = Hnl[ii].nth_oct_smooth_to_weight_complex(nsmooth)
@@ -1618,6 +1625,7 @@ class Signal:
             elif ii > 1:
                 thd += abs(Hfr[ii])**2
         thd = (thd**(1/2)*(abs(Hfr[0])**2+thd)**(-1/2))*100
+        thd.desc = "THD (%)"
         if debug_plot:
             a2=thd.plot(plot_phase=False, dby=False,label='THD')
             a1.set_xlim((freq_min,freq_max))
@@ -2455,7 +2463,7 @@ class Spectral:
         spangle = np.interp(freqlist,self.freqs, self.angle().values)
         return spamp*np.exp(1j*spangle)
 
-    def plot(self, ax=None, logx=True, dby=True, plot_phase=True, unwrap_phase=True, **kwargs):
+    def plot(self, ax=None, logx=True, dby=True, plot_phase=True, unwrap_phase=True, unwrap_around=0, **kwargs):
         """Plot spectral data
 
         :param ax: Axis where to plot the data, defaults to None
@@ -2468,6 +2476,8 @@ class Spectral:
         :type plot_phase: bool, optional
         :param unwrap_phase: If True, phase is unwrapped, defaults to True
         :type unwrap_phase: bool, optional
+        :param unwrap_around: Frequency around which phase is unwrapped, defaults to 0.
+        :type unwrap_around: float
         :return: An axes type object if plotphase is False, a list of two axes objects if plotphase is True
         :rtype: axes, or list of axes
         """
@@ -2505,7 +2515,10 @@ class Spectral:
             modulus_to_plot = modulus_to_plot[valid_indices]
             phase_to_plot = np.angle(self.values)[valid_indices]
             if unwrap_phase:
-                phase_to_plot = np.unwrap(phase_to_plot)
+                if unwrap_around==0:
+                    phase_to_plot = np.unwrap(phase_to_plot)
+                else:
+                    phase_to_plot = unwrap_around_index(phase_to_plot,get_index(self.freqs,unwrap_around))
 
         else:
             modulus_to_plot = np.abs(self.values)
@@ -2517,7 +2530,10 @@ class Spectral:
             modulus_to_plot = modulus_to_plot[valid_indices]
             phase_to_plot = np.angle(self.values)[valid_indices]
             if unwrap_phase:
-                phase_to_plot = np.unwrap(phase_to_plot)
+                if unwrap_around==0:
+                    phase_to_plot = np.unwrap(phase_to_plot)
+                else:
+                    phase_to_plot = unwrap_around_index(phase_to_plot,get_index(self.freqs,unwrap_around))
             label = r'$|$H$|$'
 
         ax_0.plot(frequencies_to_plot, modulus_to_plot, **kwargs)
@@ -2692,8 +2708,8 @@ class Weighting:
 
     # END of Weighting
 
-# Constants
 
+# Constants
 
 PREF = 20e-6*Unit('Pa')  # Acoustic pressure reference level
 VREF = 5e-8*Unit('m/s')  # Reference particle velocity
