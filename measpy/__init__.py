@@ -7,7 +7,8 @@ from .signal import (Signal,
                             DBUREF,
                             DBVREF,
                             WDBA,
-                            WDBC)
+                            WDBC,
+                            WDBM)
 from .measurement import Measurement
 
 from ._version import VERSION

@@ -66,6 +66,7 @@ class Signal:
     - the physical unit (``unit``, optional, dimensionless if not specified)
     - the calibration information, that allows to convert the data in volts to the actual physical unit (``cal``, optional, unitary if not specified)
     - an additionnal conversion factor used if the acquired data is proportionnal but not equal to the actual volts going into the AD converted, typically for soundcards (``dbfs``, optional, unitary if not specified)
+    - start time of the signal (``t0``) : the actual time of the first sample
     - any additionnal user property (string, float, int)
 
     The class defines methods for signal processing, saving,
@@ -2799,6 +2800,13 @@ WDBC = Weighting(
     freqs=np.array(WDBC)[:, 0],
     amp=10**(np.array(WDBC)[:, 1]/20),
     desc='dBC weightings')
+
+WDBM=[[31.5 , -29.9],[63 , -23.9],[100 , -19.8],[200 , -13.8],[400 , -7.8],[800 , -1.9],[1_000 , 0.0],[2_000 , +5.6],[3_150 , +9.0],[4_000 , +10.5],[5_000 , +11.7],[6_300 , +12.2],[7_100 , +12.0],[8_000 , +11.4],[9_000 , +10.1],[10_000 , +8.1],[12_500 , 0.0],[14_000 , -5.3],[16_000 , -11.7],[20_000 , -22.2],[31_500 , -42.7]]
+WDBM = Weighting(
+    freqs=np.array(WDBM)[:, 0],
+    amp=10**(np.array(WDBM)[:, 1]/20),
+    desc='M-weighting')
+
 
 # Below are functions that may be useful (some cleaning should be done)
 
