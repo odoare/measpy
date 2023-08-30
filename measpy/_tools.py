@@ -132,6 +132,12 @@ def siglist_to_array(siglist):
         out[round((s.t0-t0s)*s.fs):round(((s.t0-t0s)+s.dur)*s.fs),i] = s.raw
     return out
 
+def get_index(array,value):
+    """
+    Get the index of the nearest value
+    """
+    return np.argmin((array-value)**2)
+
 # def _tfe_farina(y, fs, freqs):
 #     """ Transfer function estimate
 #         Farina's method """
