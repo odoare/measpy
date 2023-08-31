@@ -21,6 +21,7 @@ jobs:
       run: |
         pip3 install sphinx-rtd-theme
         pip3 install recommonmark
+        pip3 install numpy scipy csaps unyt nidaqmx picosdk sounddevice matplotlib
     
     - name: Build docs
       run: |
