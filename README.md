@@ -9,6 +9,8 @@ measpy is a set of classes and methods that
 - helps signal processing and analysis using rapid and compact Python scripting, thanks to the functional programming paradigm proposed by this package,
 - ease and unify the data acquisition process with various DAQ cards
 
+Documentation: [https://odoare.github.io/measpy](https://odoare.github.io/measpy)
+
 **WARNING:** *major incompatible changes have been made to the measurement class for v0.1, if backward compatibility is needed, the old measurement class system is kept in the pre v0.1 branch. Changes in this branch will only concern eventual bug fixing.*
 
 The base classes defined by ```measpy``` are:

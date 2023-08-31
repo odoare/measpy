@@ -389,6 +389,10 @@ class Signal:
 
             :param x: Other signal to compute the coherence with
             :type x: measpy.signal.Signal
+
+            :return: A signal representing the cross-correlation
+            :rtype: measpy.signal.Signal
+
         """
 
         return self.similar(
@@ -403,6 +407,9 @@ class Signal:
             :type pos: tuple of int, optional
             :param dur: Start and stop positions of the new signal, given as time values
             :type dur: tuple of float, optional
+
+            :return: Faded signal
+            :rtype: measpy.signal.Signal
 
             pos and dur cannot be both specified. An exception is raised in that case.
 
@@ -534,7 +541,7 @@ class Signal:
         :type unit: unyt.unit or str
         :raises Exception: 'Incompatible units'
         :return: Signal converted to the new unit
-        :rtype: measpy.Signal
+        :rtype: measpy.signal.Signal
         """
         if type(unit) == str:
             unit = Unit(unit)
@@ -555,7 +562,7 @@ class Signal:
         """Change Signal unit to the standard base equivalent
 
         :return: Signal converted to the new unit
-        :rtype: measpy.Signal
+        :rtype: measpy.signal.Signal
         """
         return self.unit_to(self.unit.get_base_equivalent())
 
@@ -563,7 +570,7 @@ class Signal:
         """Normalize a signal
 
         :return: Dimensionless normalized signal
-        :rtype: measpy.Signal
+        :rtype: measpy.signal.Signal
         """
 
         return (self/self.max).similar(desc=add_step(self.desc, "Normalize"))
@@ -572,7 +579,7 @@ class Signal:
         """ Compute time derivative
 
         :return: Time derivative of signal (unit/s)
-        :rtype: measpy.signal
+        :rtype: measpy.signal.Signal
         """
         return self.similar(values=np.diff(self.values)*self.fs, unit=self.unit/Unit('s'), desc=add_step(self.desc, 'diff'), cal=None, dbfs=None)
 
@@ -580,7 +587,7 @@ class Signal:
         """ Real part of the signal, calibrations applied
 
         :return: The real part of the signal
-        :rtype: measpy.signal        
+        :rtype: measpy.signal.Signal        
         """
         return self.similar(
             values=np.real(self.values),
@@ -591,7 +598,7 @@ class Signal:
         """ Imaginary part of the signal, calibrations applied
 
         :return: The imaginary part of the signal
-        :rtype: measpy.signal        
+        :rtype: measpy.signal.Signal    
         """
         return self.similar(
             values=np.real(self.values),
@@ -650,6 +657,16 @@ class Signal:
         )
 
     def delay(self,dt):
+        """
+        Returns a delayed signal by dt. The data arrays are not changed.
+        Instead dt is added to the property t0.
+
+        :param dt: Delay time
+        :type dt: float
+
+        :return: The delayed signal
+        :rtype: measpy.signal.Signal
+        """
         return self.similar(t0=self.t0+dt)
 
     # #################################################################
@@ -786,7 +803,9 @@ class Signal:
             :param average: Method to use when averaging periodograms. Defaults to ‘mean’.
             :type average: str, optional
 
-            Returns : A Spectral object containing the psd
+            :return: A Spectral object containing the psd
+            :rtype: measpy.signal.Spectral
+
         """
 
         # Set default values for welch's kwargs
@@ -803,8 +822,13 @@ class Signal:
         )
 
     def tfe_farina(self, freqs):
-        """ Compute the transfer function between x and the actual signal
-            where x is a log sweep of same duration between freqs[0] and freqs[1]
+        """
+        Compute the transfer function between x and the actual signal
+        where x is a log sweep of same duration between freqs[0] and freqs[1]
+
+        :param freqs: The start and stop frequencies of the input logarithmic sweep whose actual signal is the response
+        :return: The FRF calculated by the Farina's method (2000)
+        :rtype: measpy.signal.Spectral
         """
         leng = int(2**np.ceil(np.log2(self.length)))
         Y = np.fft.rfft(self.values, leng)/self.fs
