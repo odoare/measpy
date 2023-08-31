@@ -679,7 +679,7 @@ class Signal:
         """
         return Spectral(values=np.fft.fft(self.values, norm=norm),
                         fs=self.fs,
-                        unit=self.unit,
+                        unit=self.unit*Unit('s'),
                         full=True,
                         norm=norm,
                         desc=add_step(self.desc, 'FFT'))
@@ -691,7 +691,7 @@ class Signal:
         odd = np.mod(self.length, 2) == 1
         return Spectral(values=np.fft.rfft(self.values, norm=norm),
                         fs=self.fs,
-                        unit=self.unit,
+                        unit=self.unit*Unit('s'),
                         full=False,
                         norm=norm,
                         desc=add_step(self.desc, 'RFFT'),
@@ -818,15 +818,19 @@ class Signal:
             values=welch(self.values, **kwargs)[1],
             desc=add_step(self.desc, 'PSD'),
             fs=self.fs,
-            unit=self.unit**2
+            unit=self.unit**2*Unit('s')
         )
 
-    def tfe_farina(self, freqs):
+    def tfe_farina(self, freqs, in_unit='V'):
         """
         Compute the transfer function between x and the actual signal
-        where x is a log sweep of same duration between freqs[0] and freqs[1]
+        where x is was a logarithmic sweep of same duration between freqs[0] and freqs[1]
+        (i.e. created with measpy.signal.Signal.log_sweep)
 
         :param freqs: The start and stop frequencies of the input logarithmic sweep whose actual signal is the response
+        :type freqs: Tuple of floats
+        :param in_unit: Unit of the input signal. Defaults to 'V'
+        :type unit: str or unyt.Unit
         :return: The FRF calculated by the Farina's method (2000)
         :rtype: measpy.signal.Spectral
         """
@@ -839,7 +843,7 @@ class Signal:
         S[0] = 0j
         return Spectral(values=Y*S,
                         desc='Transfer function between input log sweep and '+self.desc,
-                        unit=self.unit/Unit('V'),
+                        unit=self.unit/Unit(in_unit),
                         fs=self.fs,
                         full=False
                         )
@@ -850,6 +854,22 @@ class Signal:
 
     @classmethod
     def noise(cls, fs=44100, dur=2.0, amp=1.0, freq_min = 20.0, freq_max=20000.0, unit=None, cal=None, dbfs=None, desc=None):
+        """
+        ogarithmic sweep signal creation
+
+        :param fs: Sampling frequency. Defaults to 44100.
+        :param dur: Duration in seconds. Defaults to 2.0.
+        :param amp: Amplitude. Defaults to 1.0.
+        :param freq_min: Start frequency. Defaults to 20.0.
+        :param freq_max: Stop frequency. Defaults to 20000.0.
+        :param unit: Unit of the generated signal. Defaults to None (->dimensionless)
+        :param cal: Calibration. Defaults to None (->1).
+        :param dbfs: Zero dB full scale value. Defaults to None (->1).
+        :param desc: Description of the generated signal. Defaults to None, so that the default description is 'Noise freq_min-freq-max.
+
+        :return: A noise signal
+        :rtype: measpy.signal.Signal
+        """
         if desc==None:
             desc = 'Noise '+str(freq_min)+'-'+str(freq_max)+'Hz'
         return cls(
@@ -865,6 +885,22 @@ class Signal:
 
     @classmethod
     def log_sweep(cls, fs=44100, dur=2.0, amp=1.0, freq_min = 20.0, freq_max=20000.0, unit=None, cal=None, dbfs=None, desc=None):
+        """
+        ogarithmic sweep signal creation
+
+        :param fs: Sampling frequency. Defaults to 44100.
+        :param dur: Duration in seconds. Defaults to 2.0.
+        :param amp: Amplitude. Defaults to 1.0.
+        :param freq_min: Start frequency. Defaults to 20.0.
+        :param freq_max: Stop frequency. Defaults to 20000.0.
+        :param unit: Unit of the generated signal. Defaults to None (->dimensionless)
+        :param cal: Calibration. Defaults to None (->1).
+        :param dbfs: Zero dB full scale value. Defaults to None (->1).
+        :param desc: Description of the generated signal. Defaults to None, so that the default description is 'Logsweep freq_min-freq-max.
+
+        :return: A sweep signal
+        :rtype: measpy.signal.Signal
+        """
         if desc==None:
             desc = 'Logsweep '+str(freq_min)+'-'+str(freq_max)+'Hz'
         return cls(
@@ -2063,7 +2099,7 @@ class Spectral:
         return Signal(raw=np.fft.irfft(self.values, n=self.sample_number, norm=self.norm),
                       desc=add_step(self.desc, 'IFFT'),
                       fs=self.fs,
-                      unit=self.unit)
+                      unit=self.unit/Unit('s'))
 
     def ifft(self):
         """ Compute the inverse Fourier transform
@@ -2075,7 +2111,7 @@ class Spectral:
         return Signal(raw=np.fft.ifft(self.values, norm=self.norm),
                       desc=add_step(self.desc, 'IFFT'),
                       fs=self.fs,
-                      unit=self.unit)
+                      unit=self.unit/Unit('s'))
 
     #####################################################################
     # Mehtods returning a Weighting object
