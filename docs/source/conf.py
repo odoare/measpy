@@ -60,4 +60,4 @@ html_context = {'github_user_name': 'odoare', 'github_repo_name': 'measpy','proj
 
 # -- Extension configuration -------------------------------------------------
 
-# autodoc_mock_imports = ["numpy","matplotlib","scipy","csaps","unyt","sounddevice","nidaqmx","picosdk"]
+autodoc_mock_imports = ["numpy","matplotlib","scipy","csaps","unyt","sounddevice","nidaqmx","picosdk"]
