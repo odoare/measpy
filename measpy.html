@@ -1008,7 +1008,29 @@ Note: This method is exactly the hilbert function of the scipy module.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Signal.log_sweep">
 <em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">log_sweep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">44100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dur</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dbfs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">desc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.log_sweep" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>ogarithmic sweep signal creation</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fs</strong> – Sampling frequency. Defaults to 44100.</p></li>
+<li><p><strong>dur</strong> – Duration in seconds. Defaults to 2.0.</p></li>
+<li><p><strong>amp</strong> – Amplitude. Defaults to 1.0.</p></li>
+<li><p><strong>freq_min</strong> – Start frequency. Defaults to 20.0.</p></li>
+<li><p><strong>freq_max</strong> – Stop frequency. Defaults to 20000.0.</p></li>
+<li><p><strong>unit</strong> – Unit of the generated signal. Defaults to None (-&gt;dimensionless)</p></li>
+<li><p><strong>cal</strong> – Calibration. Defaults to None (-&gt;1).</p></li>
+<li><p><strong>dbfs</strong> – Zero dB full scale value. Defaults to None (-&gt;1).</p></li>
+<li><p><strong>desc</strong> – Description of the generated signal. Defaults to None, so that the default description is ‘Logsweep freq_min-freq-max.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A sweep signal</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#measpy.signal.Signal" title="measpy.signal.Signal">measpy.signal.Signal</a></p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="measpy.signal.Signal.max">
@@ -1047,7 +1069,29 @@ Note: This method is exactly the hilbert function of the scipy module.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Signal.noise">
 <em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">noise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">44100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dur</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dbfs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">desc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.noise" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>ogarithmic sweep signal creation</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fs</strong> – Sampling frequency. Defaults to 44100.</p></li>
+<li><p><strong>dur</strong> – Duration in seconds. Defaults to 2.0.</p></li>
+<li><p><strong>amp</strong> – Amplitude. Defaults to 1.0.</p></li>
+<li><p><strong>freq_min</strong> – Start frequency. Defaults to 20.0.</p></li>
+<li><p><strong>freq_max</strong> – Stop frequency. Defaults to 20000.0.</p></li>
+<li><p><strong>unit</strong> – Unit of the generated signal. Defaults to None (-&gt;dimensionless)</p></li>
+<li><p><strong>cal</strong> – Calibration. Defaults to None (-&gt;1).</p></li>
+<li><p><strong>dbfs</strong> – Zero dB full scale value. Defaults to None (-&gt;1).</p></li>
+<li><p><strong>desc</strong> – Description of the generated signal. Defaults to None, so that the default description is ‘Noise freq_min-freq-max.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A noise signal</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#measpy.signal.Signal" title="measpy.signal.Signal">measpy.signal.Signal</a></p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Signal.normalize">
@@ -1272,12 +1316,16 @@ of width nperseg samples</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Signal.tfe_farina">
-<span class="sig-name descname"><span class="pre">tfe_farina</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">freqs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.tfe_farina" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">tfe_farina</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">freqs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'V'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.tfe_farina" title="Link to this definition"></a></dt>
 <dd><p>Compute the transfer function between x and the actual signal
-where x is a log sweep of same duration between freqs[0] and freqs[1]</p>
+where x is was a logarithmic sweep of same duration between freqs[0] and freqs[1]
+(i.e. created with measpy.signal.Signal.log_sweep)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>freqs</strong> – The start and stop frequencies of the input logarithmic sweep whose actual signal is the response</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>freqs</strong> (<em>Tuple</em><em> of </em><em>floats</em>) – The start and stop frequencies of the input logarithmic sweep whose actual signal is the response</p></li>
+<li><p><strong>in_unit</strong> – Unit of the input signal. Defaults to ‘V’</p></li>
+</ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The FRF calculated by the Farina’s method (2000)</p>
