@@ -115,6 +115,12 @@ def sine(fs, dur, out_amp, freq):
     s = out_amp*np.sin(2*np.pi*create_time(fs=fs, dur=dur)*freq)
     return (s)
 
+def saw(fs, dur, out_amp, freq):
+    return out_amp*wrap(2*np.pi*freq*create_time(fs,dur=dur))/np.pi
+    
+def tri(fs, dur, out_amp, freq):
+    return out_amp*2*np.abs(wrap(2*np.pi*freq*create_time(fs,dur=dur))/np.pi)-1
+
 def t_min(siglist):
     return min(s.t0 for s in siglist)
 

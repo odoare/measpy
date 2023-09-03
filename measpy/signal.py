@@ -45,6 +45,8 @@ from ._tools import (add_step,
                            sine,
                            noise,
                            log_sweep,
+                           saw,
+                           tri,
                            unwrap_around_index,
                            get_index)
 
@@ -927,6 +929,34 @@ class Signal:
             desc=str(desc),
             freq=freq
         )
+    
+    @classmethod
+    def saw(cls, fs=44100, dur=2.0, amp=1.0, freq=1000.0, unit=None, cal=None, dbfs=None, desc=None):
+        if desc==None:
+            desc = 'Saw '+str(freq)+'Hz'
+        return cls(
+            raw=saw(fs, dur, amp, freq),
+            fs=fs,
+            unit=unit,
+            cal=cal,
+            dbfs=dbfs,
+            desc=str(desc),
+            freq=freq
+        )
+    
+    @classmethod
+    def tri(cls, fs=44100, dur=2.0, amp=1.0, freq=1000.0, unit=None, cal=None, dbfs=None, desc=None):
+        if desc==None:
+            desc = 'Tri '+str(freq)+'Hz'
+        return cls(
+            raw=tri(fs, dur, amp, freq),
+            fs=fs,
+            unit=unit,
+            cal=cal,
+            dbfs=dbfs,
+            desc=str(desc),
+            freq=freq
+        )
 
     @classmethod
     def from_csvwav(cls, filename):
@@ -1117,7 +1147,7 @@ class Signal:
     @property
     def t0(self):
         """
-        Time shifting of the signal (reads the t0 value if ot exists, else 0)
+        Time shifting of the signal (reads the t0 value if it exists, else 0)
         """
         if hasattr(self, '_t0'):
             return self._t0
