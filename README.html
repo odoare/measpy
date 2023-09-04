@@ -51,6 +51,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#functional-programing-paradigm">Functional programing paradigm</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#units">Units</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#documentation">Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#releasing">Releasing</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="copyright.html">Copyright</a></li>
@@ -220,7 +221,23 @@ Contact: olivier.doare&#64;ensta-paris.fr</p>
 </section>
 <section id="documentation">
 <h2>Documentation<a class="headerlink" href="#documentation" title="Link to this heading"></a></h2>
-<p>Additionnal documentation and examples can be found in the ./docs and ./examples directories of the project.</p>
+<p>Additionnal documentation and examples can be found in the ./docs and ./examples directories of the project. The main page for web documentation is <a class="reference external" href="https://odoare.github.io/measpy">https://odoare.github.io/measpy</a>.</p>
+</section>
+<section id="releasing">
+<h2>Releasing<a class="headerlink" href="#releasing" title="Link to this heading"></a></h2>
+<p>Releases are published automatically when a tag is pushed to GitHub.</p>
+<p>Example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="w">   </span><span class="c1"># Set next version number</span>
+<span class="w">   </span><span class="nb">export</span><span class="w"> </span><span class="nv">RELEASE</span><span class="o">=</span>x.x.x
+
+<span class="w">   </span><span class="c1"># Create tags</span>
+<span class="w">   </span>git<span class="w"> </span>commit<span class="w"> </span>--allow-empty<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Release </span><span class="nv">$RELEASE</span><span class="s2">&quot;</span>
+<span class="w">   </span>git<span class="w"> </span>tag<span class="w"> </span>-a<span class="w"> </span><span class="nv">$RELEASE</span><span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Version </span><span class="nv">$RELEASE</span><span class="s2">&quot;</span>
+
+<span class="w">   </span><span class="c1"># Push</span>
+<span class="w">   </span>git<span class="w"> </span>push<span class="w"> </span>upstream<span class="w"> </span>--tags
+</pre></div>
+</div>
 </section>
 </section>
 
