@@ -143,4 +143,22 @@ should give something like pascal * second**2 / m
 
 ## Documentation
 
-Additionnal documentation and examples can be found in the ./docs and ./examples directories of the project.
+Additionnal documentation and examples can be found in the ./docs and ./examples directories of the project. The main page for web documentation is [https://odoare.github.io/measpy](https://odoare.github.io/measpy).
+
+## Releasing
+
+Releases are published automatically when a tag is pushed to GitHub.
+
+Example:
+```bash
+
+   # Set next version number
+   export RELEASE=x.x.x
+
+   # Create tags
+   git commit --allow-empty -m "Release $RELEASE"
+   git tag -a $RELEASE -m "Version $RELEASE"
+
+   # Push
+   git push upstream --tags
+```
