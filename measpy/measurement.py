@@ -20,7 +20,10 @@ import matplotlib.pyplot as plt
 
 from copy import copy
 
-from ._version import VERSION
+from ._version import get_versions
+__version__ = get_versions()['version']
+del get_versions
+
 from copy import copy,deepcopy
 import csv
 import os
@@ -360,7 +363,7 @@ class Measurement:
     # -------------------------------
     def _write_readme(self,filename):
         with open(filename, 'w') as f:
-            f.write('Created with measpy version '+VERSION)
+            f.write('Created with measpy version '+__version__)
             f.write('\n')
             f.write('https://github.com/odoare/measpy')
 
