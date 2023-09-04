@@ -1,8 +1,7 @@
 # measpy - Measurements with Python
 
-![](https://github.com/odoare/measpy/workflows/docs/badge.svg)
-
-![Build](https://github.com/odoare/measpy/workflows/release.yml/badge.svg)
+![Documentation](https://github.com/odoare/measpy/workflows/docs/badge.svg)
+![Build](https://github.com/odoare/measpy/actions/workflows/release.yml/badge.svg)
 
 (c) 2021-2023 Olivier Doaré
 Contact: olivier.doare@ensta-paris.fr
