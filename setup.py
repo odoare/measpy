@@ -5,7 +5,6 @@ from setuptools import setup, find_packages
 from datetime import datetime
 
 now = datetime.now()
-VERSION = 'git'+now.strftime("%Y%m%d")
 VERSION = '0.1'
 DESCRIPTION = 'Measurements with Python'
 LONG_DESCRIPTION = """
@@ -25,6 +24,9 @@ LONG_DESCRIPTION = """
     - Picoscope scopes, via the ```picosdk-python-wrappers``` package.
     
     """
+
+with open("measpy/_version.py", "w") as f:
+    f.write("VERSION='"+str(VERSION)+"'")
 
 # Setting up
 setup(
