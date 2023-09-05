@@ -1,4 +1,6 @@
-# measpy - Measurements with Python
+# measpy (MEASurements with PYthon)
+
+*A package for easy data acquisition and signal processing/analysis*
 
 ![Documentation](https://github.com/odoare/measpy/workflows/docs/badge.svg)
 ![Build](https://github.com/odoare/measpy/actions/workflows/release.yml/badge.svg)
