@@ -144,6 +144,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.unit_to_std"><code class="docutils literal notranslate"><span class="pre">Signal.unit_to_std()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.values"><code class="docutils literal notranslate"><span class="pre">Signal.values</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.volts"><code class="docutils literal notranslate"><span class="pre">Signal.volts</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.window"><code class="docutils literal notranslate"><span class="pre">Signal.window()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#measpy.signal.Spectral"><code class="docutils literal notranslate"><span class="pre">Spectral</span></code></a><ul>
@@ -1496,6 +1497,23 @@ the two signals.</p>
 <dt class="sig sig-object py" id="measpy.signal.Signal.volts">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">volts</span></span><a class="headerlink" href="#measpy.signal.Signal.volts" title="Link to this definition"></a></dt>
 <dd><p>Volt values as 1D numpy array</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="measpy.signal.Signal.window">
+<span class="sig-name descname"><span class="pre">window</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">win</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'hann'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.window" title="Link to this definition"></a></dt>
+<dd><p>Apply the selected window function to the signal. Possible windows are that implemented by scipy package.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>win</strong> (<em>string</em><em>, </em><em>float</em><em>, or </em><em>tuple</em>) – Window</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A windowed signal</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#measpy.signal.Signal" title="measpy.signal.Signal">measpy.signal.Signal</a>, default to “hann”</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
