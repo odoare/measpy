@@ -26,7 +26,8 @@ from scipy.signal import (welch,
                           correlation_lags,
                           hilbert,
                           spectrogram,
-                          convolve)
+                          convolve,
+                          get_window)
 # from scipy.interpolate import InterpolatedUnivariateSpline
 from csaps import csaps
 import scipy.io.wavfile as wav
@@ -670,6 +671,19 @@ class Signal:
         :rtype: measpy.signal.Signal
         """
         return self.similar(t0=self.t0+dt)
+    
+    def window(self,win="hann"):
+        """
+        Apply the selected window function to the signal. Possible windows are that implemented by scipy package.
+
+        :param win: Window
+        :type win: string, float, or tuple
+
+        :return: A windowed signal
+        :rtype: measpy.signal.Signal, default to "hann"
+        """
+
+        return self.similar(values=self.values*get_window(window=win, Nx=self.length))
 
     # #################################################################
     # Methods that return an object of type Spectral
