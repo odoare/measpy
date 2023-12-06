@@ -19,6 +19,8 @@ from numpy.matlib import repmat
 from datetime import datetime
 from time import time, sleep
 
+BUFFERSIZE = 2048
+
 def audio_run_measurement(M):
     """
     Runs a measurement defined in the object of
@@ -122,7 +124,7 @@ def audio_get_devices():
    """
    return sd.query_devices()
  
-def audio_run_measurement_stream(M):
+def audio_run_measurement_2(M):
     """
     Runs a measurement defined in the object of
     the class measpy.measurement.Measurement given
@@ -162,17 +164,18 @@ def audio_run_measurement_stream(M):
         tmin = t_min(M.out_sig)
         if M.in_sig!=None:
             sd.default.device=(M.in_device,M.out_device)
+            s = np.zeros((len(M.in_sig),int(round(M.dur*M.fs))))
         else:
             sd.default.device=(M.out_device)
     else:
         tmin = 0
         if M.in_sig!=None:
             sd.default.device=(M.in_device)
+            s = np.zeros((len(M.in_sig),int(round(M.dur*M.fs))))
         else:
             raise Exception('No input nor output defined.')
 
     if M.out_sig==None:
-        # in_stream = sd.InputStream()
         y = sd.rec(int(M.dur * M.fs),
                 samplerate=M.fs,
                 mapping=M.in_map,
@@ -184,10 +187,14 @@ def audio_run_measurement_stream(M):
                     mapping=M.out_map,
                     blocking=False)
         else:
-            y = sd.playrec(outx,
+            y = sd.rec(int(M.dur * M.fs+1),
                     samplerate=M.fs,
-                    input_mapping=M.in_map,
-                    output_mapping=M.out_map,
+                    mapping=M.in_map,
+                    blocking=False)
+            
+            sd.play(outx,
+                    samplerate=M.fs,
+                    mapping=M.out_map,
                     blocking=False)
             
     sd.wait()
@@ -195,5 +202,5 @@ def audio_run_measurement_stream(M):
     if M.in_sig!=None:
         print(M.in_sig)
         for i,s in enumerate(M.in_sig):
-            s.raw = np.array(y[:,i])
+            s.raw = np.array(y[0:int(round(M.dur*M.fs)),i])
             s.t0 = tmin
