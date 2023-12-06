@@ -9,12 +9,12 @@
 
 # Import Packages
 # Add to path the parent directory in order to use the local measpy 
-# Comment in order to use the global version (e.g. via pip install)
+# Comment in order to use the global version (e.g. version installed via pip install)
 # import sys
 # sys.path.insert(0, "..")
 
 import measpy as mp
-from measpy.audio import audio_run_measurement, audio_get_devices
+from measpy.audio import audio_run_measurement_2, audio_get_devices
 
 #%% Get the list of audio devices present on the system
 l=audio_get_devices()
@@ -59,6 +59,8 @@ si2 = mp.Signal(unit='m/s**2',cal=0.1,dbfs=1.4, desc='Acceleration there')
 
 M = mp.Measurement( device_type='audio',
                     fs = 44100,
+                    in_sig=[si1,si2],
+                    out_sig=[so],
                     out_map=[1],
                     in_map=[1,2],
                     dur=5,
@@ -66,7 +68,7 @@ M = mp.Measurement( device_type='audio',
                     out_device=outdev)
 
 # Run the measurement
-audio_run_measurement(M)
+audio_run_measurement_2(M)
 
 # Save the measurement as directory containing all data
 # This command creates the directory containing:
@@ -79,15 +81,19 @@ M.to_dir('my_audio_measurement')
 # Load the measurement into the Measurement object M1
 M1 = mp.Measurement.from_dir('my_audio_measurement')
 
+#%%
+
 # Plot the acquired signals on the same graph
 a = M1.in_sig[0].plot()
 M1.in_sig[1].plot(ax=a)
 
-# Plot an individual signal (channel 1)
-M1.data['In1'].plot()
+# Plot an individual signal (first input)
+M1.in_sig[0].plot()
 
 # Plot the Power spectral density of channel 2 signal 
 # (Welch's method with windows of 2**14 points)
 M1.in_sig[1].psd(nperseg=2**14).plot()
 
 
+
+# %%
