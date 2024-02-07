@@ -973,14 +973,19 @@ class Signal:
         )
 
     @classmethod
-    def from_csvwav(cls, filename):
+    def from_csvwav(cls, filename, **kwargs):
         """Load a signal from a pair of csv and wav files
 
         :param filename: base file name
         :type filename: str
+        :param convert_to_fp: If True, the eventual integer data is converted to floats in the range [-1.0, 1.0], defaults to True.
+        :type convert_to_fp: bool
         :return: The loaded signal
         :rtype: measpy.signal.Signal
         """
+
+        convert_to_fp = kwargs.setdefault("convert_to_fp", True)
+
         out = cls()
         with open(filename+'.csv', 'r') as file:
             reader = csv.reader(file)
@@ -994,7 +999,13 @@ class Signal:
                         out.__dict__[row[0]] = row[1]
                 else:
                     out.__dict__[row[0]] = row[1:]
-        _, out._rawvalues = wav.read(filename+'.wav')
+        _, y = wav.read(filename+'.wav')
+        if (convert_to_fp and np.issubdtype(y.dtype, np.integer)):
+            min = float(np.iinfo(y.dtype).max)
+            max = float(np.iinfo(y.dtype).min)
+            middle = (max-min)/2
+            amp = max-middle
+            out._rawvalues = (y.astype(dtype=float)-middle)/amp        
         return out
 
     @classmethod
@@ -1003,6 +1014,16 @@ class Signal:
 
         :param filename: base file name
         :type filename: str
+        :param convert_to_fp: If True, the eventual integer data is converted to floats in the range [-1.0, 1.0], defaults to True.
+        :type convert_to_fp: bool
+        :param desc: Description of the generated signal, defaults to filename
+        :type desc: String
+        :param unit: Unit of the generated signal, defaults to None
+        :type desc: float
+        :param cal: Calibration of the generated signal, defaults to None
+        :type desc: float
+        :param dbfs: dBFS value of the generated signal, defaults to None
+        :type desc: float
         :return: The loaded signal
         :rtype: measpy.signal.Signal
         """
@@ -1011,8 +1032,20 @@ class Signal:
         unit = kwargs.setdefault("unit", None)
         cal = kwargs.setdefault("cal", None)
         dbfs = kwargs.setdefault("dbfs", None)
+        convert_to_fp = kwargs.setdefault("convert_to_fp", True)
         out = cls(desc=desc, unit=unit, cal=cal, dbfs=dbfs)
-        out.fs, out.raw = wav.read(filename)
+        out.fs, y = wav.read(filename)
+        if (convert_to_fp and np.issubdtype(y.dtype, np.integer)):
+            print("Convert...")
+            min = float(np.iinfo(y.dtype).min)
+            print(min)
+            max = float(np.iinfo(y.dtype).max)
+            print(max)
+            middle = np.ceil((max+min)/2)
+            print(middle)
+            amp = max-middle
+            print(amp)
+            out.raw = (y.astype(dtype=float)-middle)/amp
         return out
 
     #######################################################################
