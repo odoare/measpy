@@ -1036,15 +1036,10 @@ class Signal:
         out = cls(desc=desc, unit=unit, cal=cal, dbfs=dbfs)
         out.fs, y = wav.read(filename)
         if (convert_to_fp and np.issubdtype(y.dtype, np.integer)):
-            print("Convert...")
             min = float(np.iinfo(y.dtype).min)
-            print(min)
             max = float(np.iinfo(y.dtype).max)
-            print(max)
             middle = np.ceil((max+min)/2)
-            print(middle)
             amp = max-middle
-            print(amp)
             out.raw = (y.astype(dtype=float)-middle)/amp
         return out
 
