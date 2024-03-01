@@ -59,7 +59,9 @@ si2 = mp.Signal(unit='m/s**2',cal=0.1, desc='Acceleration there')
 M = mp.Measurement(device_type='ni',
                     fs = 44100,
                     out_map=[1],
+                    out_sig=[so],
                     in_map=[1,2],
+                    in_sig=[si1,si2],
                     dur=5,
                     in_device=indev,
                     out_device=outdev)
