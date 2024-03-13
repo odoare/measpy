@@ -7,7 +7,10 @@ from .signal import (Signal,
                             DBUREF,
                             DBVREF,
                             WDBA,
-                            WDBC)
+                            WDBC,
+                            WDBM)
 from .measurement import Measurement
 
-from ._version import VERSION
+from ._version import get_versions
+__version__ = get_versions()['version']
+del get_versions

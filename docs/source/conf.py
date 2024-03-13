@@ -19,7 +19,7 @@ import sphinx_rtd_theme
 # -- Project information -----------------------------------------------------
 
 project = 'measpy'
-copyright = '2021, Olivier Doaré'
+copyright = '2021-2023, Olivier Doaré'
 author = 'Olivier Doaré'
 
 
@@ -59,3 +59,5 @@ html_theme = 'sphinx_rtd_theme'
 html_context = {'github_user_name': 'odoare', 'github_repo_name': 'measpy','project_name': project}
 
 # -- Extension configuration -------------------------------------------------
+
+autodoc_mock_imports = ["sounddevice","picosdk"]

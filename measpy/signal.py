@@ -26,7 +26,8 @@ from scipy.signal import (welch,
                           correlation_lags,
                           hilbert,
                           spectrogram,
-                          convolve)
+                          convolve,
+                          get_window)
 # from scipy.interpolate import InterpolatedUnivariateSpline
 from csaps import csaps
 import scipy.io.wavfile as wav
@@ -44,7 +45,11 @@ from ._tools import (add_step,
                            apply_fades,
                            sine,
                            noise,
-                           log_sweep)
+                           log_sweep,
+                           saw,
+                           tri,
+                           unwrap_around_index,
+                           get_index)
 
 ##################
 ##              ##
@@ -64,6 +69,7 @@ class Signal:
     - the physical unit (``unit``, optional, dimensionless if not specified)
     - the calibration information, that allows to convert the data in volts to the actual physical unit (``cal``, optional, unitary if not specified)
     - an additionnal conversion factor used if the acquired data is proportionnal but not equal to the actual volts going into the AD converted, typically for soundcards (``dbfs``, optional, unitary if not specified)
+    - start time of the signal (``t0``) : the actual time of the first sample
     - any additionnal user property (string, float, int)
 
     The class defines methods for signal processing, saving,
@@ -386,6 +392,10 @@ class Signal:
 
             :param x: Other signal to compute the coherence with
             :type x: measpy.signal.Signal
+
+            :return: A signal representing the cross-correlation
+            :rtype: measpy.signal.Signal
+
         """
 
         return self.similar(
@@ -400,6 +410,9 @@ class Signal:
             :type pos: tuple of int, optional
             :param dur: Start and stop positions of the new signal, given as time values
             :type dur: tuple of float, optional
+
+            :return: Faded signal
+            :rtype: measpy.signal.Signal
 
             pos and dur cannot be both specified. An exception is raised in that case.
 
@@ -531,7 +544,7 @@ class Signal:
         :type unit: unyt.unit or str
         :raises Exception: 'Incompatible units'
         :return: Signal converted to the new unit
-        :rtype: measpy.Signal
+        :rtype: measpy.signal.Signal
         """
         if type(unit) == str:
             unit = Unit(unit)
@@ -552,7 +565,7 @@ class Signal:
         """Change Signal unit to the standard base equivalent
 
         :return: Signal converted to the new unit
-        :rtype: measpy.Signal
+        :rtype: measpy.signal.Signal
         """
         return self.unit_to(self.unit.get_base_equivalent())
 
@@ -560,7 +573,7 @@ class Signal:
         """Normalize a signal
 
         :return: Dimensionless normalized signal
-        :rtype: measpy.Signal
+        :rtype: measpy.signal.Signal
         """
 
         return (self/self.max).similar(desc=add_step(self.desc, "Normalize"))
@@ -569,7 +582,7 @@ class Signal:
         """ Compute time derivative
 
         :return: Time derivative of signal (unit/s)
-        :rtype: measpy.signal
+        :rtype: measpy.signal.Signal
         """
         return self.similar(values=np.diff(self.values)*self.fs, unit=self.unit/Unit('s'), desc=add_step(self.desc, 'diff'), cal=None, dbfs=None)
 
@@ -577,7 +590,7 @@ class Signal:
         """ Real part of the signal, calibrations applied
 
         :return: The real part of the signal
-        :rtype: measpy.signal        
+        :rtype: measpy.signal.Signal        
         """
         return self.similar(
             values=np.real(self.values),
@@ -588,7 +601,7 @@ class Signal:
         """ Imaginary part of the signal, calibrations applied
 
         :return: The imaginary part of the signal
-        :rtype: measpy.signal        
+        :rtype: measpy.signal.Signal    
         """
         return self.similar(
             values=np.real(self.values),
@@ -647,7 +660,30 @@ class Signal:
         )
 
     def delay(self,dt):
+        """
+        Returns a delayed signal by dt. The data arrays are not changed.
+        Instead dt is added to the property t0.
+
+        :param dt: Delay time
+        :type dt: float
+
+        :return: The delayed signal
+        :rtype: measpy.signal.Signal
+        """
         return self.similar(t0=self.t0+dt)
+    
+    def window(self,win="hann"):
+        """
+        Apply the selected window function to the signal. Possible windows are that implemented by scipy package.
+
+        :param win: Window
+        :type win: string, float, or tuple
+
+        :return: A windowed signal
+        :rtype: measpy.signal.Signal, default to "hann"
+        """
+
+        return self.similar(values=self.values*get_window(window=win, Nx=self.length))
 
     # #################################################################
     # Methods that return an object of type Spectral
@@ -659,7 +695,7 @@ class Signal:
         """
         return Spectral(values=np.fft.fft(self.values, norm=norm),
                         fs=self.fs,
-                        unit=self.unit,
+                        unit=self.unit*Unit('s'),
                         full=True,
                         norm=norm,
                         desc=add_step(self.desc, 'FFT'))
@@ -671,7 +707,7 @@ class Signal:
         odd = np.mod(self.length, 2) == 1
         return Spectral(values=np.fft.rfft(self.values, norm=norm),
                         fs=self.fs,
-                        unit=self.unit,
+                        unit=self.unit*Unit('s'),
                         full=False,
                         norm=norm,
                         desc=add_step(self.desc, 'RFFT'),
@@ -783,7 +819,9 @@ class Signal:
             :param average: Method to use when averaging periodograms. Defaults to ‘mean’.
             :type average: str, optional
 
-            Returns : A Spectral object containing the psd
+            :return: A Spectral object containing the psd
+            :rtype: measpy.signal.Spectral
+
         """
 
         # Set default values for welch's kwargs
@@ -796,12 +834,21 @@ class Signal:
             values=welch(self.values, **kwargs)[1],
             desc=add_step(self.desc, 'PSD'),
             fs=self.fs,
-            unit=self.unit**2
+            unit=self.unit**2*Unit('s')
         )
 
-    def tfe_farina(self, freqs):
-        """ Compute the transfer function between x and the actual signal
-            where x is a log sweep of same duration between freqs[0] and freqs[1]
+    def tfe_farina(self, freqs, in_unit='V'):
+        """
+        Compute the transfer function between x and the actual signal
+        where x is was a logarithmic sweep of same duration between freqs[0] and freqs[1]
+        (i.e. created with measpy.signal.Signal.log_sweep)
+
+        :param freqs: The start and stop frequencies of the input logarithmic sweep whose actual signal is the response
+        :type freqs: Tuple of floats
+        :param in_unit: Unit of the input signal. Defaults to 'V'
+        :type unit: str or unyt.Unit
+        :return: The FRF calculated by the Farina's method (2000)
+        :rtype: measpy.signal.Spectral
         """
         leng = int(2**np.ceil(np.log2(self.length)))
         Y = np.fft.rfft(self.values, leng)/self.fs
@@ -812,7 +859,7 @@ class Signal:
         S[0] = 0j
         return Spectral(values=Y*S,
                         desc='Transfer function between input log sweep and '+self.desc,
-                        unit=self.unit/Unit('V'),
+                        unit=self.unit/Unit(in_unit),
                         fs=self.fs,
                         full=False
                         )
@@ -823,6 +870,22 @@ class Signal:
 
     @classmethod
     def noise(cls, fs=44100, dur=2.0, amp=1.0, freq_min = 20.0, freq_max=20000.0, unit=None, cal=None, dbfs=None, desc=None):
+        """
+        ogarithmic sweep signal creation
+
+        :param fs: Sampling frequency. Defaults to 44100.
+        :param dur: Duration in seconds. Defaults to 2.0.
+        :param amp: Amplitude. Defaults to 1.0.
+        :param freq_min: Start frequency. Defaults to 20.0.
+        :param freq_max: Stop frequency. Defaults to 20000.0.
+        :param unit: Unit of the generated signal. Defaults to None (->dimensionless)
+        :param cal: Calibration. Defaults to None (->1).
+        :param dbfs: Zero dB full scale value. Defaults to None (->1).
+        :param desc: Description of the generated signal. Defaults to None, so that the default description is 'Noise freq_min-freq-max.
+
+        :return: A noise signal
+        :rtype: measpy.signal.Signal
+        """
         if desc==None:
             desc = 'Noise '+str(freq_min)+'-'+str(freq_max)+'Hz'
         return cls(
@@ -838,6 +901,22 @@ class Signal:
 
     @classmethod
     def log_sweep(cls, fs=44100, dur=2.0, amp=1.0, freq_min = 20.0, freq_max=20000.0, unit=None, cal=None, dbfs=None, desc=None):
+        """
+        ogarithmic sweep signal creation
+
+        :param fs: Sampling frequency. Defaults to 44100.
+        :param dur: Duration in seconds. Defaults to 2.0.
+        :param amp: Amplitude. Defaults to 1.0.
+        :param freq_min: Start frequency. Defaults to 20.0.
+        :param freq_max: Stop frequency. Defaults to 20000.0.
+        :param unit: Unit of the generated signal. Defaults to None (->dimensionless)
+        :param cal: Calibration. Defaults to None (->1).
+        :param dbfs: Zero dB full scale value. Defaults to None (->1).
+        :param desc: Description of the generated signal. Defaults to None, so that the default description is 'Logsweep freq_min-freq-max.
+
+        :return: A sweep signal
+        :rtype: measpy.signal.Signal
+        """
         if desc==None:
             desc = 'Logsweep '+str(freq_min)+'-'+str(freq_max)+'Hz'
         return cls(
@@ -864,16 +943,49 @@ class Signal:
             desc=str(desc),
             freq=freq
         )
+    
+    @classmethod
+    def saw(cls, fs=44100, dur=2.0, amp=1.0, freq=1000.0, unit=None, cal=None, dbfs=None, desc=None):
+        if desc==None:
+            desc = 'Saw '+str(freq)+'Hz'
+        return cls(
+            raw=saw(fs, dur, amp, freq),
+            fs=fs,
+            unit=unit,
+            cal=cal,
+            dbfs=dbfs,
+            desc=str(desc),
+            freq=freq
+        )
+    
+    @classmethod
+    def tri(cls, fs=44100, dur=2.0, amp=1.0, freq=1000.0, unit=None, cal=None, dbfs=None, desc=None):
+        if desc==None:
+            desc = 'Tri '+str(freq)+'Hz'
+        return cls(
+            raw=tri(fs, dur, amp, freq),
+            fs=fs,
+            unit=unit,
+            cal=cal,
+            dbfs=dbfs,
+            desc=str(desc),
+            freq=freq
+        )
 
     @classmethod
-    def from_csvwav(cls, filename):
+    def from_csvwav(cls, filename, **kwargs):
         """Load a signal from a pair of csv and wav files
 
         :param filename: base file name
         :type filename: str
+        :param convert_to_fp: If True, the eventual integer data is converted to floats in the range [-1.0, 1.0], defaults to True.
+        :type convert_to_fp: bool
         :return: The loaded signal
         :rtype: measpy.signal.Signal
         """
+
+        convert_to_fp = kwargs.setdefault("convert_to_fp", True)
+
         out = cls()
         with open(filename+'.csv', 'r') as file:
             reader = csv.reader(file)
@@ -887,7 +999,13 @@ class Signal:
                         out.__dict__[row[0]] = row[1]
                 else:
                     out.__dict__[row[0]] = row[1:]
-        _, out._rawvalues = wav.read(filename+'.wav')
+        _, y = wav.read(filename+'.wav')
+        if (convert_to_fp and np.issubdtype(y.dtype, np.integer)):
+            min = float(np.iinfo(y.dtype).max)
+            max = float(np.iinfo(y.dtype).min)
+            middle = (max-min)/2
+            amp = max-middle
+            out._rawvalues = (y.astype(dtype=float)-middle)/amp        
         return out
 
     @classmethod
@@ -896,6 +1014,16 @@ class Signal:
 
         :param filename: base file name
         :type filename: str
+        :param convert_to_fp: If True, the eventual integer data is converted to floats in the range [-1.0, 1.0], defaults to True.
+        :type convert_to_fp: bool
+        :param desc: Description of the generated signal, defaults to filename
+        :type desc: String
+        :param unit: Unit of the generated signal, defaults to None
+        :type desc: float
+        :param cal: Calibration of the generated signal, defaults to None
+        :type desc: float
+        :param dbfs: dBFS value of the generated signal, defaults to None
+        :type desc: float
         :return: The loaded signal
         :rtype: measpy.signal.Signal
         """
@@ -904,8 +1032,15 @@ class Signal:
         unit = kwargs.setdefault("unit", None)
         cal = kwargs.setdefault("cal", None)
         dbfs = kwargs.setdefault("dbfs", None)
+        convert_to_fp = kwargs.setdefault("convert_to_fp", True)
         out = cls(desc=desc, unit=unit, cal=cal, dbfs=dbfs)
-        out.fs, out.raw = wav.read(filename)
+        out.fs, y = wav.read(filename)
+        if (convert_to_fp and np.issubdtype(y.dtype, np.integer)):
+            min = float(np.iinfo(y.dtype).min)
+            max = float(np.iinfo(y.dtype).max)
+            middle = np.ceil((max+min)/2)
+            amp = max-middle
+            out.raw = (y.astype(dtype=float)-middle)/amp
         return out
 
     #######################################################################
@@ -1054,7 +1189,7 @@ class Signal:
     @property
     def t0(self):
         """
-        Time shifting of the signal (reads the t0 value if ot exists, else 0)
+        Time shifting of the signal (reads the t0 value if it exists, else 0)
         """
         if hasattr(self, '_t0'):
             return self._t0
@@ -1489,7 +1624,7 @@ class Signal:
                 writer.writerow(['First column is time in seconds'])
             writer.writerows(outdata)
 
-    def harmonic_disto(self, nh=4, freq_min=20.0, freq_max=20000.0, delay=None, win_max_length=2**15, prop_before=0.1, nsmooth=24, debug_plot=False):
+    def harmonic_disto(self, nh=4, freq_min=20.0, freq_max=20000.0, delay=None, win_max_length=2**15, prop_before=0.25, nsmooth=24, debug_plot=False):
         """Compute the harmonic distorsion of an in/out system
         using the method proposed by Farina (2000) and adapted by
         Novak et al. (2015) to correctly estimate the phase of the
@@ -1507,7 +1642,7 @@ class Signal:
         :type delay: float, optional
         :param win_max_length: Maximum window length for each harmonic Fourier analysis in number of samples. Has to be even. Defaults to 2**15. When treating higher harmonics, the window can be shortened so that there is no overlapping with the next window.
         :type delay: float, optional
-        :param prop_before: Proportion of the window that is before the peak center for each harmonic content. Defaults to 0.1 (10% of the window is before the harmonic peak)
+        :param prop_before: Proportion of the window that is before the peak center for each harmonic content. Defaults to 0.25 (1/4th of the window is before the harmonic peak)
         :type prop_before: float, optionnal
         :param nsmooth: Parameter for 1/nsmooth smoothing before Weighting conversion, defaults to 12
         :type nsmooth: int
@@ -1524,21 +1659,10 @@ class Signal:
         # Compute transfer function using Farina's method
         sp = self.tfe_farina((freq_min,freq_max))
 
-        # Delay calculation based on group delay (less robust)
-        # if type(delay)==type(None):
-        #     # Estimate the delay by calculating the mean value of
-        #     # the group delay
-        #     gd = sp.group_delay()
-        #     delay = np.mean(
-        #         gd.values[(gd.freqs > freqs[0])&(gd.freqs < freqs[1])]
-        #     ) - 0.5*l/sp.fs
-
-        # print (delay)
-
         l = win_max_length
 
         # dl is the window shift for each Fourier transform computation
-        # of the harmonic peaks l/8 is a standard value that keeps a part
+        # of the harmonic peaks l/4 is a standard value that keeps a part
         # of the signal before the peak itself
         dl = prop_before*l
 
@@ -1551,6 +1675,16 @@ class Signal:
                 freq_min=freq_min,
                 freq_max=freq_max))
 
+        # Delay calculation based on group delay (less robust)
+        # if type(delay)==type(None):
+        #     # Estimate the delay by calculating the mean value of
+        #     # the group delay
+        #     gd = sp.group_delay()
+        #     delay = np.mean(
+        #         gd.values[(gd.freqs > freqs[0])&(gd.freqs < freqs[1])]
+        #     ) - 0.5*l/sp.fs
+        # print (delay)
+
         # Green's function from Farina's spectrum
         G = sp.irfft()
 
@@ -1559,19 +1693,25 @@ class Signal:
         L = (self.dur-1/self.fs)/np.log(freq_max/freq_min)
         dt = L*np.log(np.arange(nh)+1)
         decal = dt*G.fs-np.ceil(dt*G.fs)
+        # print("dt")
+        # print(dt)
+        # print("decal")
+        # print(decal)
         ns = np.round((G.dur-dt+delay)*G.fs)-dl
 
+        ts = np.take(G.time, list(map(int, list(ns))), mode='wrap')
+        # print("ts")
+        # print(ts)
+        tf=ts.copy()
+        for i,t in enumerate(ts):
+            if i==0:
+                tf[i] = t+l/sp.fs
+            else:
+                tf[i] = min(t+l/sp.fs,ts[i-1])
+
         if debug_plot:
-            ts = np.take(G.time, list(map(int, list(ns))), mode='wrap')
-            print(ts)
-            tf=ts.copy()
-            for i,t in enumerate(ts):
-                if i==0:
-                    tf[i] = t+l/sp.fs
-                else:
-                    tf[i] = min(t+l/sp.fs,ts[i-1])
-            # tf = ts+l/sp.fs
-            print(tf)
+            # print("tf")
+            # print(tf)
             maxG = np.max(np.abs(G.values))
             axG = G.plot(label="IFFT of Farina's spectrum")
             for ii in range(nh):
@@ -1596,7 +1736,7 @@ class Signal:
 
             # Phase of spectra are adjusted to compensate for various delays
             Hnl[ii] = Hnl[ii].similar(
-                values=Hnl[ii].values*np.exp(-1j*Hnl[ii].freqs*2*np.pi*(dl+decal[ii])/Hnl[ii].fs))
+                values=Hnl[ii].values*np.exp(-1j*Hnl[ii].freqs*2*np.pi*(-dl+decal[ii])/Hnl[ii].fs))
 
             # We create a weighting for each spectra
             Wnl[ii] = Hnl[ii].nth_oct_smooth_to_weight_complex(nsmooth)
@@ -1618,6 +1758,7 @@ class Signal:
             elif ii > 1:
                 thd += abs(Hfr[ii])**2
         thd = (thd**(1/2)*(abs(Hfr[0])**2+thd)**(-1/2))*100
+        thd.desc = "THD (%)"
         if debug_plot:
             a2=thd.plot(plot_phase=False, dby=False,label='THD')
             a1.set_xlim((freq_min,freq_max))
@@ -2030,7 +2171,7 @@ class Spectral:
         return Signal(raw=np.fft.irfft(self.values, n=self.sample_number, norm=self.norm),
                       desc=add_step(self.desc, 'IFFT'),
                       fs=self.fs,
-                      unit=self.unit)
+                      unit=self.unit/Unit('s'))
 
     def ifft(self):
         """ Compute the inverse Fourier transform
@@ -2042,7 +2183,7 @@ class Spectral:
         return Signal(raw=np.fft.ifft(self.values, norm=self.norm),
                       desc=add_step(self.desc, 'IFFT'),
                       fs=self.fs,
-                      unit=self.unit)
+                      unit=self.unit/Unit('s'))
 
     #####################################################################
     # Mehtods returning a Weighting object
@@ -2455,7 +2596,7 @@ class Spectral:
         spangle = np.interp(freqlist,self.freqs, self.angle().values)
         return spamp*np.exp(1j*spangle)
 
-    def plot(self, ax=None, logx=True, dby=True, plot_phase=True, unwrap_phase=True, **kwargs):
+    def plot(self, ax=None, logx=True, dby=True, plot_phase=True, unwrap_phase=True, unwrap_around=0, **kwargs):
         """Plot spectral data
 
         :param ax: Axis where to plot the data, defaults to None
@@ -2468,6 +2609,8 @@ class Spectral:
         :type plot_phase: bool, optional
         :param unwrap_phase: If True, phase is unwrapped, defaults to True
         :type unwrap_phase: bool, optional
+        :param unwrap_around: Frequency around which phase is unwrapped, defaults to 0.
+        :type unwrap_around: float
         :return: An axes type object if plotphase is False, a list of two axes objects if plotphase is True
         :rtype: axes, or list of axes
         """
@@ -2505,7 +2648,10 @@ class Spectral:
             modulus_to_plot = modulus_to_plot[valid_indices]
             phase_to_plot = np.angle(self.values)[valid_indices]
             if unwrap_phase:
-                phase_to_plot = np.unwrap(phase_to_plot)
+                if unwrap_around==0:
+                    phase_to_plot = np.unwrap(phase_to_plot)
+                else:
+                    phase_to_plot = unwrap_around_index(phase_to_plot,get_index(self.freqs,unwrap_around))
 
         else:
             modulus_to_plot = np.abs(self.values)
@@ -2517,7 +2663,10 @@ class Spectral:
             modulus_to_plot = modulus_to_plot[valid_indices]
             phase_to_plot = np.angle(self.values)[valid_indices]
             if unwrap_phase:
-                phase_to_plot = np.unwrap(phase_to_plot)
+                if unwrap_around==0:
+                    phase_to_plot = np.unwrap(phase_to_plot)
+                else:
+                    phase_to_plot = unwrap_around_index(phase_to_plot,get_index(self.freqs,unwrap_around))
             label = r'$|$H$|$'
 
         ax_0.plot(frequencies_to_plot, modulus_to_plot, **kwargs)
@@ -2692,8 +2841,8 @@ class Weighting:
 
     # END of Weighting
 
-# Constants
 
+# Constants
 
 PREF = 20e-6*Unit('Pa')  # Acoustic pressure reference level
 VREF = 5e-8*Unit('m/s')  # Reference particle velocity
@@ -2783,6 +2932,13 @@ WDBC = Weighting(
     freqs=np.array(WDBC)[:, 0],
     amp=10**(np.array(WDBC)[:, 1]/20),
     desc='dBC weightings')
+
+WDBM=[[31.5 , -29.9],[63 , -23.9],[100 , -19.8],[200 , -13.8],[400 , -7.8],[800 , -1.9],[1_000 , 0.0],[2_000 , +5.6],[3_150 , +9.0],[4_000 , +10.5],[5_000 , +11.7],[6_300 , +12.2],[7_100 , +12.0],[8_000 , +11.4],[9_000 , +10.1],[10_000 , +8.1],[12_500 , 0.0],[14_000 , -5.3],[16_000 , -11.7],[20_000 , -22.2],[31_500 , -42.7]]
+WDBM = Weighting(
+    freqs=np.array(WDBM)[:, 0],
+    amp=10**(np.array(WDBM)[:, 1]/20),
+    desc='M-weighting')
+
 
 # Below are functions that may be useful (some cleaning should be done)
 

@@ -1,10 +1,18 @@
-# measpy - Measurements with Python
+# measpy (MEASurements with PYthon)
+
+*A package for easy data acquisition and signal processing/analysis*
+
+![Documentation](https://github.com/odoare/measpy/workflows/docs/badge.svg)
+![Build](https://github.com/odoare/measpy/actions/workflows/release.yml/badge.svg)
+
 (c) 2021-2023 Olivier Doaré
 Contact: olivier.doare@ensta-paris.fr
 
 measpy is a set of classes and methods that
 - helps signal processing and analysis using rapid and compact Python scripting, thanks to the functional programming paradigm proposed by this package,
 - ease and unify the data acquisition process with various DAQ cards
+
+Documentation: [https://odoare.github.io/measpy](https://odoare.github.io/measpy)
 
 **WARNING:** *major incompatible changes have been made to the measurement class for v0.1, if backward compatibility is needed, the old measurement class system is kept in the pre v0.1 branch. Changes in this branch will only concern eventual bug fixing.*
 
@@ -138,4 +146,22 @@ should give something like pascal * second**2 / m
 
 ## Documentation
 
-Additionnal documentation and examples can be found in the ./docs and ./examples directories of the project.
+Additionnal documentation and examples can be found in the ./docs and ./examples directories of the project. The main page for web documentation is [https://odoare.github.io/measpy](https://odoare.github.io/measpy).
+
+## Releasing
+
+Releases are published automatically when a tag is pushed to GitHub.
+
+Example:
+```bash
+
+   # Set next version number
+   export RELEASE=x.x.x
+
+   # Create tags
+   git commit --allow-empty -m "Release $RELEASE"
+   git tag -a $RELEASE -m "Version $RELEASE"
+
+   # Push
+   git push upstream --tags
+```

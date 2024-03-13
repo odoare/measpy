@@ -1,12 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from setuptools import setup, find_packages
+import versioneer
 
-from datetime import datetime
-
-now = datetime.now()
-VERSION = 'git'+now.strftime("%Y%m%d")
-VERSION = '0.1'
 DESCRIPTION = 'Measurements with Python'
 LONG_DESCRIPTION = """
     measpy is a set of classes and methods to help the data acquisition and analysis of signals. It is mainly acoustics and vibrations oriented. This package is very recent, it is still incomplete and many bugs may appear.
@@ -29,7 +25,8 @@ LONG_DESCRIPTION = """
 # Setting up
 setup(
     name="measpy",
-    version=VERSION,
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
     author="Olivier Doaré",
     author_email="<olivier.doare@ensta-paris.fr>",
     description=DESCRIPTION,

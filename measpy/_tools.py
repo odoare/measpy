@@ -115,6 +115,12 @@ def sine(fs, dur, out_amp, freq):
     s = out_amp*np.sin(2*np.pi*create_time(fs=fs, dur=dur)*freq)
     return (s)
 
+def saw(fs, dur, out_amp, freq):
+    return out_amp*wrap(2*np.pi*freq*create_time(fs,dur=dur))/np.pi
+    
+def tri(fs, dur, out_amp, freq):
+    return out_amp*2*np.abs(wrap(2*np.pi*freq*create_time(fs,dur=dur))/np.pi)-1
+
 def t_min(siglist):
     return min(s.t0 for s in siglist)
 
@@ -131,6 +137,12 @@ def siglist_to_array(siglist):
     for i,s in enumerate(siglist):
         out[round((s.t0-t0s)*s.fs):round(((s.t0-t0s)+s.dur)*s.fs),i] = s.raw
     return out
+
+def get_index(array,value):
+    """
+    Get the index of the nearest value
+    """
+    return np.argmin((array-value)**2)
 
 # def _tfe_farina(y, fs, freqs):
 #     """ Transfer function estimate
