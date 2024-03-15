@@ -122,6 +122,10 @@ class Measurement:
                 self.in_map = list(range(1,len(self.in_sig)+1))
                 print("in_map not given, it is set to default value of: "+str(self.in_map))
                 print(self.in_map)
+            if 'in_threshold' in params:
+                if len(params['in_threshold'])!=len(self.in_sig):
+                    raise Exception('Lengths of in_threshold and in_sig do not correspond.')
+                self.in_threshold = params['in_threshold']
 
         self.in_device = params.setdefault("in_device",'')
         self.out_device = params.setdefault("out_device",'')

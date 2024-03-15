@@ -23,6 +23,7 @@ from threading import Thread
 from queue import Queue, Empty
 import time
 from scipy.signal import find_peaks
+from functools import partial
 
 from picosdk.ps2000 import ps2000
 from picosdk.functions import assert_pico2000_ok
@@ -31,9 +32,8 @@ from picosdk.PicoDeviceEnums import picoEnum
 
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
-#plt.style.use('seaborn-v0_8')
 
-min_chunksize_proceced = 0
+# plt.style.use('seaborn-v0_8')
 
 maxtimeout = 5
 
@@ -126,6 +126,7 @@ class inline_plotting:
         self.timesincelastupdate += n_values / self.fs
         self.plotbuffer = np.roll(self.plotbuffer, int(-n_values), axis=0)
         self.plotbuffer[-n_values:] = item[-self.plotbuffersize :]
+        self.plotbuffer /= 1000
 
     def update_plot(self, dataqueues, updatetime=None):
         dataqueue = dataqueues[0] or dataqueues[1]
@@ -173,11 +174,36 @@ def findindex(l, e):
     return a
 
 
-def detect_rising_pulses_grad_ind(values, ind0, range_):
-    grad = np.diff(values)
-    lefts, _ = find_peaks(grad, height=1000)
-    # rights, _ = find_peaks(-grad, height=2000)
-    return lefts + ind0 + 1
+def detect_rising_pulses_grad_ind(values, ind0, previous_data_points, range_):
+    try:
+        N = len(previous_data_points)
+        previous_data_points.extend(values)
+        grad = np.diff(previous_data_points)
+        lefts, _ = find_peaks(grad, height=np.mean(grad) + np.std(grad))
+        # rights, _ = find_peaks(-grad, height=2000)
+        return lefts + ind0 - N + 1
+    except TypeError:
+        grad = np.diff(values)
+        lefts, _ = find_peaks(grad, height=np.mean(grad) + np.std(grad))
+        # rights, _ = find_peaks(-grad, height=2000)
+        return lefts + ind0 + 1
+    except AttributeError:
+        grad = np.diff([previous_data_points] + values)
+        lefts, _ = find_peaks(grad, height=np.mean(grad) + np.std(grad))
+        # rights, _ = find_peaks(-grad, height=2000)
+        return lefts + ind0
+
+
+def detect_rising_pulses_threshold_ind(
+    values, ind0, previous_data_point, range_, threshold
+):
+    try:
+        V = np.asarray([previous_data_point] + values)
+        rising = np.flatnonzero((V[:-1] <= threshold) & (V[1:] > threshold))
+    except TypeError:
+        V = np.asarray(values)
+        rising = np.flatnonzero((V[:-1] <= threshold) & (V[1:] > threshold)) + 1
+    return rising + ind0
 
 
 def rising_pulse_to_raw(M, channel, values):
@@ -189,9 +215,16 @@ def rising_pulse_to_raw(M, channel, values):
             M.in_sig[i].unit = "s"
 
 
-def adc_to_mv(values, ind0, range_, bitness=16):
+def adc_to_mv(values, ind0, previous_data_point, range_, bitness=16):
     v_ranges = [10, 20, 50, 100, 200, 500, 1_000, 2_000, 5_000, 10_000, 20_000]
     return [(x * v_ranges[range_]) / (2 ** (bitness - 1) - 1) for x in values]
+
+
+def mv_to_adc(values, range_, bitness=16):
+    v_ranges = [10, 20, 50, 100, 200, 500, 1_000, 2_000, 5_000, 10_000, 20_000]
+    return [
+        int((x * (2 ** (bitness - 1) - 1)) / v_ranges[range_]) for x in values
+    ]
 
 
 def mv_to_raw(M, channel, values):
@@ -213,29 +246,35 @@ def ps2000_run_measurement(M):
 
 
 def ps2000_plot(M, plotbuffersize=2000, updatetime=0.1):
+    plotting = partial(inline_plotting, plotbuffersize=2000, updatetime=0.1)
     return _ps2000_run_measurement_threaded(
         M,
         adc_to_mv,
         mv_to_raw,
-        inline_plotting,
-        plotbuffersize=plotbuffersize,
-        updatetime=updatetime,
+        plotting,
     )
 
 
 def ps2000_pulse_detection(M):
+    if hasattr(M, "in_threshold") and M.in_threshold is not None:
+        detect_rising_pulses = detect_rising_pulses_threshold_ind
+        print(
+            f"Detect pulse with threshold method (threshold = {M.in_threshold} V)"
+        )
+    else:
+        detect_rising_pulses = detect_rising_pulses_grad_ind
+        print("Detect pulse with gradient method")
     return _ps2000_run_measurement_threaded(
-        M, detect_rising_pulses_grad_ind, rising_pulse_to_raw, None
+        M,
+        detect_rising_pulses,
+        rising_pulse_to_raw,
+        None,
+        min_chunksize_proceced=10000,
     )
 
 
 def _ps2000_run_measurement_threaded(
-    M,
-    pre_process,
-    save,
-    plotting,
-    plotbuffersize=2000,
-    updatetime=0.1,
+    M, pre_process, save, plotting, min_chunksize_proceced=0
 ):
     """
     This function needs M to contain the following properties:
@@ -249,6 +288,7 @@ def _ps2000_run_measurement_threaded(
 
     max_samples = 100_000
     overview_buffer_size = 20_000
+
     CALLBACK = C_CALLBACK_FUNCTION_FACTORY(
         None,
         ctypes.POINTER(ctypes.POINTER(ctypes.c_int16)),
@@ -305,15 +345,11 @@ def _ps2000_run_measurement_threaded(
             plot = plotting(
                 M.fs,
                 timeout=0.1 * max_loop_time,
-                plotbuffersize=plotbuffersize,
-                updatetime=updatetime,
             )
         else:
             plot = inline_plotting(
                 M.fs,
                 timeout=0.1 * max_loop_time,
-                plotbuffersize=plotbuffersize,
-                updatetime=updatetime,
             )
         if plot.ploting_duration > 0.85 * max_loop_time:
             print(
@@ -329,17 +365,20 @@ def _ps2000_run_measurement_threaded(
     def consumer(queue, result, method, queue_plot=None):
         ind0 = 0
         chunk_data = []
+        previous_data_point = None
         while (item := queue.get(timeout=maxtimeout)) is not None:
             chunk_data.extend(item)
             if (N := len(chunk_data)) > min_chunksize_proceced:
-                values = method(chunk_data, ind0)
+                values = method(chunk_data, ind0, previous_data_point)
+                previous_data_point = chunk_data[-1]
                 result.extend(values)
                 if queue_plot is not None:
                     queue_plot.put(values)
                 ind0 += N
                 chunk_data = []
         if (N := len(chunk_data)) > 0:
-            values = method(chunk_data, ind0)
+            values = method(chunk_data, ind0, previous_data_point)
+            previous_data_point = chunk_data[-1]
             result.extend(values)
             if queue_plot is not None:
                 queue_plot.put(values)
@@ -358,9 +397,19 @@ def _ps2000_run_measurement_threaded(
             queue_plot.append(Queue())
         else:
             queue_plot.append(None)
-        pre_processA = lambda values, ind0: pre_process(
-            values, ind0, range_=rangeA
-        )
+        try:
+            adc_thresholdA = mv_to_adc([M.in_threshold[indA] / 1000], rangeA)[0]
+            pre_processA = lambda values, ind0, previous_data_point: pre_process(
+                values,
+                ind0,
+                previous_data_point,
+                range_=rangeA,
+                threshold=adc_thresholdA,
+            )
+        except AttributeError:
+            pre_processA = lambda values, ind0, previous_data_point: pre_process(
+                values, ind0, previous_data_point, range_=rangeA
+            )
         ProcessA = Thread(
             target=consumer,
             args=(
@@ -403,9 +452,19 @@ def _ps2000_run_measurement_threaded(
             queue_plot.append(Queue())
         else:
             queue_plot.append(None)
-        pre_processB = lambda values, ind0: pre_process(
-            values, ind0, range_=rangeB
-        )
+        try:
+            adc_thresholdB = mv_to_adc([M.in_threshold[indB] / 1000], rangeB)[0]
+            pre_processB = lambda values, ind0, previous_data_point: pre_process(
+                values,
+                ind0,
+                previous_data_point,
+                range_=rangeB,
+                threshold=adc_thresholdB,
+            )
+        except AttributeError:
+            pre_processB = lambda values, ind0, previous_data_point: pre_process(
+                values, ind0, previous_data_point, range_=rangeB
+            )
         ProcessB = Thread(
             target=consumer,
             args=(
