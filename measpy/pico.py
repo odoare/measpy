@@ -15,7 +15,6 @@ from datetime import datetime
 from scipy.signal import decimate
 
 import ctypes
-import numpy as np
 from picosdk.ps4000 import ps4000
 from picosdk.functions import adc2mV, assert_pico_ok
 
@@ -39,6 +38,13 @@ maxtimeout = 5
 
 
 class inline_plotting:
+    """
+    Plot data from a Queue.queue
+    init create the plot
+    update_plot update the plot buffer from new data in dataqueues and update the plot if enough data has been received
+    end_plot call update plot until dataqueues contain None
+    ploting_duration estimate time of update_plot execution to check for buffer overflow risk
+    """
     def __init__(self, fs, timeout, updatetime=0.1, plotbuffersize=2000):
         self.timesincelastupdate = 0.0
         self.plotbuffersize = plotbuffersize
@@ -175,6 +181,27 @@ def findindex(l, e):
 
 
 def detect_rising_pulses_grad_ind(values, ind0, previous_data_points, range_):
+    """
+    Detect rising pulse with signal.find_peaks on gradient of the signal
+
+    Parameters
+    ----------
+    values : List
+        Data.
+    ind0 : int
+        indice of the first data point.
+    previous_data_points : number
+        Value of the last data point (indice = ind0-1).
+        useful to not lose peak if it is at ind0 (work not very well)
+    range_ : int
+        picoscope range.
+
+    Returns
+    -------
+    List
+        List of indices where a rising pulse is detected.
+
+    """
     try:
         N = len(previous_data_points)
         previous_data_points.extend(values)
@@ -197,6 +224,28 @@ def detect_rising_pulses_grad_ind(values, ind0, previous_data_points, range_):
 def detect_rising_pulses_threshold_ind(
     values, ind0, previous_data_point, range_, threshold
 ):
+    """
+    Detect rising pulse using a threshold
+    Parameters
+    ----------
+    values : List
+        Data.
+    ind0 : int
+        indice of the first data point.
+    previous_data_points : number
+        Value of the last data point (indice = ind0-1).
+        useful to not lose peak if it is at ind0
+    range_ : int
+        picoscope range.
+    threshold : int
+        threshold (in adc values).
+
+    Returns
+    -------
+    List
+        List of indices where a rising pulse is detected.
+
+    """
     try:
         V = np.asarray([previous_data_point] + values)
         rising = np.flatnonzero((V[:-1] <= threshold) & (V[1:] > threshold))
@@ -256,6 +305,10 @@ def ps2000_plot(M, plotbuffersize=2000, updatetime=0.1):
 
 
 def ps2000_pulse_detection(M):
+    """
+    To use threshold detection (more efficient), this function needs M to contain the property
+     in_threshold : a list of threshold for pulse height (in Volt) for each channel
+    """
     if hasattr(M, "in_threshold") and M.in_threshold is not None:
         detect_rising_pulses = detect_rising_pulses_threshold_ind
         print(
@@ -363,6 +416,25 @@ def _ps2000_run_measurement_threaded(
                 return
 
     def consumer(queue, result, method, queue_plot=None):
+        """
+        Function used to preprocess data received from the picoscope in thread
+        Parameters
+        ----------
+        queue : queue.Queue
+            Queue filled by get_overview_buffers.
+        result : list
+            List where preprocessed data are send.
+        method : function
+            Function to preprocess the data, take a list of values,
+            the indice of the first value and the value of the last data point from previous loop.
+        queue_plot : queue.Queue, optional
+            queue used to plot the data, filled with preprocessed data. The default is None.
+
+        Returns
+        -------
+        None.
+
+        """
         ind0 = 0
         chunk_data = []
         previous_data_point = None
