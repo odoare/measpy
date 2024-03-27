@@ -180,7 +180,7 @@ def findindex(l, e):
     return a
 
 
-def detect_rising_pulses_grad_ind(values, ind0, previous_data_points, range_):
+def detect_rising_pulses_grad_ind(values, ind0, previous_data_points, **kwargs):
     """
     Detect rising pulse with signal.find_peaks on gradient of the signal
 
@@ -222,7 +222,7 @@ def detect_rising_pulses_grad_ind(values, ind0, previous_data_points, range_):
 
 
 def detect_rising_pulses_threshold_ind(
-    values, ind0, previous_data_point, range_, threshold
+    values, ind0, previous_data_point, threshold, **kwargs
 ):
     """
     Detect rising pulse using a threshold
@@ -264,7 +264,7 @@ def rising_pulse_to_raw(M, channel, values):
             M.in_sig[i].unit = "s"
 
 
-def adc_to_mv(values, ind0, previous_data_point, range_, bitness=16):
+def adc_to_mv(values, range_, bitness=16, **kwargs):
     v_ranges = [10, 20, 50, 100, 200, 500, 1_000, 2_000, 5_000, 10_000, 20_000]
     return [(x * v_ranges[range_]) / (2 ** (bitness - 1) - 1) for x in values]
 
@@ -339,6 +339,7 @@ def _ps2000_run_measurement_threaded(
             Can be "ac" or "dc"
     """
 
+    multichannel = False
     max_samples = 100_000
     overview_buffer_size = 20_000
 
@@ -469,19 +470,18 @@ def _ps2000_run_measurement_threaded(
             queue_plot.append(Queue())
         else:
             queue_plot.append(None)
-        try:
-            adc_thresholdA = mv_to_adc([M.in_threshold[indA] / 1000], rangeA)[0]
-            pre_processA = lambda values, ind0, previous_data_point: pre_process(
-                values,
-                ind0,
-                previous_data_point,
-                range_=rangeA,
-                threshold=adc_thresholdA,
-            )
-        except AttributeError:
-            pre_processA = lambda values, ind0, previous_data_point: pre_process(
-                values, ind0, previous_data_point, range_=rangeA
-            )
+        if (Vthreshold := getattr(M, "in_threshold", None)) is not None:
+            adc_thresholdA = mv_to_adc([Vthreshold[indA] / 1000], rangeA)[0]
+        else:
+            adc_thresholdA = None
+        pre_processA = lambda values, ind0, previous_data_point: pre_process(
+            values=values,
+            ind0=ind0,
+            previous_data_point=previous_data_point,
+            range_=rangeA,
+            threshold=adc_thresholdA,
+        )
+
         ProcessA = Thread(
             target=consumer,
             args=(
@@ -511,6 +511,8 @@ def _ps2000_run_measurement_threaded(
     else:
         enabledA = False
         rangeA = ps2000.PS2000_VOLTAGE_RANGE["PS2000_10V"]
+        queue_plot.append(None)
+        couplingA = "PICO_DC"
         print("Channel A: disabled")
 
     # Setup channel B
@@ -524,19 +526,17 @@ def _ps2000_run_measurement_threaded(
             queue_plot.append(Queue())
         else:
             queue_plot.append(None)
-        try:
-            adc_thresholdB = mv_to_adc([M.in_threshold[indB] / 1000], rangeB)[0]
-            pre_processB = lambda values, ind0, previous_data_point: pre_process(
-                values,
-                ind0,
-                previous_data_point,
-                range_=rangeB,
-                threshold=adc_thresholdB,
-            )
-        except AttributeError:
-            pre_processB = lambda values, ind0, previous_data_point: pre_process(
-                values, ind0, previous_data_point, range_=rangeB
-            )
+        if (Vthreshold := getattr(M, "in_threshold", None)) is not None:
+            adc_thresholdB = mv_to_adc([Vthreshold[indB] / 1000], rangeB)[0]
+        else:
+            adc_thresholdB = None
+        pre_processB = lambda values, ind0, previous_data_point: pre_process(
+            values=values,
+            ind0=ind0,
+            previous_data_point=previous_data_point,
+            range_=rangeB,
+            threshold=adc_thresholdB,
+        )
         ProcessB = Thread(
             target=consumer,
             args=(
@@ -566,19 +566,35 @@ def _ps2000_run_measurement_threaded(
     else:
         enabledB = False
         rangeB = ps2000.PS2000_VOLTAGE_RANGE["PS2000_10V"]
+        queue_plot.append(None)
         couplingB = "PICO_DC"
         print("Channel B: disabled")
 
-    def get_overview_buffers(
-        buffers, _overflow, _triggered_at, _triggered, _auto_stop, n_values
-    ):
-        if enabledA:
-            queueA.put(buffers[0][0:n_values])
-            if enabledB:
-                queueB.put(buffers[2][0:n_values])
+    ##get_overview_buffers_factory
+    if enabledA:
+        if enabledB:
+            if multichannel:
+                raise NotImplementedError
+                # def get_overview_buffers(
+                #     buffers, _overflow, _triggered_at, _triggered, _auto_stop, n_values
+                # ):
+                #     queueAB.put([buffers[0][0:n_values],buffers[2][0:n_values]])
+            else:
+                def get_overview_buffers(
+                    buffers, _overflow, _triggered_at, _triggered, _auto_stop, n_values
+                ):
+                    queueA.put(buffers[0][0:n_values])
+                    queueB.put(buffers[2][0:n_values])
         else:
-            if enabledB:
-                queueB.put(buffers[2][0:n_values])
+            def get_overview_buffers(
+                buffers, _overflow, _triggered_at, _triggered, _auto_stop, n_values
+            ):
+                queueA.put(buffers[0][0:n_values])
+    elif enabledB:
+        def get_overview_buffers(
+            buffers, _overflow, _triggered_at, _triggered, _auto_stop, n_values
+        ):
+            queueB.put(buffers[2][0:n_values])
 
     callback = CALLBACK(get_overview_buffers)
 
