@@ -36,6 +36,8 @@ from matplotlib.widgets import Button
 
 maxtimeout = 5
 
+PS2000_channel = {"A": 1, "B": 2, 1: "A", 2: "B"}
+
 
 class inline_plotting:
     """
@@ -45,6 +47,7 @@ class inline_plotting:
     end_plot call update plot until dataqueues contain None
     ploting_duration estimate time of update_plot execution to check for buffer overflow risk
     """
+
     def __init__(self, fs, timeout, updatetime=0.1, plotbuffersize=2000):
         self.timesincelastupdate = 0.0
         self.plotbuffersize = plotbuffersize
@@ -134,8 +137,8 @@ class inline_plotting:
         self.plotbuffer[-n_values:] = item[-self.plotbuffersize :]
         self.plotbuffer /= 1000
 
-    def update_plot(self, dataqueues, updatetime=None):
-        dataqueue = dataqueues[0] or dataqueues[1]
+    def update_plot(self, dataqueue, updatetime=None):
+        # dataqueue = dataqueues[0] or dataqueues[1]
         updatetime = self.updatetime if updatetime is None else updatetime
         try:
             if (item := dataqueue.get(timeout=self.timeout)) is not None:
@@ -145,8 +148,8 @@ class inline_plotting:
         except Empty:
             pass
 
-    def end_plot(self, dataqueues):
-        dataqueue = dataqueues[0] or dataqueues[1]
+    def end_plot(self, dataqueue):
+        # dataqueue = dataqueues[0] or dataqueues[1]
         while (item := dataqueue.get(timeout=maxtimeout)) is not None:
             self._update_buffer(item)
             if self.timesincelastupdate > self.updatetime:
@@ -163,7 +166,7 @@ class inline_plotting:
             queuetest.put(np.random.normal(0, 3, self.plotbuffersize))
             queuetest.put(None)
             start = time.time()
-            self.update_plot([queuetest, None], updatetime=0)
+            self.update_plot(queuetest, updatetime=0)
             self._ploting_duration = time.time() - start
             print(f"Plotting duration = {self._ploting_duration}")
             self.x = 1.0 * np.arange(-self.plotbuffersize, 0) / self.fs
@@ -294,13 +297,14 @@ def ps2000_run_measurement(M):
     return _ps2000_run_measurement_threaded(M, adc_to_mv, mv_to_raw, None)
 
 
-def ps2000_plot(M, plotbuffersize=2000, updatetime=0.1):
+def ps2000_plot(M, plotbuffersize=2000, updatetime=0.1, chan_to_plot="A"):
     plotting = partial(inline_plotting, plotbuffersize=2000, updatetime=0.1)
     return _ps2000_run_measurement_threaded(
         M,
         adc_to_mv,
         mv_to_raw,
         plotting,
+        chan_to_plot=chan_to_plot,
     )
 
 
@@ -311,8 +315,9 @@ def ps2000_pulse_detection(M):
     """
     if hasattr(M, "in_threshold") and M.in_threshold is not None:
         detect_rising_pulses = detect_rising_pulses_threshold_ind
+        info = ", ".join([f"Threshold = {th} V for chan {PS2000_channel[chan]}" for chan,th in zip(M.in_map,M.in_threshold)])
         print(
-            f"Detect pulse with threshold method (threshold = {M.in_threshold} V)"
+            f"Detect pulse with threshold method ({info})"
         )
     else:
         detect_rising_pulses = detect_rising_pulses_grad_ind
@@ -327,7 +332,12 @@ def ps2000_pulse_detection(M):
 
 
 def _ps2000_run_measurement_threaded(
-    M, pre_process, save, plotting, min_chunksize_proceced=0
+    M,
+    pre_process,
+    save,
+    plotting,
+    chan_to_plot=None,
+    min_chunksize_proceced=0,
 ):
     """
     This function needs M to contain the following properties:
@@ -394,27 +404,36 @@ def _ps2000_run_measurement_threaded(
         )
 
     if plotting is not None:
-        max_loop_time = overview_buffer_size / M.fs
-        if callable(plotting):
-            plot = plotting(
-                M.fs,
-                timeout=0.1 * max_loop_time,
-            )
-        else:
-            plot = inline_plotting(
-                M.fs,
-                timeout=0.1 * max_loop_time,
-            )
-        if plot.ploting_duration > 0.85 * max_loop_time:
+        if (
+            chan_to_plot is not None
+            and findindex(M.in_map, PS2000_channel.get(chan_to_plot)) is None
+        ):
             print(
-                "Update plot function is too long to execute : "
-                f"{plot.ploting_duration} s, there is a high risk to"
-                f" overflow the buffer (the buffer is full in {max_loop_time} s) "
+                f"The channel to plot {chan_to_plot} is not enabled in measurement setup, plotting canceled"
             )
-            plt.close(plot.fig)
             plotting = None
-            if input("Cancel measurment? y/n : ") == "y":
-                return
+        else:
+            max_loop_time = overview_buffer_size / M.fs
+            if callable(plotting):
+                plot = plotting(
+                    M.fs,
+                    timeout=0.1 * max_loop_time,
+                )
+            else:
+                plot = inline_plotting(
+                    M.fs,
+                    timeout=0.1 * max_loop_time,
+                )
+            if plot.ploting_duration > 0.85 * max_loop_time:
+                print(
+                    "Update plot function is too long to execute : "
+                    f"{plot.ploting_duration} s, there is a high risk to"
+                    f" overflow the buffer (the buffer is full in {max_loop_time} s) "
+                )
+                plt.close(plot.fig)
+                plotting = None
+                if input("Cancel measurment? y/n : ") == "y":
+                    return
 
     def consumer(queue, result, method, queue_plot=None):
         """
@@ -458,139 +477,129 @@ def _ps2000_run_measurement_threaded(
         if queue_plot is not None:
             queue_plot.put(None)
 
-    # Setup channel A
-    indA = findindex(M.in_map, 1)
-    queue_plot = []
-    if indA != None:
-        enabledA = True
-        rangeA = ps2000.PS2000_VOLTAGE_RANGE["PS2000_" + M.in_range[indA]]
-        retA = []
-        queueA = Queue()
-        if plotting is not None:
-            queue_plot.append(Queue())
+    ## Setup channels
+    def setup_channel(chan_index):
+        if (ind := findindex(M.in_map, chan_index)) != None:
+            enabled = True
+            pico_range = ps2000.PS2000_VOLTAGE_RANGE["PS2000_" + M.in_range[ind]]
+            if M.in_coupling[ind].capitalize() == "Dc":
+                coupling = "PICO_DC"
+            elif M.in_coupling[ind].capitalize() == "Ac":
+                coupling = "PICO_AC"
+            else:
+                print(f"Input {PS2000_channel[chan_index]} coupling not recognized, set to 'dc'")
+                M.in_coupling[ind] = "dc"
+                coupling = "PICO_DC"
+            print(
+                f"Channel {PS2000_channel[chan_index]}: enabled with range "
+                + "PS2000_"
+                + M.in_range[ind]
+                + " ("
+                + str(pico_range)
+                + ")"
+            )
         else:
-            queue_plot.append(None)
-        if (Vthreshold := getattr(M, "in_threshold", None)) is not None:
-            adc_thresholdA = mv_to_adc([Vthreshold[indA] / 1000], rangeA)[0]
-        else:
-            adc_thresholdA = None
-        pre_processA = lambda values, ind0, previous_data_point: pre_process(
-            values=values,
-            ind0=ind0,
-            previous_data_point=previous_data_point,
-            range_=rangeA,
-            threshold=adc_thresholdA,
-        )
+            enabled = False
+            pico_range = ps2000.PS2000_VOLTAGE_RANGE["PS2000_10V"]
+            coupling = "PICO_DC"
+            print(f"Channel {PS2000_channel[chan_index]}: disabled")
+        return enabled, coupling, pico_range
 
-        ProcessA = Thread(
-            target=consumer,
-            args=(
-                queueA,
-                retA,
-                pre_processA,
-                queue_plot[0],
-            ),
-        )
+    enabledA, couplingA, rangeA = setup_channel(1)
+    enabledB, couplingB, rangeB = setup_channel(2)
 
-        print(
-            "Channel A: enabled with range "
-            + "PS2000_"
-            + M.in_range[indA]
-            + " ("
-            + str(rangeA)
-            + ")"
-        )
-        if M.in_coupling[indA].capitalize() == "Dc":
-            couplingA = "PICO_DC"
-        elif M.in_coupling[indA].capitalize() == "Ac":
-            couplingA = "PICO_AC"
-        else:
-            print("Input A coupling not recognized, set to 'dc'")
-            couplingA = "PICO_DC"
-            M.in_coupling[indA] = "dc"
+    # Setup data thread processing
+    def setup_preprocess(chan_index, pico_range, chan_plot=False):
+        if (ind := findindex(M.in_map, chan_index)) != None:
+            ret = []
+            queue = Queue()
+            if chan_plot:
+                queue_plot = Queue()
+            else:
+                queue_plot = None
+            if (Vthreshold := getattr(M, "in_threshold", None)) is not None:
+                adc_threshold = mv_to_adc([Vthreshold[ind] / 1000], pico_range)[0]
+            else:
+                adc_threshold = None
+
+            pre_process_func = lambda values, ind0, previous_data_point: pre_process(
+                values=values,
+                ind0=ind0,
+                previous_data_point=previous_data_point,
+                range_=pico_range,
+                threshold=adc_threshold,
+            )
+
+            Process = Thread(
+                target=consumer,
+                args=(
+                    queue,
+                    ret,
+                    pre_process_func,
+                    queue_plot,
+                ),
+            )
+            return queue, queue_plot, Process, ret
+
+    if not multichannel:
+        if enabledA:
+            if chan_to_plot == "A":
+                queueA, queue_plot, ProcessA, retA = setup_preprocess(
+                    1, rangeA, True
+                )
+            else:
+                queueA, _, ProcessA, retA = setup_preprocess(1, rangeA, False)
+
+        if enabledB:
+            if chan_to_plot == "B":
+                queueB, queue_plot, ProcessB, retB = setup_preprocess(
+                    2, rangeB, True
+                )
+            else:
+                queueB, _, ProcessB, retB = setup_preprocess(2, rangeB, False)
     else:
-        enabledA = False
-        rangeA = ps2000.PS2000_VOLTAGE_RANGE["PS2000_10V"]
-        queue_plot.append(None)
-        couplingA = "PICO_DC"
-        print("Channel A: disabled")
-
-    # Setup channel B
-    indB = findindex(M.in_map, 2)
-    if indB != None:
-        enabledB = True
-        rangeB = ps2000.PS2000_VOLTAGE_RANGE["PS2000_" + M.in_range[indB]]
-        retB = []
-        queueB = Queue()
-        if plotting is not None:
-            queue_plot.append(Queue())
-        else:
-            queue_plot.append(None)
-        if (Vthreshold := getattr(M, "in_threshold", None)) is not None:
-            adc_thresholdB = mv_to_adc([Vthreshold[indB] / 1000], rangeB)[0]
-        else:
-            adc_thresholdB = None
-        pre_processB = lambda values, ind0, previous_data_point: pre_process(
-            values=values,
-            ind0=ind0,
-            previous_data_point=previous_data_point,
-            range_=rangeB,
-            threshold=adc_thresholdB,
+        raise NotImplementedError
+        ranges = [rangeA, rangeB]
+        queueAB, queue_plotAB, ProcessAB, retAB = setup_preprocess(
+            ranges, chan_plot=False
         )
-        ProcessB = Thread(
-            target=consumer,
-            args=(
-                queueB,
-                retB,
-                pre_processB,
-                queue_plot[1],
-            ),
-        )
-
-        if M.in_coupling[indB].capitalize() == "Dc":
-            couplingB = "PICO_DC"
-        elif M.in_coupling[indB].capitalize() == "Ac":
-            couplingB = "PICO_AC"
-        else:
-            print("Input B coupling not recognized, set to 'dc'")
-            M.in_coupling[indB] = "dc"
-            couplingB = "PICO_DC"
-        print(
-            "Channel B: enabled with range "
-            + "PS2000_"
-            + M.in_range[indB]
-            + " ("
-            + str(rangeB)
-            + ")"
-        )
-    else:
-        enabledB = False
-        rangeB = ps2000.PS2000_VOLTAGE_RANGE["PS2000_10V"]
-        queue_plot.append(None)
-        couplingB = "PICO_DC"
-        print("Channel B: disabled")
 
     ##get_overview_buffers_factory
     if enabledA:
         if enabledB:
             if multichannel:
                 raise NotImplementedError
-                # def get_overview_buffers(
-                #     buffers, _overflow, _triggered_at, _triggered, _auto_stop, n_values
-                # ):
-                #     queueAB.put([buffers[0][0:n_values],buffers[2][0:n_values]])
-            else:
                 def get_overview_buffers(
                     buffers, _overflow, _triggered_at, _triggered, _auto_stop, n_values
                 ):
+                    queueAB.put([buffers[0][0:n_values],buffers[2][0:n_values]])
+            else:
+
+                def get_overview_buffers(
+                    buffers,
+                    _overflow,
+                    _triggered_at,
+                    _triggered,
+                    _auto_stop,
+                    n_values,
+                ):
                     queueA.put(buffers[0][0:n_values])
                     queueB.put(buffers[2][0:n_values])
+
         else:
+
             def get_overview_buffers(
-                buffers, _overflow, _triggered_at, _triggered, _auto_stop, n_values
+                buffers,
+                _overflow,
+                _triggered_at,
+                _triggered,
+                _auto_stop,
+                n_values,
             ):
                 queueA.put(buffers[0][0:n_values])
+
     elif enabledB:
+
         def get_overview_buffers(
             buffers, _overflow, _triggered_at, _triggered, _auto_stop, n_values
         ):
@@ -650,6 +659,7 @@ def _ps2000_run_measurement_threaded(
         M.date = now.strftime("%Y-%m-%d")
         M.time = now.strftime("%H:%M:%S")
 
+        ##start preprocess threads
         if enabledA:
             ProcessA.start()
 
@@ -670,15 +680,18 @@ def _ps2000_run_measurement_threaded(
                 ps2000.ps2000_get_streaming_last_values(device.handle, callback)
 
         print("Measurment done")
-        overview = False
-        ps2000.ps2000_overview_buffer_status(device.handle, overview)
-        if overview:
-            print("Buffer overview")
+        overrun = False
+        ps2000.ps2000_overview_buffer_status(device.handle, overrun)
+        if overrun:
+            print("Buffer have overrun")
+
+        ##Put end flag in queues
         if enabledA:
             queueA.put(None)
         if enabledB:
             queueB.put(None)
 
+        ##Wait for all thread to finish and save data
         if enabledA:
             ProcessA.join()
             save(M, 1, retA)
@@ -686,8 +699,11 @@ def _ps2000_run_measurement_threaded(
             ProcessB.join()
             save(M, 2, retB)
         print("Preprocess data done")
+
+        ## Continue plotting until last data
         if plotting is not None:
             plot.end_plot(queue_plot)
+
 
 def ps4000_plot(M,plotbuffersize=2000,updatetime=0.1):
     """
