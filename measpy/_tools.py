@@ -25,14 +25,14 @@ def csv_to_dict(filename):
     return dd
 
 def convl(fun,xx):
-    if type(xx)==list:
+    if type(xx) in [np.ndarray ,list]:
         yy=list(map(fun,xx))
     else:
         yy=fun(xx) 
     return yy
 
 def convl1(fun,xx):
-    if type(xx)==list:
+    if type(xx) in [np.ndarray ,list]:
         yy=fun(xx[0])
     else:
         yy=fun(xx) 

@@ -27,6 +27,7 @@ del get_versions
 from copy import copy,deepcopy
 import csv
 import os
+import h5py
 
 class Measurement:
     # ---------------------------
@@ -216,8 +217,8 @@ class Measurement:
     def _to_dict(self,withsig=True):
         """ Converts a Measurement object to a dict
 
-            :param withdata: Optionnally removes the data arrays, defaults to True
-            :type withdata: bool
+            :param withsig: Optionnally removes the data arrays, defaults to True
+            :type withsig: bool
             
         """
         mesu = copy(self.__dict__)
@@ -251,6 +252,40 @@ class Measurement:
         self._write_readme(dirname+"/README")
         return dirname
     
+    def to_hdf5(self, filename):
+        """
+        Save Measurement parameter in hdf5 file
+
+        Parameters
+        ----------
+        filename : str
+            hdf5 file.
+
+        """
+        mesu = self._to_dict()
+        in_sig = mesu.pop("in_sig",None)
+        out_sig = mesu.pop("out_sig",None)
+        datatype = mesu.pop("datatype",None)
+        multichannel = mesu.pop("multichannel",False)
+        with h5py.File(filename, "x") as H5file:
+            for name, value in mesu.items():
+                if value is not None:
+                    H5file.attrs[name] = value
+            if type(in_sig)!=type(None):
+                if multichannel:
+                    raise NotImplementedError
+                    in_sig.to_hdf5(H5file, "in_sigs", datatype)
+                else:
+                    for index,s in zip(mesu["in_map"],in_sig):
+                        s.to_hdf5(H5file, f"in_sig_{index}", datatype)
+            if type(out_sig)!=type(None):
+                if multichannel:
+                    raise NotImplementedError
+                    out_sig.to_hdf5(H5file, "out_sigs", datatype)
+                else:
+                    for index,s in zip(mesu["out_map"],out_sig):
+                        s.to_hdf5(H5file, f"out_sig_{index}", datatype)
+
     # ------------------------
     @classmethod
     def from_dir(cls,dirname):
@@ -259,8 +294,43 @@ class Measurement:
             :param dirname: Name of the directory
             :type dirname: str                
         """
-        self=cls()
+
         task_dict = csv_to_dict(dirname+'/params.csv')
+        self = cls._from_dict(task_dict)
+        if 'in_map' in task_dict:
+            self.in_sig = list(Signal.from_csvwav(dirname+'/in_sig_'+str(i)) for i in range(len(task_dict['in_map'])) )
+        if 'out_map' in task_dict:
+            self.out_sig = list(Signal.from_csvwav(dirname+'/out_sig_'+str(i)) for i in range(len(task_dict['out_map'])) )
+        return self
+
+    @classmethod
+    def from_hdf5(cls,filename):
+        with h5py.File(filename, "r") as H5file:
+            task_dict = {}
+            for key,val in H5file.attrs.items():
+                task_dict[key] = val
+            self = cls._from_dict(task_dict)
+            if 'in_map' in task_dict:
+                index = task_dict["in_map"]
+                in_sig = [None]*len(index)
+                for i, ind in enumerate(index):
+                    in_sig[i] = Signal.from_hdf5(H5file[f"in_sig_{ind}"])
+            else:
+                in_sig = None
+            if 'out_map' in task_dict:
+                index = task_dict["out_map"]
+                out_sig = [None]*len(index)
+                for i, ind in enumerate(index):
+                    out_sig[i] = Signal.from_hdf5(H5file[f"out_sig_{ind}"])
+            else:
+                out_sig = None
+            self.in_sig = in_sig
+            self.out_sig = out_sig
+        return self
+
+    @classmethod
+    def _from_dict(cls, task_dict):
+        self=cls()
         self.fs=convl1(float,task_dict['fs'])
         self.dur=convl1(float,task_dict['dur'])
         try:
@@ -273,13 +343,12 @@ class Measurement:
         if 'in_map' in task_dict:
             self.in_map = convl(int,task_dict['in_map'])
             self.in_device = convl1(str,task_dict['in_device'])
-            self.in_sig = list(Signal.from_csvwav(dirname+'/in_sig_'+str(i)) for i in range(len(task_dict['in_map'])) )
+
         else:
             self.in_sig = None
         if 'out_map' in task_dict:
             self.out_map = convl(int,task_dict['out_map'])
             self.out_device = convl1(str,task_dict['out_device'])
-            self.out_sig = list(Signal.from_csvwav(dirname+'/out_sig_'+str(i)) for i in range(len(task_dict['out_map'])) )
             self.io_sync = convl1(int,task_dict['io_sync'])
         else:
             self.out_sig = None

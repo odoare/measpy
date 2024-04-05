@@ -34,6 +34,8 @@ import scipy.io.wavfile as wav
 import csv
 import copy
 import numbers
+from contextlib import ExitStack
+import h5py
 
 import unyt
 from unyt import Unit
@@ -1043,6 +1045,26 @@ class Signal:
             out.raw = (y.astype(dtype=float)-middle)/amp
         return out
 
+    @classmethod
+    def from_hdf5(cls, file):
+        out = cls()
+        with ExitStack() as stack:
+            if isinstance(file, str):
+                H5file = stack.enter_context(h5py.File(file, "x"))
+            else:
+                H5file = file
+
+            for key,val in H5file.attrs.items():
+                if key == '_unit' or key == 'unit':
+                    out.__dict__[key] = Unit(val)
+                else:
+                    try:
+                        out.__dict__[key] = float(val)
+                    except:
+                        out.__dict__[key] = val
+            out._rawvalues = np.asarray(H5file)
+        return out
+
     #######################################################################
     # Properties
     #####################################################################
@@ -1623,6 +1645,44 @@ class Signal:
             if includetime:
                 writer.writerow(['First column is time in seconds'])
             writer.writerows(outdata)
+
+    def to_hdf5(self, file, dataset_name, datatype):
+        """
+        Save Signal in hdf5 file
+        Parameters
+        ----------
+        filename : str or opened h5file handle
+            hdf5 file.
+        dataset_name : str
+            Name of the hdf5 dataser.
+        datatype : str
+            Data format (Numpy dtype).
+
+        """
+        with ExitStack() as stack:
+            if isinstance(file, str):
+                H5file = stack.enter_context(h5py.File(file, "x"))
+            else:
+                H5file = file
+
+            if self._rawvalues.size>0:
+                dataset = H5file.create_dataset(dataset_name, data = self._rawvalues)
+                dataset.attrs["datatype"] = self._rawvalues.dtype.__str__()
+            elif datatype is not None:
+                print(f"There is no data, creating empty dataset {dataset_name} wity type = {datatype}")
+                dataset = H5file.create_dataset(
+                    dataset_name, (0,), maxshape=(None,), dtype=datatype, chunks=(512,)
+                )
+                # dataset.attrs["datatype"] = datatype.dtype.__str__()
+            else:
+                raise TypeError("Cannot create dataset if type not specified")
+            for key, value in self.__dict__.items():
+                if key != '_rawvalues':
+                    try:
+                        Val = value.__str__()
+                    except AttributeError:
+                        Val = value
+                    dataset.attrs[key] = Val
 
     def harmonic_disto(self, nh=4, freq_min=20.0, freq_max=20000.0, delay=None, win_max_length=2**15, prop_before=0.25, nsmooth=24, debug_plot=False):
         """Compute the harmonic distorsion of an in/out system

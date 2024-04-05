@@ -38,7 +38,6 @@ maxtimeout = 5
 
 PS2000_channel = {"A": 1, "B": 2, 1: "A", 2: "B"}
 
-
 class inline_plotting:
     """
     Plot data from a Queue.queue
@@ -559,9 +558,8 @@ def _ps2000_run_measurement_threaded(
                 queueB, _, ProcessB, retB = setup_preprocess(2, rangeB, False)
     else:
         raise NotImplementedError
-        ranges = [rangeA, rangeB]
         queueAB, queue_plotAB, ProcessAB, retAB = setup_preprocess(
-            ranges, chan_plot=False
+            [1,2], [rangeA,rangeB], chan_plot=False
         )
 
     ##get_overview_buffers_factory
