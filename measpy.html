@@ -405,12 +405,12 @@ All the acquired signals are then re-synced from the time lag value.</p>
 <span id="measpy-pico-module"></span><h2>measpy.pico module<a class="headerlink" href="#module-measpy.pico" title="Link to this heading"></a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="measpy.pico.adc_to_mv">
-<span class="sig-prename descclassname"><span class="pre">measpy.pico.</span></span><span class="sig-name descname"><span class="pre">adc_to_mv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ind0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous_data_point</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">range_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bitness</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">16</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.pico.adc_to_mv" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">measpy.pico.</span></span><span class="sig-name descname"><span class="pre">adc_to_mv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">range_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bitness</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.pico.adc_to_mv" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="measpy.pico.detect_rising_pulses_grad_ind">
-<span class="sig-prename descclassname"><span class="pre">measpy.pico.</span></span><span class="sig-name descname"><span class="pre">detect_rising_pulses_grad_ind</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ind0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous_data_points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">range_</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.pico.detect_rising_pulses_grad_ind" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">measpy.pico.</span></span><span class="sig-name descname"><span class="pre">detect_rising_pulses_grad_ind</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ind0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous_data_points</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.pico.detect_rising_pulses_grad_ind" title="Link to this definition"></a></dt>
 <dd><p>Detect rising pulse with signal.find_peaks on gradient of the signal</p>
 <section id="parameters">
 <h3>Parameters<a class="headerlink" href="#parameters" title="Link to this heading"></a></h3>
@@ -437,7 +437,7 @@ useful to not lose peak if it is at ind0 (work not very well)</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="measpy.pico.detect_rising_pulses_threshold_ind">
-<span class="sig-prename descclassname"><span class="pre">measpy.pico.</span></span><span class="sig-name descname"><span class="pre">detect_rising_pulses_threshold_ind</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ind0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous_data_point</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">range_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.pico.detect_rising_pulses_threshold_ind" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">measpy.pico.</span></span><span class="sig-name descname"><span class="pre">detect_rising_pulses_threshold_ind</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ind0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous_data_point</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.pico.detect_rising_pulses_threshold_ind" title="Link to this definition"></a></dt>
 <dd><p>Detect rising pulse using a threshold
 Parameters
 ———-
@@ -481,7 +481,7 @@ end_plot call update plot until dataqueues contain None
 ploting_duration estimate time of update_plot execution to check for buffer overflow risk</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.pico.inline_plotting.end_plot">
-<span class="sig-name descname"><span class="pre">end_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataqueues</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.pico.inline_plotting.end_plot" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">end_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataqueue</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.pico.inline_plotting.end_plot" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
@@ -491,7 +491,7 @@ ploting_duration estimate time of update_plot execution to check for buffer over
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.pico.inline_plotting.update_plot">
-<span class="sig-name descname"><span class="pre">update_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataqueues</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">updatetime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.pico.inline_plotting.update_plot" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">update_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataqueue</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">updatetime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.pico.inline_plotting.update_plot" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -508,7 +508,7 @@ ploting_duration estimate time of update_plot execution to check for buffer over
 
 <dl class="py function">
 <dt class="sig sig-object py" id="measpy.pico.ps2000_plot">
-<span class="sig-prename descclassname"><span class="pre">measpy.pico.</span></span><span class="sig-name descname"><span class="pre">ps2000_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotbuffersize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">updatetime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.pico.ps2000_plot" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">measpy.pico.</span></span><span class="sig-name descname"><span class="pre">ps2000_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotbuffersize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">updatetime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chan_to_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'A'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.pico.ps2000_plot" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
