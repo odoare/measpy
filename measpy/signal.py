@@ -12,8 +12,9 @@
 # https://github.com/odoare/measpy
 
 
-from warnings import WarningMessage
+# from warnings import WarningMessage
 import numpy as np
+from pathlib import Path
 import matplotlib.pyplot as plt
 from numpy.core.fromnumeric import argmax
 from scipy.signal import (welch,
@@ -36,6 +37,7 @@ import copy
 import numbers
 from contextlib import ExitStack
 import h5py
+from functools import partial
 
 import unyt
 from unyt import Unit
@@ -51,7 +53,8 @@ from ._tools import (add_step,
                            saw,
                            tri,
                            unwrap_around_index,
-                           get_index)
+                           get_index,
+                           h5file_write_from_queue)
 
 ##################
 ##              ##
@@ -1046,15 +1049,33 @@ class Signal:
         return out
 
     @classmethod
-    def from_hdf5(cls, file):
+    def from_hdf5(cls, hdf5_object, chan = 1):
+        """
+        Load Signal from hdf5 object (file or dataset)
+        Parameters
+        ----------
+        hdf5_object : str,Path or opened h5file handle
+            File or dataset from opened hdf5 file
+        chan : int, optional
+            channel if there are more than one dataset in the file. The default is 1.
+
+        Returns
+        -------
+        out : Signal
+
+        """
         out = cls()
         with ExitStack() as stack:
-            if isinstance(file, str):
-                H5file = stack.enter_context(h5py.File(file, "x"))
+            if isinstance(hdf5_object, (str,Path)):
+                H5file = stack.enter_context(h5py.File(hdf5_object, "r"))
+                datasets = [v for v in H5file.values()]
+                if len(datasets)>1 and chan == 1:
+                    print(f"Warning there is more than one dataset in current file : {list(H5file.keys())}")
+                dataset = datasets[chan-1]
             else:
-                H5file = file
+                dataset = hdf5_object
 
-            for key,val in H5file.attrs.items():
+            for key,val in dataset.attrs.items():
                 if key == '_unit' or key == 'unit':
                     out.__dict__[key] = Unit(val)
                 else:
@@ -1062,7 +1083,7 @@ class Signal:
                         out.__dict__[key] = float(val)
                     except:
                         out.__dict__[key] = val
-            out._rawvalues = np.asarray(H5file)
+            out._rawvalues = np.asarray(dataset)
         return out
 
     #######################################################################
@@ -1646,38 +1667,50 @@ class Signal:
                 writer.writerow(['First column is time in seconds'])
             writer.writerows(outdata)
 
-    def to_hdf5(self, file, dataset_name, datatype):
+    def to_hdf5(self, hdf5_object, dataset_name, datatype):
         """
         Save Signal in hdf5 file
         Parameters
         ----------
-        filename : str or opened h5file handle
-            hdf5 file.
+        hdf5_object : str,Path or opened h5file handle
+            File.
         dataset_name : str
             Name of the hdf5 dataser.
         datatype : str
             Data format (Numpy dtype).
 
         """
+        #if file is str or path open it in with statement, else file is a opened h5file handle already in with statement
         with ExitStack() as stack:
-            if isinstance(file, str):
-                H5file = stack.enter_context(h5py.File(file, "x"))
+            if isinstance(hdf5_object, (str,Path)):
+                H5file = stack.enter_context(h5py.File(hdf5_object, "x"))
             else:
-                H5file = file
+                H5file = hdf5_object
 
             if self._rawvalues.size>0:
                 dataset = H5file.create_dataset(dataset_name, data = self._rawvalues)
                 dataset.attrs["datatype"] = self._rawvalues.dtype.__str__()
             elif datatype is not None:
                 print(f"There is no data, creating empty dataset {dataset_name} wity type = {datatype}")
+                itemsize = np.dtype(datatype).itemsize
+                #Chunck memory size should be between 10KiB and 1MiB, (bytes power of two 14 to 19 )
+                power_two_chunck_size = 17
+                chunksize = 2**(power_two_chunck_size-(itemsize-1).bit_length())
                 dataset = H5file.create_dataset(
-                    dataset_name, (0,), maxshape=(None,), dtype=datatype, chunks=(512,)
+                    dataset_name, (0,), maxshape=(None,), dtype=datatype, chunks=(chunksize,)
                 )
-                # dataset.attrs["datatype"] = datatype.dtype.__str__()
+                dataset.attrs["datatype"] = np.dtype(datatype).__str__()
+                # Create the method that can fill this dataset from queue.
+                self.h5save_data = partial(
+                    h5file_write_from_queue,
+                    filename=H5file.filename,
+                    dataset_name=dataset_name,
+                    )
+                print("To save data from a Queue.queue use the method h5save_data")
             else:
                 raise TypeError("Cannot create dataset if type not specified")
             for key, value in self.__dict__.items():
-                if key != '_rawvalues':
+                if key not in ['_rawvalues',"h5save_data"]:
                     try:
                         Val = value.__str__()
                     except AttributeError:

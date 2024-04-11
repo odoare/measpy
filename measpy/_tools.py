@@ -10,6 +10,7 @@
 
 import csv
 import numpy as np
+import h5py
 
 def csv_to_dict(filename):
     """ Conversion from a CSV (produced by the class Measurement) to a dict
@@ -143,6 +144,107 @@ def get_index(array,value):
     Get the index of the nearest value
     """
     return np.argmin((array-value)**2)
+
+def h5file_write_from_queue(queue, filename, dataset_name):
+    """
+    Write data received from a queue in HDF5 dataset
+
+    Parameters
+    ----------
+    queue : queue.Queue
+        A Queue which contains lists of data.
+    filename : str,Path
+        Path of the hdf5 file, it should already exist with an empty extensible dataset.
+    dataset_name : str
+        Name of the hdf5 dataset where data will be written.
+
+    Returns
+    -------
+    None.
+
+    """
+    print(f"Starting saving data in {filename}/{dataset_name}")
+    with h5py.File(filename, "r+") as H5file:
+        item = np.asarray(queue.get())
+        #Get dimension of item for multichannel case
+        Nchannel, getsize = getdimension(item)
+        dataset = H5file[dataset_name]
+        #Get the chunksize and datatype of the dataset
+        chunksize = dataset.chunks[0]
+        datatype = dataset.dtype
+        #Define a buffer with chuncksize and datatype
+        writebuffer = np.empty((chunksize, Nchannel),dtype=datatype).squeeze()
+        Npoints = getsize(item)
+        buffer_position = _add_item(writebuffer, 0, item, Npoints, dataset, chunksize)
+        while (item := queue.get(timeout=5)) is not None:
+            item = np.asarray(item)
+            Npoints = getsize(item)
+            buffer_position = _add_item(
+                writebuffer, buffer_position, item, Npoints, dataset, chunksize
+            )
+        if buffer_position > 0:
+            _add_N_data(dataset, writebuffer, buffer_position)
+
+
+def _add_item(writebuffer, buffer_position, item, Npoints, dataset, chunksize):
+    """
+    Add new item into buffer and into dataset if it fill up the buffer
+    Parameters
+    ----------
+    writebuffer : np.array
+        Data buffer.
+    buffer_position : int
+        Current position in the buffer (last written data+1).
+    item : np.array
+        New data.
+    Npoints : int
+        Number of new data point.
+    dataset : HDF5 dataset
+        Where to write data.
+    chunksize : int
+        Size of the dataset chunk.
+
+    Returns
+    -------
+    Nrest : int
+        New position in the buffer (last written data+1).
+
+    """
+    #Calcul the number of chunk to write and the new position in buffer
+    Nchuncktowrite, Nrest = divmod((buffer_position + Npoints), chunksize)
+    old_buffer_position = buffer_position
+    #Loop over the number of new chunk in item
+    for i in range(Nchuncktowrite):
+        #Write item data into buffer until it is full
+        writebuffer[buffer_position:] = item[
+            ...,
+            i * chunksize
+            - np.sign(i) * old_buffer_position : (i + 1) * chunksize
+            - old_buffer_position,
+        ].transpose()
+        #Write the whole buffer into dataset
+        _add_N_data(dataset, writebuffer, chunksize)
+        buffer_position = 0
+    if Nrest:
+        #Write Nrest data into the buffer
+        writebuffer[buffer_position:Nrest] = item[
+            ..., (buffer_position - Nrest) :
+        ].transpose()
+    return Nrest
+
+
+def _add_N_data(dataset, data, N):
+    #Write N data point into the dataset
+    chunk_start = dataset.shape[0]
+    dataset.resize(chunk_start + N, axis=0)
+    dataset[chunk_start:] = data[:N]
+
+
+def getdimension(item):
+    if item.ndim < 2:
+        return 1, np.size
+    else:
+        return item.shape[0], lambda item: item.shape[1]
 
 # def _tfe_farina(y, fs, freqs):
 #     """ Transfer function estimate
