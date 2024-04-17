@@ -1074,16 +1074,28 @@ class Signal:
                 dataset = datasets[chan-1]
             else:
                 dataset = hdf5_object
-
-            for key,val in dataset.attrs.items():
-                if key == '_unit' or key == 'unit':
-                    out.__dict__[key] = Unit(val)
-                else:
-                    try:
-                        out.__dict__[key] = float(val)
-                    except:
-                        out.__dict__[key] = val
-            out._rawvalues = np.asarray(dataset)
+            data = np.asarray(dataset)
+            if data.ndim>1:
+                idx = list(dataset.attrs["channel"]).index(chan)
+                for key,val in dataset.attrs.items():
+                    if key == '_unit' or key == 'unit':
+                        out.__dict__[key] = Unit(val[idx])
+                    else:
+                        try:
+                            out.__dict__[key] = float(val[idx])
+                        except:
+                            out.__dict__[key] = val[idx]
+                out._rawvalues = data[:,idx]
+            else:
+                for key,val in dataset.attrs.items():
+                    if key == '_unit' or key == 'unit':
+                        out.__dict__[key] = Unit(val)
+                    else:
+                        try:
+                            out.__dict__[key] = float(val)
+                        except:
+                            out.__dict__[key] = val
+                out._rawvalues = data
         return out
 
     #######################################################################
@@ -1706,7 +1718,7 @@ class Signal:
                     filename=H5file.filename,
                     dataset_name=dataset_name,
                     )
-                print("To save data from a Queue.queue use the method h5save_data")
+                # print("To save data from a Queue.queue use the method h5save_data")
             else:
                 raise TypeError("Cannot create dataset if type not specified")
             for key, value in self.__dict__.items():

@@ -35,7 +35,7 @@ from matplotlib.widgets import Button
 
 # plt.style.use('seaborn-v0_8')
 
-maxtimeout = 5
+maxtimeout = 10
 
 PS2000_channel = {"A": 1, "B": 2, 1: "A", 2: "B"}
 
@@ -479,7 +479,7 @@ def _ps2000_run_measurement_threaded(
     enabledA, couplingA, rangeA = setup_channel(1)
     enabledB, couplingB, rangeB = setup_channel(2)
 
-    def setup_save_hdf5(chan_index, pico_range):
+    def setup_save_hdf5(chan_index):
         """
         Setup to save directly on hdf5 file
 
@@ -487,8 +487,6 @@ def _ps2000_run_measurement_threaded(
         ----------
         chan_index : int
             Index of he channel (1or 2).
-        pico_range : int
-            Picoscope voltage range (mapped from PS2000_VOLTAGE_RANGE).
 
         Returns
         -------
@@ -498,12 +496,15 @@ def _ps2000_run_measurement_threaded(
             Preprocessing method to be sent in thread.
 
         """
-        if (ind := findindex(M.in_map, chan_index)) != None:
-            queue = Queue()
+        queue = Queue()
+        if isinstance(chan_index,list):
+            method = M.h5save_data
+            Process = Thread(target=method,args=(queue,))
+        elif (ind := findindex(M.in_map, chan_index)) != None:
             Sig = M.in_sig[ind]
             method = Sig.h5save_data
             Process = Thread(target=method,args=(queue,))
-            return queue, Process
+        return queue, Process
 
     def setup_preprocess(chan_index, pico_range, chan_plot=False):
         """
@@ -512,7 +513,7 @@ def _ps2000_run_measurement_threaded(
         Parameters
         ----------
         chan_index : int
-            Index of he channel (1 or 2).
+            Index of the channel (1 or 2).
         pico_range : int
             Picoscope voltage range (mapped from PS2000_VOLTAGE_RANGE).
         chan_plot : bool, optional
@@ -643,15 +644,13 @@ def _ps2000_run_measurement_threaded(
         M.to_hdf5(filename)
         if not multichannel:
             if enabledA:
-                queueA, ProcessA = setup_save_hdf5(1, rangeA)
                 if enabledB:
-                    #should be multichannel in this case, cannot open same file with 2 threads
-                    print("Warning save 2 channel at once not implemented, only channel A will be saved")
+                    queueAB, ProcessAB = setup_save_hdf5([1,2])
+                    multichannel=True
+                else:
+                    queueA, ProcessA = setup_save_hdf5(1)
             elif enabledB:
-                queueB, ProcessB = setup_save_hdf5(2, rangeB)
-        else:
-            raise NotImplementedError
-            queueAB, ProcessAB = setup_save_hdf5([1,2], [rangeA,rangeB])
+                queueB, ProcessB = setup_save_hdf5(2)
     elif not multichannel:
         if enabledA:
             if chan_to_plot == "A":
@@ -669,16 +668,15 @@ def _ps2000_run_measurement_threaded(
             else:
                 queueB, _, ProcessB, retB = setup_preprocess(2, rangeB, False)
     else:
-        raise NotImplementedError
-        queueAB, queue_plotAB, ProcessAB, retAB = setup_preprocess(
-            [1,2], [rangeA,rangeB], chan_plot=False
-        )
+        raise NotImplementedError #Need change to allow preprocess with multichannel
+        # queueAB, queue_plot, ProcessAB, retAB = setup_preprocessAB(
+        #     [1,2], [rangeA,rangeB], chan
+        # )
 
     ##get_overview_buffers_factory
     if enabledA:
         if enabledB:
             if multichannel:
-                raise NotImplementedError
                 def get_overview_buffers(
                     buffers, _overflow, _triggered_at, _triggered, _auto_stop, n_values
                 ):
@@ -770,11 +768,17 @@ def _ps2000_run_measurement_threaded(
         M.time = now.strftime("%H:%M:%S")
 
         ##start preprocess threads
-        if enabledA:
-            ProcessA.start()
+        if multichannel:
+            ProcessAB.start()
+            if not savehdf5:
+                ProcessA.start()
+                ProcessB.start()
+        else:
+            if enabledA:
+                ProcessA.start()
 
-        if enabledB:
-            ProcessB.start()
+            if enabledB:
+                ProcessB.start()
 
         print("Start")
         start_time = time.time_ns()
@@ -798,20 +802,33 @@ def _ps2000_run_measurement_threaded(
             print("Buffer have overrun")
 
         ##Put end flag in queues
-        if enabledA:
-            queueA.put(None)
-        if enabledB:
-            queueB.put(None)
+        if multichannel:
+            queueAB.put(None)
+        else:
+            if enabledA:
+                queueA.put(None)
+            if enabledB:
+                queueB.put(None)
 
         ##Wait for all thread to finish and save data
-        if enabledA:
-            ProcessA.join()
+        if multichannel:
+            ProcessAB.join()
             if not savehdf5:
+                ProcessA.join()
                 save(M, 1, retA)
-        if enabledB:
-            ProcessB.join()
-            if not savehdf5:
+                ProcessB.join()
                 save(M, 2, retB)
+        else:
+            if enabledA:
+                ProcessA.join()
+                if not savehdf5:
+                    save(M, 1, retA)
+
+            if enabledB:
+                ProcessB.join()
+                if not savehdf5:
+                    save(M, 2, retB)
+
         print("Preprocess data done")
 
         ## Continue plotting until last data
