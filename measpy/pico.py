@@ -54,7 +54,7 @@ class inline_plotting:
         self.updatetime = updatetime
         self.fs = fs
         self.timeinterval = 1/fs
-        self.timeout = min(timeout,0.5*updatetime)
+        self.timeout = min(timeout,0.1 * updatetime)
         self.stop = False
 
         def fstop(event):
@@ -299,7 +299,7 @@ def ps2000_run_measurement(M):
     return _ps2000_run_measurement_threaded(M, adc_to_mv, mv_to_raw, None)
 
 
-def ps2000_plot(M, plotbuffersize=2000, updatetime=0.5, chan_to_plot="A"):
+def ps2000_plot(M, plotbuffersize=2000, updatetime=0.1, chan_to_plot="A"):
     plotting = partial(inline_plotting, plotbuffersize=plotbuffersize, updatetime=updatetime)
     return _ps2000_run_measurement_threaded(
         M,
@@ -782,14 +782,15 @@ def _ps2000_run_measurement_threaded(
         start_time = time.time_ns()
 
         # loop until wanted duration + maximum time of one loop without buffer overrun
-        margin = min(int(max_loop_time*1e9),0.1)
         if plotting is not None:
-            while (t:=time.time_ns() - start_time) < duree_ns + margin and not plot.stop:
+            margin = max(min(int(max_loop_time*1e9),duree_ns * 0.1), plot.ploting_duration*(1.1))
+            while time.time_ns() - start_time < duree_ns + margin and not plot.stop:
                 ps2000.ps2000_get_streaming_last_values(device.handle, callback)
                 plot.update_plot(queue_plot)
 
         else:
-            while time.time_ns() - start_time < duree_ns  + int(max_loop_time*1e9):
+            margin = min(int(max_loop_time*1e9), duree_ns * 0.1)
+            while time.time_ns() - start_time < duree_ns  + margin:
                 ps2000.ps2000_get_streaming_last_values(device.handle, callback)
 
         print("Measurment done")
