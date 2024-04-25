@@ -32,7 +32,7 @@ setup(
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
     packages=find_packages(),
-    install_requires=['numpy','matplotlib','unyt','csaps'],
+    install_requires=['numpy','matplotlib','unyt','csaps','h5py'],
     keywords=['Python', 'Measurements', 'Data acquisition', 'Signal processing'],
     classifiers=[
         "Development Status :: 3 - Alpha",
