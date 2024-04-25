@@ -106,11 +106,163 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="measpy.html">measpy package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="measpy.html#measpy-audio-module">measpy.audio module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="measpy.html#measpy-measurement-module">measpy.measurement module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="measpy.html#measpy-ni-module">measpy.ni module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="measpy.html#measpy-pico-module">measpy.pico module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="measpy.html#measpy-signal-module">measpy.signal module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="measpy.html#module-measpy.audio">measpy.audio module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="measpy.html#measpy.audio.audio_get_devices"><code class="docutils literal notranslate"><span class="pre">audio_get_devices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="measpy.html#measpy.audio.audio_run_measurement"><code class="docutils literal notranslate"><span class="pre">audio_run_measurement()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="measpy.html#measpy.audio.audio_run_synced_measurement"><code class="docutils literal notranslate"><span class="pre">audio_run_synced_measurement()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="measpy.html#module-measpy.measurement">measpy.measurement module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="measpy.html#measpy.measurement.Measurement"><code class="docutils literal notranslate"><span class="pre">Measurement</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.measurement.Measurement.from_dir"><code class="docutils literal notranslate"><span class="pre">Measurement.from_dir()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.measurement.Measurement.from_hdf5"><code class="docutils literal notranslate"><span class="pre">Measurement.from_hdf5()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.measurement.Measurement.sync_prepare"><code class="docutils literal notranslate"><span class="pre">Measurement.sync_prepare()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.measurement.Measurement.sync_render"><code class="docutils literal notranslate"><span class="pre">Measurement.sync_render()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.measurement.Measurement.to_dir"><code class="docutils literal notranslate"><span class="pre">Measurement.to_dir()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.measurement.Measurement.to_hdf5"><code class="docutils literal notranslate"><span class="pre">Measurement.to_hdf5()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="measpy.html#module-measpy.ni">measpy.ni module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="measpy.html#measpy.ni.ni_get_devices"><code class="docutils literal notranslate"><span class="pre">ni_get_devices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="measpy.html#measpy.ni.ni_run_measurement"><code class="docutils literal notranslate"><span class="pre">ni_run_measurement()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="measpy.html#measpy.ni.ni_run_synced_measurement"><code class="docutils literal notranslate"><span class="pre">ni_run_synced_measurement()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="measpy.html#module-measpy.pico">measpy.pico module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="measpy.html#measpy.pico.adc_to_mv"><code class="docutils literal notranslate"><span class="pre">adc_to_mv()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="measpy.html#measpy.pico.detect_rising_pulses_grad_ind"><code class="docutils literal notranslate"><span class="pre">detect_rising_pulses_grad_ind()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="measpy.html#measpy.pico.detect_rising_pulses_threshold_ind"><code class="docutils literal notranslate"><span class="pre">detect_rising_pulses_threshold_ind()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="measpy.html#measpy.pico.findindex"><code class="docutils literal notranslate"><span class="pre">findindex()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="measpy.html#measpy.pico.inline_plotting"><code class="docutils literal notranslate"><span class="pre">inline_plotting</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.pico.inline_plotting.end_plot"><code class="docutils literal notranslate"><span class="pre">inline_plotting.end_plot()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.pico.inline_plotting.ploting_duration"><code class="docutils literal notranslate"><span class="pre">inline_plotting.ploting_duration</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.pico.inline_plotting.update_plot"><code class="docutils literal notranslate"><span class="pre">inline_plotting.update_plot()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="measpy.html#measpy.pico.mv_to_adc"><code class="docutils literal notranslate"><span class="pre">mv_to_adc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="measpy.html#measpy.pico.mv_to_raw"><code class="docutils literal notranslate"><span class="pre">mv_to_raw()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="measpy.html#measpy.pico.ps2000_hdf5"><code class="docutils literal notranslate"><span class="pre">ps2000_hdf5()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="measpy.html#measpy.pico.ps2000_plot"><code class="docutils literal notranslate"><span class="pre">ps2000_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="measpy.html#measpy.pico.ps2000_pulse_detection"><code class="docutils literal notranslate"><span class="pre">ps2000_pulse_detection()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="measpy.html#measpy.pico.ps2000_run_measurement"><code class="docutils literal notranslate"><span class="pre">ps2000_run_measurement()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="measpy.html#measpy.pico.ps4000_plot"><code class="docutils literal notranslate"><span class="pre">ps4000_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="measpy.html#measpy.pico.ps4000_run_measurement"><code class="docutils literal notranslate"><span class="pre">ps4000_run_measurement()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="measpy.html#measpy.pico.rising_pulse_to_raw"><code class="docutils literal notranslate"><span class="pre">rising_pulse_to_raw()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="measpy.html#module-measpy.signal">measpy.signal module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="measpy.html#measpy.signal.Signal"><code class="docutils literal notranslate"><span class="pre">Signal</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.abs"><code class="docutils literal notranslate"><span class="pre">Signal.abs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.add_silence"><code class="docutils literal notranslate"><span class="pre">Signal.add_silence()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.angle"><code class="docutils literal notranslate"><span class="pre">Signal.angle()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.as_raw"><code class="docutils literal notranslate"><span class="pre">Signal.as_raw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.as_volts"><code class="docutils literal notranslate"><span class="pre">Signal.as_volts()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.cal"><code class="docutils literal notranslate"><span class="pre">Signal.cal</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.coh"><code class="docutils literal notranslate"><span class="pre">Signal.coh()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.convolve"><code class="docutils literal notranslate"><span class="pre">Signal.convolve()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.corr"><code class="docutils literal notranslate"><span class="pre">Signal.corr()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.cut"><code class="docutils literal notranslate"><span class="pre">Signal.cut()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.dB"><code class="docutils literal notranslate"><span class="pre">Signal.dB()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.dB_SPL"><code class="docutils literal notranslate"><span class="pre">Signal.dB_SPL()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.dB_SVL"><code class="docutils literal notranslate"><span class="pre">Signal.dB_SVL()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.dbfs"><code class="docutils literal notranslate"><span class="pre">Signal.dbfs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.delay"><code class="docutils literal notranslate"><span class="pre">Signal.delay()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.diff"><code class="docutils literal notranslate"><span class="pre">Signal.diff()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.dur"><code class="docutils literal notranslate"><span class="pre">Signal.dur</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.fade"><code class="docutils literal notranslate"><span class="pre">Signal.fade()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.fft"><code class="docutils literal notranslate"><span class="pre">Signal.fft()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.from_csvwav"><code class="docutils literal notranslate"><span class="pre">Signal.from_csvwav()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.from_hdf5"><code class="docutils literal notranslate"><span class="pre">Signal.from_hdf5()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.from_wav"><code class="docutils literal notranslate"><span class="pre">Signal.from_wav()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.harmonic_disto"><code class="docutils literal notranslate"><span class="pre">Signal.harmonic_disto()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.hilbert"><code class="docutils literal notranslate"><span class="pre">Signal.hilbert()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.hilbert_ana"><code class="docutils literal notranslate"><span class="pre">Signal.hilbert_ana()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.iir"><code class="docutils literal notranslate"><span class="pre">Signal.iir()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.imag"><code class="docutils literal notranslate"><span class="pre">Signal.imag()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.invcal"><code class="docutils literal notranslate"><span class="pre">Signal.invcal</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.length"><code class="docutils literal notranslate"><span class="pre">Signal.length</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.log_sweep"><code class="docutils literal notranslate"><span class="pre">Signal.log_sweep()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.max"><code class="docutils literal notranslate"><span class="pre">Signal.max</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.mean"><code class="docutils literal notranslate"><span class="pre">Signal.mean</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.min"><code class="docutils literal notranslate"><span class="pre">Signal.min</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.noise"><code class="docutils literal notranslate"><span class="pre">Signal.noise()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.normalize"><code class="docutils literal notranslate"><span class="pre">Signal.normalize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.plot"><code class="docutils literal notranslate"><span class="pre">Signal.plot()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.psd"><code class="docutils literal notranslate"><span class="pre">Signal.psd()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.raw"><code class="docutils literal notranslate"><span class="pre">Signal.raw</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.real"><code class="docutils literal notranslate"><span class="pre">Signal.real()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.resample"><code class="docutils literal notranslate"><span class="pre">Signal.resample()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.rfft"><code class="docutils literal notranslate"><span class="pre">Signal.rfft()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.rms"><code class="docutils literal notranslate"><span class="pre">Signal.rms</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.rms_smooth"><code class="docutils literal notranslate"><span class="pre">Signal.rms_smooth()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.saw"><code class="docutils literal notranslate"><span class="pre">Signal.saw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.similar"><code class="docutils literal notranslate"><span class="pre">Signal.similar()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.sine"><code class="docutils literal notranslate"><span class="pre">Signal.sine()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.smooth"><code class="docutils literal notranslate"><span class="pre">Signal.smooth()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.spectrogram"><code class="docutils literal notranslate"><span class="pre">Signal.spectrogram()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.t0"><code class="docutils literal notranslate"><span class="pre">Signal.t0</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.tfe_farina"><code class="docutils literal notranslate"><span class="pre">Signal.tfe_farina()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.tfe_welch"><code class="docutils literal notranslate"><span class="pre">Signal.tfe_welch()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.time"><code class="docutils literal notranslate"><span class="pre">Signal.time</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.timelag"><code class="docutils literal notranslate"><span class="pre">Signal.timelag()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.tmax"><code class="docutils literal notranslate"><span class="pre">Signal.tmax</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.to_csv"><code class="docutils literal notranslate"><span class="pre">Signal.to_csv()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.to_csvtxt"><code class="docutils literal notranslate"><span class="pre">Signal.to_csvtxt()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.to_csvwav"><code class="docutils literal notranslate"><span class="pre">Signal.to_csvwav()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.to_hdf5"><code class="docutils literal notranslate"><span class="pre">Signal.to_hdf5()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.tri"><code class="docutils literal notranslate"><span class="pre">Signal.tri()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.unit"><code class="docutils literal notranslate"><span class="pre">Signal.unit</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.unit_to"><code class="docutils literal notranslate"><span class="pre">Signal.unit_to()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.unit_to_std"><code class="docutils literal notranslate"><span class="pre">Signal.unit_to_std()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.values"><code class="docutils literal notranslate"><span class="pre">Signal.values</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.volts"><code class="docutils literal notranslate"><span class="pre">Signal.volts</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.window"><code class="docutils literal notranslate"><span class="pre">Signal.window()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="measpy.html#measpy.signal.Spectral"><code class="docutils literal notranslate"><span class="pre">Spectral</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Spectral.angle"><code class="docutils literal notranslate"><span class="pre">Spectral.angle()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Spectral.apply_dBA"><code class="docutils literal notranslate"><span class="pre">Spectral.apply_dBA()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Spectral.apply_dBC"><code class="docutils literal notranslate"><span class="pre">Spectral.apply_dBC()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Spectral.apply_weighting"><code class="docutils literal notranslate"><span class="pre">Spectral.apply_weighting()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Spectral.dBV"><code class="docutils literal notranslate"><span class="pre">Spectral.dBV()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Spectral.dB_SPL"><code class="docutils literal notranslate"><span class="pre">Spectral.dB_SPL()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Spectral.dB_SVL"><code class="docutils literal notranslate"><span class="pre">Spectral.dB_SVL()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Spectral.dBu"><code class="docutils literal notranslate"><span class="pre">Spectral.dBu()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Spectral.diff"><code class="docutils literal notranslate"><span class="pre">Spectral.diff()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Spectral.dur"><code class="docutils literal notranslate"><span class="pre">Spectral.dur</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Spectral.filterout"><code class="docutils literal notranslate"><span class="pre">Spectral.filterout()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Spectral.freqs"><code class="docutils literal notranslate"><span class="pre">Spectral.freqs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Spectral.group_delay"><code class="docutils literal notranslate"><span class="pre">Spectral.group_delay()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Spectral.ifft"><code class="docutils literal notranslate"><span class="pre">Spectral.ifft()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Spectral.imag"><code class="docutils literal notranslate"><span class="pre">Spectral.imag()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Spectral.irfft"><code class="docutils literal notranslate"><span class="pre">Spectral.irfft()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Spectral.length"><code class="docutils literal notranslate"><span class="pre">Spectral.length</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Spectral.nth_oct_smooth"><code class="docutils literal notranslate"><span class="pre">Spectral.nth_oct_smooth()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Spectral.nth_oct_smooth_complex"><code class="docutils literal notranslate"><span class="pre">Spectral.nth_oct_smooth_complex()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Spectral.nth_oct_smooth_to_weight"><code class="docutils literal notranslate"><span class="pre">Spectral.nth_oct_smooth_to_weight()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Spectral.nth_oct_smooth_to_weight_complex"><code class="docutils literal notranslate"><span class="pre">Spectral.nth_oct_smooth_to_weight_complex()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Spectral.plot"><code class="docutils literal notranslate"><span class="pre">Spectral.plot()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Spectral.real"><code class="docutils literal notranslate"><span class="pre">Spectral.real()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Spectral.sample_number"><code class="docutils literal notranslate"><span class="pre">Spectral.sample_number</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Spectral.similar"><code class="docutils literal notranslate"><span class="pre">Spectral.similar()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Spectral.tfe"><code class="docutils literal notranslate"><span class="pre">Spectral.tfe()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Spectral.unit"><code class="docutils literal notranslate"><span class="pre">Spectral.unit</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Spectral.unit_to"><code class="docutils literal notranslate"><span class="pre">Spectral.unit_to()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Spectral.values"><code class="docutils literal notranslate"><span class="pre">Spectral.values</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Spectral.values_at_freqs"><code class="docutils literal notranslate"><span class="pre">Spectral.values_at_freqs()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="measpy.html#measpy.signal.Weighting"><code class="docutils literal notranslate"><span class="pre">Weighting</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Weighting.acomplex"><code class="docutils literal notranslate"><span class="pre">Weighting.acomplex</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Weighting.adb"><code class="docutils literal notranslate"><span class="pre">Weighting.adb</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Weighting.from_csv"><code class="docutils literal notranslate"><span class="pre">Weighting.from_csv()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Weighting.to_csv"><code class="docutils literal notranslate"><span class="pre">Weighting.to_csv()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
