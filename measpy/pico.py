@@ -40,13 +40,13 @@ maxtimeout = 10
 PS2000_channel = {"A": 1, "B": 2, 1: "A", 2: "B"}
 
 class inline_plotting:
-    """
-    Plot data from a Queue.queue
-    init create the plot
-    update_plot update the plot buffer from new data in dataqueues and update the plot if enough data has been received
-    end_plot call update plot until dataqueues contain None
-    ploting_duration estimate time of update_plot execution to check for buffer overflow risk
-    """
+    # """
+    # Plot data from a Queue.queue
+    # init create the plot
+    # update_plot update the plot buffer from new data in dataqueues and update the plot if enough data has been received
+    # end_plot call update plot until dataqueues contain None
+    # ploting_duration estimate time of update_plot execution to check for buffer overflow risk
+    # """
 
     def __init__(self, fs, timeout, updatetime=0.1, plotbuffersize=2000):
         self.timesincelastupdate = 0.0
@@ -186,27 +186,27 @@ def findindex(l, e):
 
 
 def detect_rising_pulses_grad_ind(values, ind0, previous_data_points, **kwargs):
-    """
-    Detect rising pulse with signal.find_peaks on gradient of the signal
+    # """
+    # Detect rising pulse with signal.find_peaks on gradient of the signal
 
-    Parameters
-    ----------
-    values : List
-        Data.
-    ind0 : int
-        indice of the first data point.
-    previous_data_points : number
-        Value of the last data point (indice = ind0-1).
-        useful to not lose peak if it is at ind0 (work not very well)
-    range_ : int
-        picoscope range.
+    # Parameters
+    # ----------
+    # values : List
+    #     Data.
+    # ind0 : int
+    #     indice of the first data point.
+    # previous_data_points : number
+    #     Value of the last data point (indice = ind0-1).
+    #     useful to not lose peak if it is at ind0 (work not very well)
+    # range_ : int
+    #     picoscope range.
 
-    Returns
-    -------
-    List
-        List of indices where a rising pulse is detected.
+    # Returns
+    # -------
+    # List
+    #     List of indices where a rising pulse is detected.
 
-    """
+    # """
     try:
         N = len(previous_data_points)
         previous_data_points.extend(values)
@@ -229,28 +229,28 @@ def detect_rising_pulses_grad_ind(values, ind0, previous_data_points, **kwargs):
 def detect_rising_pulses_threshold_ind(
     values, ind0, previous_data_point, threshold, **kwargs
 ):
-    """
-    Detect rising pulse using a threshold
-    Parameters
-    ----------
-    values : List
-        Data.
-    ind0 : int
-        indice of the first data point.
-    previous_data_points : number
-        Value of the last data point (indice = ind0-1).
-        useful to not lose peak if it is at ind0
-    range_ : int
-        picoscope range.
-    threshold : int
-        threshold (in adc values).
+    # """
+    # Detect rising pulse using a threshold
+    # Parameters
+    # ----------
+    # values : List
+    #     Data.
+    # ind0 : int
+    #     indice of the first data point.
+    # previous_data_points : number
+    #     Value of the last data point (indice = ind0-1).
+    #     useful to not lose peak if it is at ind0
+    # range_ : int
+    #     picoscope range.
+    # threshold : int
+    #     threshold (in adc values).
 
-    Returns
-    -------
-    List
-        List of indices where a rising pulse is detected.
+    # Returns
+    # -------
+    # List
+    #     List of indices where a rising pulse is detected.
 
-    """
+    # """
     try:
         V = np.asarray([previous_data_point] + values)
         rising = np.flatnonzero((V[:-1] <= threshold) & (V[1:] > threshold))
@@ -311,10 +311,10 @@ def ps2000_plot(M, plotbuffersize=2000, updatetime=0.1, chan_to_plot="A"):
 
 
 def ps2000_pulse_detection(M):
-    """
-    To use threshold detection (more efficient), this function needs M to contain the property
-     in_threshold : a list of threshold for pulse height (in Volt) for each channel
-    """
+    # """
+    # To use threshold detection (more efficient), this function needs M to contain the property
+    #  in_threshold : a list of threshold for pulse height (in Volt) for each channel
+    # """
     if hasattr(M, "in_threshold") and M.in_threshold is not None:
         detect_rising_pulses = detect_rising_pulses_threshold_ind
         info = ", ".join([f"Threshold = {th} V for chan {PS2000_channel[chan]}" for chan,th in zip(M.in_map,M.in_threshold)])
@@ -344,15 +344,15 @@ def _ps2000_run_measurement_threaded(
     min_chunksize_processed=0,
     filename = None
 ):
-    """
-    This function needs M to contain the following properties:
-        - in_range : a list of strings specifying the voltage range.
-            Possible voltage ranges are "10MV", "20MV", "50MV", "100MV",
-            "200MV", "500MV", "1V", "2V", "5V", "10V", "20V", "50V", "100V"
-        - upsampling_factor : upsampling factor
-        - in_coupling : Coupling configuration of the channels.
-            Can be "ac" or "dc"
-    """
+    # """
+    # This function needs M to contain the following properties:
+    #     - in_range : a list of strings specifying the voltage range.
+    #         Possible voltage ranges are "10MV", "20MV", "50MV", "100MV",
+    #         "200MV", "500MV", "1V", "2V", "5V", "10V", "20V", "50V", "100V"
+    #     - upsampling_factor : upsampling factor
+    #     - in_coupling : Coupling configuration of the channels.
+    #         Can be "ac" or "dc"
+    # """
 
     savehdf5 = False
     if filename is not None:
@@ -479,22 +479,22 @@ def _ps2000_run_measurement_threaded(
     enabledB, couplingB, rangeB = setup_channel(2)
 
     def setup_save_hdf5(chan_index):
-        """
-        Setup to save directly on hdf5 file
+        # """
+        # Setup to save directly on hdf5 file
 
-        Parameters
-        ----------
-        chan_index : int
-            Index of he channel (1or 2).
+        # Parameters
+        # ----------
+        # chan_index : int
+        #     Index of he channel (1or 2).
 
-        Returns
-        -------
-        queue : queue.Queue
-            Queue where data are sent by get_overview_buffers.
-        Process : method
-            Preprocessing method to be sent in thread.
+        # Returns
+        # -------
+        # queue : queue.Queue
+        #     Queue where data are sent by get_overview_buffers.
+        # Process : method
+        #     Preprocessing method to be sent in thread.
 
-        """
+        # """
         queue = Queue()
         if isinstance(chan_index,list):
             method = M.h5save_data
@@ -506,30 +506,30 @@ def _ps2000_run_measurement_threaded(
         return queue, Process
 
     def setup_preprocess(chan_index, pico_range, chan_plot=False):
-        """
-        Define the method for preprocessing data in thread based on the method in arguments
+        # """
+        # Define the method for preprocessing data in thread based on the method in arguments
 
-        Parameters
-        ----------
-        chan_index : int
-            Index of the channel (1 or 2).
-        pico_range : int
-            Picoscope voltage range (mapped from PS2000_VOLTAGE_RANGE).
-        chan_plot : bool, optional
-            If True the data are send to another queue for plotting. The default is False.
+        # Parameters
+        # ----------
+        # chan_index : int
+        #     Index of the channel (1 or 2).
+        # pico_range : int
+        #     Picoscope voltage range (mapped from PS2000_VOLTAGE_RANGE).
+        # chan_plot : bool, optional
+        #     If True the data are send to another queue for plotting. The default is False.
 
-        Returns
-        -------
-        queue : queue.Queue
-            Queue where data are sent by get_overview_buffers.
-        queue_plot : queue.Queue
-            Queue for plotting.
-        Process : method
-            Preprocessing method to be sent in thread.
-        result : list
-            Data after preprocessing.
+        # Returns
+        # -------
+        # queue : queue.Queue
+        #     Queue where data are sent by get_overview_buffers.
+        # queue_plot : queue.Queue
+        #     Queue for plotting.
+        # Process : method
+        #     Preprocessing method to be sent in thread.
+        # result : list
+        #     Data after preprocessing.
 
-        """
+        # """
         if (ind := findindex(M.in_map, chan_index)) != None:
             result = []
             queue = Queue()
@@ -836,15 +836,15 @@ def _ps2000_run_measurement_threaded(
 
 
 def ps4000_plot(M,plotbuffersize=2000,updatetime=0.1):
-    """
-    This function needs M to contain the following properties:
-        - in_range : a list of strings specifying the voltage range.
-            Possible voltage ranges are "10MV", "20MV", "50MV", "100MV",
-            "200MV", "500MV", "1V", "2V", "5V", "10V", "20V", "50V", "100V"
-        - upsampling_factor : upsampling factor
-        - in_coupling : Coupling configuration of the channels.
-            Can be "ac" or "dc"
-    """
+    # """
+    # This function needs M to contain the following properties:
+    #     - in_range : a list of strings specifying the voltage range.
+    #         Possible voltage ranges are "10MV", "20MV", "50MV", "100MV",
+    #         "200MV", "500MV", "1V", "2V", "5V", "10V", "20V", "50V", "100V"
+    #     - upsampling_factor : upsampling factor
+    #     - in_coupling : Coupling configuration of the channels.
+    #         Can be "ac" or "dc"
+    # """
 
     import time
 
@@ -1143,15 +1143,15 @@ def ps4000_plot(M,plotbuffersize=2000,updatetime=0.1):
     
 
 def ps4000_run_measurement(M):
-    """
-    This function needs M to contain the following properties:
-        - in_range : a list of strings specifying the voltage range.
-            Possible voltage ranges are "10MV", "20MV", "50MV", "100MV",
-            "200MV", "500MV", "1V", "2V", "5V", "10V", "20V", "50V", "100V"
-        - upsampling_factor : upsampling factor
-        - in_coupling : Coupling configuration of the channels.
-            Can be "ac" or "dc"
-    """
+    # """
+    # This function needs M to contain the following properties:
+    #     - in_range : a list of strings specifying the voltage range.
+    #         Possible voltage ranges are "10MV", "20MV", "50MV", "100MV",
+    #         "200MV", "500MV", "1V", "2V", "5V", "10V", "20V", "50V", "100V"
+    #     - upsampling_factor : upsampling factor
+    #     - in_coupling : Coupling configuration of the channels.
+    #         Can be "ac" or "dc"
+    # """
 
     import time
     global nextSample, autoStopOuter, wasCalledBack
