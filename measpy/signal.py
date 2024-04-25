@@ -1050,20 +1050,20 @@ class Signal:
 
     @classmethod
     def from_hdf5(cls, hdf5_object, chan = 1):
-        """
-        Load Signal from hdf5 object (file or dataset)
-        Parameters
-        ----------
-        hdf5_object : str,Path or opened h5file handle
-            File or dataset from opened hdf5 file
-        chan : int, optional
-            channel if there are more than one dataset in the file. The default is 1.
+        # """
+        # Load Signal from hdf5 object (file or dataset)
+        # Parameters
+        # ----------
+        # hdf5_object : str,Path or opened h5file handle
+        #     File or dataset from opened hdf5 file
+        # chan : int, optional
+        #     channel if there are more than one dataset in the file. The default is 1.
 
-        Returns
-        -------
-        out : Signal
+        # Returns
+        # -------
+        # out : Signal
 
-        """
+        # """
         out = cls()
         with ExitStack() as stack:
             if isinstance(hdf5_object, (str,Path)):
@@ -1680,18 +1680,18 @@ class Signal:
             writer.writerows(outdata)
 
     def to_hdf5(self, hdf5_object, dataset_name, datatype):
-        """
-        Save Signal in hdf5 file
-        Parameters
-        ----------
-        hdf5_object : str,Path or opened h5file handle
-            File.
-        dataset_name : str
-            Name of the hdf5 dataser.
-        datatype : str
-            Data format (Numpy dtype).
+        # """
+        # Save Signal in hdf5 file
+        # Parameters
+        # ----------
+        # hdf5_object : str,Path or opened h5file handle
+        #     File.
+        # dataset_name : str
+        #     Name of the hdf5 dataser.
+        # datatype : str
+        #     Data format (Numpy dtype).
 
-        """
+        # """
         #if file is str or path open it in with statement, else file is a opened h5file handle already in with statement
         with ExitStack() as stack:
             if isinstance(hdf5_object, (str,Path)):
