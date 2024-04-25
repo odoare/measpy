@@ -434,59 +434,12 @@ All the acquired signals are then re-synced from the time lag value.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="measpy.pico.detect_rising_pulses_grad_ind">
 <span class="sig-prename descclassname"><span class="pre">measpy.pico.</span></span><span class="sig-name descname"><span class="pre">detect_rising_pulses_grad_ind</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ind0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous_data_points</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.pico.detect_rising_pulses_grad_ind" title="Link to this definition"></a></dt>
-<dd><p>Detect rising pulse with signal.find_peaks on gradient of the signal</p>
-<section id="id1">
-<h3>Parameters<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
-<dl class="simple">
-<dt>values<span class="classifier">List</span></dt><dd><p>Data.</p>
-</dd>
-<dt>ind0<span class="classifier">int</span></dt><dd><p>indice of the first data point.</p>
-</dd>
-<dt>previous_data_points<span class="classifier">number</span></dt><dd><p>Value of the last data point (indice = ind0-1).
-useful to not lose peak if it is at ind0 (work not very well)</p>
-</dd>
-<dt><a href="#id4"><span class="problematic" id="id5">range_</span></a><span class="classifier">int</span></dt><dd><p>picoscope range.</p>
-</dd>
-</dl>
-</section>
-<section id="returns">
-<h3>Returns<a class="headerlink" href="#returns" title="Link to this heading"></a></h3>
-<dl class="simple">
-<dt>List</dt><dd><p>List of indices where a rising pulse is detected.</p>
-</dd>
-</dl>
-</section>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="measpy.pico.detect_rising_pulses_threshold_ind">
 <span class="sig-prename descclassname"><span class="pre">measpy.pico.</span></span><span class="sig-name descname"><span class="pre">detect_rising_pulses_threshold_ind</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ind0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous_data_point</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.pico.detect_rising_pulses_threshold_ind" title="Link to this definition"></a></dt>
-<dd><p>Detect rising pulse using a threshold
-Parameters
-———-
-values : List</p>
-<blockquote>
-<div><p>Data.</p>
-</div></blockquote>
-<dl class="simple">
-<dt>ind0<span class="classifier">int</span></dt><dd><p>indice of the first data point.</p>
-</dd>
-<dt>previous_data_points<span class="classifier">number</span></dt><dd><p>Value of the last data point (indice = ind0-1).
-useful to not lose peak if it is at ind0</p>
-</dd>
-<dt><a href="#id6"><span class="problematic" id="id7">range_</span></a><span class="classifier">int</span></dt><dd><p>picoscope range.</p>
-</dd>
-<dt>threshold<span class="classifier">int</span></dt><dd><p>threshold (in adc values).</p>
-</dd>
-</dl>
-<section id="id2">
-<h3>Returns<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
-<dl class="simple">
-<dt>List</dt><dd><p>List of indices where a rising pulse is detected.</p>
-</dd>
-</dl>
-</section>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="measpy.pico.findindex">
@@ -497,11 +450,6 @@ useful to not lose peak if it is at ind0</p>
 <dt class="sig sig-object py" id="measpy.pico.inline_plotting">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">measpy.pico.</span></span><span class="sig-name descname"><span class="pre">inline_plotting</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">updatetime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotbuffersize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2000</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.pico.inline_plotting" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Plot data from a Queue.queue
-init create the plot
-update_plot update the plot buffer from new data in dataqueues and update the plot if enough data has been received
-end_plot call update plot until dataqueues contain None
-ploting_duration estimate time of update_plot execution to check for buffer overflow risk</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.pico.inline_plotting.end_plot">
 <span class="sig-name descname"><span class="pre">end_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataqueue</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.pico.inline_plotting.end_plot" title="Link to this definition"></a></dt>
@@ -542,11 +490,7 @@ ploting_duration estimate time of update_plot execution to check for buffer over
 <dl class="py function">
 <dt class="sig sig-object py" id="measpy.pico.ps2000_pulse_detection">
 <span class="sig-prename descclassname"><span class="pre">measpy.pico.</span></span><span class="sig-name descname"><span class="pre">ps2000_pulse_detection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.pico.ps2000_pulse_detection" title="Link to this definition"></a></dt>
-<dd><dl class="simple">
-<dt>To use threshold detection (more efficient), this function needs M to contain the property</dt><dd><p>in_threshold : a list of threshold for pulse height (in Volt) for each channel</p>
-</dd>
-</dl>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="measpy.pico.ps2000_run_measurement">
@@ -556,46 +500,12 @@ ploting_duration estimate time of update_plot execution to check for buffer over
 <dl class="py function">
 <dt class="sig sig-object py" id="measpy.pico.ps4000_plot">
 <span class="sig-prename descclassname"><span class="pre">measpy.pico.</span></span><span class="sig-name descname"><span class="pre">ps4000_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotbuffersize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">updatetime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.pico.ps4000_plot" title="Link to this definition"></a></dt>
-<dd><dl class="simple">
-<dt>This function needs M to contain the following properties:</dt><dd><ul class="simple">
-<li><dl class="simple">
-<dt>in_range<span class="classifier">a list of strings specifying the voltage range.</span></dt><dd><p>Possible voltage ranges are “10MV”, “20MV”, “50MV”, “100MV”,
-“200MV”, “500MV”, “1V”, “2V”, “5V”, “10V”, “20V”, “50V”, “100V”</p>
-</dd>
-</dl>
-</li>
-<li><p>upsampling_factor : upsampling factor</p></li>
-<li><dl class="simple">
-<dt>in_coupling<span class="classifier">Coupling configuration of the channels.</span></dt><dd><p>Can be “ac” or “dc”</p>
-</dd>
-</dl>
-</li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="measpy.pico.ps4000_run_measurement">
 <span class="sig-prename descclassname"><span class="pre">measpy.pico.</span></span><span class="sig-name descname"><span class="pre">ps4000_run_measurement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.pico.ps4000_run_measurement" title="Link to this definition"></a></dt>
-<dd><dl class="simple">
-<dt>This function needs M to contain the following properties:</dt><dd><ul class="simple">
-<li><dl class="simple">
-<dt>in_range<span class="classifier">a list of strings specifying the voltage range.</span></dt><dd><p>Possible voltage ranges are “10MV”, “20MV”, “50MV”, “100MV”,
-“200MV”, “500MV”, “1V”, “2V”, “5V”, “10V”, “20V”, “50V”, “100V”</p>
-</dd>
-</dl>
-</li>
-<li><p>upsampling_factor : upsampling factor</p></li>
-<li><dl class="simple">
-<dt>in_coupling<span class="classifier">Coupling configuration of the channels.</span></dt><dd><p>Can be “ac” or “dc”</p>
-</dd>
-</dl>
-</li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="measpy.pico.rising_pulse_to_raw">
@@ -1012,8 +922,8 @@ hdf5_object : str,Path or opened h5file handle</p>
 <dt>chan<span class="classifier">int, optional</span></dt><dd><p>channel if there are more than one dataset in the file. The default is 1.</p>
 </dd>
 </dl>
-<section id="id3">
-<h3>Returns<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
+<section id="returns">
+<h3>Returns<a class="headerlink" href="#returns" title="Link to this heading"></a></h3>
 <p>out : Signal</p>
 </section>
 </dd></dl>
