@@ -235,8 +235,8 @@ class Measurement:
 
             :param dirname: Name of the directory, a (1), (2)... is added to the name if directory exists
             :type dirname: str
-            :return dirname: Actual name to the saved folder (if name conflit is detected)
-            :rtype dirname: str                            
+            :return: Actual name to the saved folder (if name conflit is detected)
+            :rtype: str                            
         """
         if os.path.exists(dirname):
             i = 1
