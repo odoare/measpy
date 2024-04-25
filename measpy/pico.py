@@ -35,7 +35,7 @@ from matplotlib.widgets import Button
 
 # plt.style.use('seaborn-v0_8')
 
-maxtimeout = 5
+maxtimeout = 10
 
 PS2000_channel = {"A": 1, "B": 2, 1: "A", 2: "B"}
 
@@ -53,7 +53,8 @@ class inline_plotting:
         self.plotbuffersize = plotbuffersize
         self.updatetime = updatetime
         self.fs = fs
-        self.timeout = timeout
+        self.timeinterval = 1/fs
+        self.timeout = min(timeout,0.1 * updatetime)
         self.stop = False
 
         def fstop(event):
@@ -80,7 +81,7 @@ class inline_plotting:
             global stop
             stop = True
 
-        self.x = 1.0 * np.arange(-self.plotbuffersize, 0) / self.fs
+        self.x = 1.0 * np.arange(-self.plotbuffersize, 0) * self.timeinterval
         self.plotbuffer = np.zeros_like(self.x)
         self.fig, self.ax = plt.subplots(1, 2, figsize=(15, 5))
         self.fig.subplots_adjust(bottom=0.2)
@@ -92,7 +93,7 @@ class inline_plotting:
         self.ax[1].set_ylim([0, 10])
         (self.linet,) = self.ax[0].plot(self.x, self.plotbuffer)
         (self.linef,) = self.ax[1].plot(
-            np.fft.fftfreq(n=self.plotbuffersize, d=1 / self.fs),
+            np.fft.fftfreq(n=self.plotbuffersize, d= self.timeinterval),
             np.fft.fft(self.plotbuffer, norm="ortho"),
         )
         axs = self.fig.add_axes([0.4, 0.01, 0.2, 0.075])
@@ -132,13 +133,12 @@ class inline_plotting:
 
     def _update_buffer(self, item):
         n_values = len(item)
-        self.timesincelastupdate += n_values / self.fs
+        item = np.asarray(item)*0.001
+        self.timesincelastupdate += n_values * self.timeinterval
         self.plotbuffer = np.roll(self.plotbuffer, int(-n_values), axis=0)
         self.plotbuffer[-n_values:] = item[-self.plotbuffersize :]
-        self.plotbuffer /= 1000
 
     def update_plot(self, dataqueue, updatetime=None):
-        # dataqueue = dataqueues[0] or dataqueues[1]
         updatetime = self.updatetime if updatetime is None else updatetime
         try:
             if (item := dataqueue.get(timeout=self.timeout)) is not None:
@@ -149,7 +149,6 @@ class inline_plotting:
             pass
 
     def end_plot(self, dataqueue):
-        # dataqueue = dataqueues[0] or dataqueues[1]
         try:
             while (item := dataqueue.get(timeout=maxtimeout)) is not None:
                 self._update_buffer(item)
@@ -172,7 +171,7 @@ class inline_plotting:
             self.update_plot(queuetest, updatetime=0)
             self._ploting_duration = time.time() - start
             print(f"Plotting duration = {self._ploting_duration}")
-            self.x = 1.0 * np.arange(-self.plotbuffersize, 0) / self.fs
+            self.x = 1.0 * np.arange(-self.plotbuffersize, 0) * self.timeinterval
             self.timesincelastupdate = 0
             self._plotting_buffer()
             return self._ploting_duration
@@ -288,10 +287,10 @@ def mv_to_raw(M, channel, values):
             M.in_sig[i].fs = M.fs
             if M.upsampling_factor > 1:
                 M.in_sig[i].raw = decimate(
-                    np.double(values) / 1000, M.upsampling_factor, ftype="fir"
+                    np.double(values) * 0.001, M.upsampling_factor, ftype="fir"
                 )[0 : int(round(M.dur * M.fs))]
             else:
-                M.in_sig[i].raw = (np.double(values) / 1000)[
+                M.in_sig[i].raw = (np.double(values) * 0.001)[
                     0 : int(round(M.dur * M.fs))
                 ]
 
@@ -301,7 +300,7 @@ def ps2000_run_measurement(M):
 
 
 def ps2000_plot(M, plotbuffersize=2000, updatetime=0.1, chan_to_plot="A"):
-    plotting = partial(inline_plotting, plotbuffersize=2000, updatetime=0.1)
+    plotting = partial(inline_plotting, plotbuffersize=plotbuffersize, updatetime=updatetime)
     return _ps2000_run_measurement_threaded(
         M,
         adc_to_mv,
@@ -479,7 +478,7 @@ def _ps2000_run_measurement_threaded(
     enabledA, couplingA, rangeA = setup_channel(1)
     enabledB, couplingB, rangeB = setup_channel(2)
 
-    def setup_save_hdf5(chan_index, pico_range):
+    def setup_save_hdf5(chan_index):
         """
         Setup to save directly on hdf5 file
 
@@ -487,8 +486,6 @@ def _ps2000_run_measurement_threaded(
         ----------
         chan_index : int
             Index of he channel (1or 2).
-        pico_range : int
-            Picoscope voltage range (mapped from PS2000_VOLTAGE_RANGE).
 
         Returns
         -------
@@ -498,12 +495,15 @@ def _ps2000_run_measurement_threaded(
             Preprocessing method to be sent in thread.
 
         """
-        if (ind := findindex(M.in_map, chan_index)) != None:
-            queue = Queue()
+        queue = Queue()
+        if isinstance(chan_index,list):
+            method = M.h5save_data
+            Process = Thread(target=method,args=(queue,))
+        elif (ind := findindex(M.in_map, chan_index)) != None:
             Sig = M.in_sig[ind]
             method = Sig.h5save_data
             Process = Thread(target=method,args=(queue,))
-            return queue, Process
+        return queue, Process
 
     def setup_preprocess(chan_index, pico_range, chan_plot=False):
         """
@@ -512,7 +512,7 @@ def _ps2000_run_measurement_threaded(
         Parameters
         ----------
         chan_index : int
-            Index of he channel (1 or 2).
+            Index of the channel (1 or 2).
         pico_range : int
             Picoscope voltage range (mapped from PS2000_VOLTAGE_RANGE).
         chan_plot : bool, optional
@@ -540,7 +540,7 @@ def _ps2000_run_measurement_threaded(
                 queue_plot = None
 
             if (Vthreshold := getattr(M, "in_threshold", None)) is not None:
-                adc_threshold = mv_to_adc([Vthreshold[ind] / 1000], pico_range)[0]
+                adc_threshold = mv_to_adc([Vthreshold[ind] * 0.001], pico_range)[0]
             else:
                 adc_threshold = None
 
@@ -560,7 +560,6 @@ def _ps2000_run_measurement_threaded(
             if "ind0" and "previous_data_point" in method_args:
             #pre_process need the index of the start of each chunk and 
             #the value of the last datapoint (detect_rising_pulses_threshold_ind)
-
                 def func(queue, result):
                     ind0 = 0
                     chunk_data = []
@@ -610,7 +609,6 @@ def _ps2000_run_measurement_threaded(
                             if len(chunk_data) > 0:
                                 values = method(chunk_data)
                                 result.extend(values)
-
                 else:
                     if queue_plot is not None:
                         def func(queue, result):
@@ -618,6 +616,7 @@ def _ps2000_run_measurement_threaded(
                                 values = method(item)
                                 result.extend(values)
                                 queue_plot.put(values)
+                            queue_plot.put(None)
 
                     else:
                         def func(queue, result):
@@ -636,22 +635,20 @@ def _ps2000_run_measurement_threaded(
         #update dbfs before saving parameters
         for sig, prange in zip(M.in_sig,M.in_range):
             pico_range = ps2000.PS2000_VOLTAGE_RANGE["PS2000_" + prange]
-            sig.dbfs = adc_to_mv([1],pico_range)[0]/1000
+            sig.dbfs = adc_to_mv([1],pico_range)[0] * 0.001
 
         #Picoscope2000 return 16bits signed integer
         M.datatype = "i2"
         M.to_hdf5(filename)
         if not multichannel:
             if enabledA:
-                queueA, ProcessA = setup_save_hdf5(1, rangeA)
                 if enabledB:
-                    #should be multichannel in this case, cannot open same file with 2 threads
-                    print("Warning save 2 channel at once not implemented, only channel A will be saved")
+                    queueAB, ProcessAB = setup_save_hdf5([1,2])
+                    multichannel=True
+                else:
+                    queueA, ProcessA = setup_save_hdf5(1)
             elif enabledB:
-                queueB, ProcessB = setup_save_hdf5(2, rangeB)
-        else:
-            raise NotImplementedError
-            queueAB, ProcessAB = setup_save_hdf5([1,2], [rangeA,rangeB])
+                queueB, ProcessB = setup_save_hdf5(2)
     elif not multichannel:
         if enabledA:
             if chan_to_plot == "A":
@@ -669,16 +666,15 @@ def _ps2000_run_measurement_threaded(
             else:
                 queueB, _, ProcessB, retB = setup_preprocess(2, rangeB, False)
     else:
-        raise NotImplementedError
-        queueAB, queue_plotAB, ProcessAB, retAB = setup_preprocess(
-            [1,2], [rangeA,rangeB], chan_plot=False
-        )
+        raise NotImplementedError #Need change to allow preprocess with multichannel
+        # queueAB, queue_plot, ProcessAB, retAB = setup_preprocessAB(
+        #     [1,2], [rangeA,rangeB], chan
+        # )
 
     ##get_overview_buffers_factory
     if enabledA:
         if enabledB:
             if multichannel:
-                raise NotImplementedError
                 def get_overview_buffers(
                     buffers, _overflow, _triggered_at, _triggered, _auto_stop, n_values
                 ):
@@ -770,24 +766,31 @@ def _ps2000_run_measurement_threaded(
         M.time = now.strftime("%H:%M:%S")
 
         ##start preprocess threads
-        if enabledA:
-            ProcessA.start()
+        if multichannel:
+            ProcessAB.start()
+            if not savehdf5:
+                ProcessA.start()
+                ProcessB.start()
+        else:
+            if enabledA:
+                ProcessA.start()
 
-        if enabledB:
-            ProcessB.start()
+            if enabledB:
+                ProcessB.start()
 
         print("Start")
         start_time = time.time_ns()
 
         # loop until wanted duration + maximum time of one loop without buffer overrun
         if plotting is not None:
-            while time.time_ns() - start_time < duree_ns + int(max_loop_time*1e9):
+            margin = max(min(int(max_loop_time*1e9),duree_ns * 0.1), plot.ploting_duration*(1.1))
+            while time.time_ns() - start_time < duree_ns + margin and not plot.stop:
                 ps2000.ps2000_get_streaming_last_values(device.handle, callback)
                 plot.update_plot(queue_plot)
-                if plot.stop:
-                    break
+
         else:
-            while time.time_ns() - start_time < duree_ns  + int(max_loop_time*1e9):
+            margin = min(int(max_loop_time*1e9), duree_ns * 0.1)
+            while time.time_ns() - start_time < duree_ns  + margin:
                 ps2000.ps2000_get_streaming_last_values(device.handle, callback)
 
         print("Measurment done")
@@ -798,20 +801,33 @@ def _ps2000_run_measurement_threaded(
             print("Buffer have overrun")
 
         ##Put end flag in queues
-        if enabledA:
-            queueA.put(None)
-        if enabledB:
-            queueB.put(None)
+        if multichannel:
+            queueAB.put(None)
+        else:
+            if enabledA:
+                queueA.put(None)
+            if enabledB:
+                queueB.put(None)
 
         ##Wait for all thread to finish and save data
-        if enabledA:
-            ProcessA.join()
+        if multichannel:
+            ProcessAB.join()
             if not savehdf5:
+                ProcessA.join()
                 save(M, 1, retA)
-        if enabledB:
-            ProcessB.join()
-            if not savehdf5:
+                ProcessB.join()
                 save(M, 2, retB)
+        else:
+            if enabledA:
+                ProcessA.join()
+                if not savehdf5:
+                    save(M, 1, retA)
+
+            if enabledB:
+                ProcessB.join()
+                if not savehdf5:
+                    save(M, 2, retB)
+
         print("Preprocess data done")
 
         ## Continue plotting until last data

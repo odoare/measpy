@@ -9,11 +9,13 @@
 # https://github.com/odoare/measpy
 
 from .signal import Signal
+from functools import partial
 
 from ._tools import (csv_to_dict, 
                      convl, 
                      convl1,  
-                     calc_dur_siglist)
+                     calc_dur_siglist,
+                     h5file_write_from_queue)
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -275,6 +277,31 @@ class Measurement:
                 if multichannel:
                     raise NotImplementedError
                     in_sig.to_hdf5(H5file, "in_sigs", datatype)
+                elif (Nchannel := len(mesu["in_map"])) > 1:
+                    itemsize = Nchannel*np.dtype(datatype).itemsize
+                    #Chunck memory size should be between 10KiB and 1MiB, (bytes power of two 14 to 19 )
+                    power_two_chunck_size = 17
+                    chunksize = 2**(power_two_chunck_size-(itemsize-1).bit_length())
+                    dataset = H5file.create_dataset(
+                        "in_sigs", (0,Nchannel), maxshape=(None,Nchannel), dtype=datatype, chunks=(chunksize,Nchannel)
+                    )
+                    temp_dic = {}
+                    for index,s in zip(mesu["in_map"],in_sig):
+                        temp_dic.setdefault("channel",[]).append(index)
+                        for key, value in s.__dict__.items():
+                            if key not in ['_rawvalues',"h5save_data"]:
+                                try:
+                                    Val = value.__str__()
+                                except AttributeError:
+                                    Val = value
+                                temp_dic.setdefault(key,[]).append(Val)
+                        for key, value in temp_dic.items():
+                            dataset.attrs[key] = value
+                    self.h5save_data = partial(
+                        h5file_write_from_queue,
+                        filename=H5file.filename,
+                        dataset_name="in_sigs",
+                        )
                 else:
                     for index,s in zip(mesu["in_map"],in_sig):
                         s.to_hdf5(H5file, f"in_sig_{index}", datatype)
@@ -313,8 +340,11 @@ class Measurement:
             if 'in_map' in task_dict:
                 index = task_dict["in_map"]
                 in_sig = [None]*len(index)
-                for i, ind in enumerate(index):
-                    in_sig[i] = Signal.from_hdf5(H5file[f"in_sig_{ind}"])
+                try:
+                    in_sig = [Signal.from_hdf5(H5file["in_sigs"],chan) for chan in index]
+                except KeyError:
+                    for i, ind in enumerate(index):
+                        in_sig[i] = Signal.from_hdf5(H5file[f"in_sig_{ind}"])
             else:
                 in_sig = None
             if 'out_map' in task_dict:
