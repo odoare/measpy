@@ -492,7 +492,7 @@ class Measurement:
         self.dur = self.dur-2*added_time
         self.out_sig[out_chan] = self.out_sig[out_chan].cut(dur=(added_time,added_time+self.dur)).delay(added_time)
         for i,s in enumerate(self.in_sig):
-            self.in_sig[i] = s.cut(dur=(1+d+dt,1+d+dt+self.dur))
+            self.in_sig[i] = s.cut(dur=(added_time+d+dt,added_time+d+dt+self.dur))
             self.in_sig[i].t0 = self.out_sig[out_chan].t0
         return d
 
