@@ -111,9 +111,9 @@ def audio_run_synced_measurement(M,in_chan=0,out_chan=0):
     :type in_chan: int
 
     """
-    M=M.sync_prepare(out_chan=out_chan)
+    M.sync_prepare(out_chan=out_chan)
     audio_run_measurement(M)
-    M=M.sync_render(out_chan=out_chan,in_chan=in_chan)
+    M.sync_render(out_chan=out_chan,in_chan=in_chan)
     return M
 
 def audio_get_devices():
