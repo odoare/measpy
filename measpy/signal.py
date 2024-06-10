@@ -1010,7 +1010,9 @@ class Signal:
             max = float(np.iinfo(y.dtype).min)
             middle = (max-min)/2
             amp = max-middle
-            out._rawvalues = (y.astype(dtype=float)-middle)/amp        
+            out._rawvalues = (y.astype(dtype=float)-middle)/amp     
+        else:
+            out._rawvalues = y   
         return out
 
     @classmethod
@@ -1045,7 +1047,9 @@ class Signal:
             max = float(np.iinfo(y.dtype).max)
             middle = np.ceil((max+min)/2)
             amp = max-middle
-            out.raw = (y.astype(dtype=float)-middle)/amp
+            out._rawvalues = (y.astype(dtype=float)-middle)/amp
+        else:
+            out._rawvalues = y
         return out
 
     @classmethod
