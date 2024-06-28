@@ -50,8 +50,11 @@ outdev = 'default'
 # This has to be measured for instance by sending a known signal
 # to the inputs with an external signal generator
 
+# Duration of the recording
+DUR = 5
+
 # We first create the output signal
-so = mp.Signal.log_sweep(fs=44100,freq_min=20,freq_max=20000,dur=5)
+so = mp.Signal.log_sweep(fs=44100,freq_min=20,freq_max=20000,dur=DUR)
 
 # Two (empty) input signals are then created
 si1 = mp.Signal(unit='Pa',cal=2,dbfs=1.4,desc='Pressure here')
@@ -59,9 +62,11 @@ si2 = mp.Signal(unit='m/s**2',cal=0.1,dbfs=1.4, desc='Acceleration there')
 
 M = mp.Measurement( device_type='audio',
                     fs = 44100,
+                    out_sig=[so],
                     out_map=[1],
+                    in_sig=[si1,si2],
                     in_map=[1,2],
-                    dur=5,
+                    dur=DUR,
                     in_device=indev,
                     out_device=outdev)
 
@@ -76,6 +81,7 @@ audio_run_measurement(M)
 
 M.to_dir('my_audio_measurement')
 
+# The measurement data can then be restored with the from_dir method
 # Load the measurement into the Measurement object M1
 M1 = mp.Measurement.from_dir('my_audio_measurement')
 
@@ -89,5 +95,4 @@ M1.data['In1'].plot()
 # Plot the Power spectral density of channel 2 signal 
 # (Welch's method with windows of 2**14 points)
 M1.in_sig[1].psd(nperseg=2**14).plot()
-
 
