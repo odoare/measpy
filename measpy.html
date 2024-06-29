@@ -351,14 +351,12 @@ All the acquired signals are then re-synced from the time lag value.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.measurement.Measurement.to_hdf5">
 <span class="sig-name descname"><span class="pre">to_hdf5</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.measurement.Measurement.to_hdf5" title="Link to this definition"></a></dt>
-<dd><p>Save Measurement parameter in hdf5 file</p>
-<section id="parameters">
-<h3>Parameters<a class="headerlink" href="#parameters" title="Link to this heading"></a></h3>
-<dl class="simple">
-<dt>filename<span class="classifier">str</span></dt><dd><p>hdf5 file.</p>
+<dd><p>Save Measurement in hdf5 file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filename</strong> (<em>str</em>) – hdf5 file</p>
 </dd>
 </dl>
-</section>
 </dd></dl>
 
 </dd></dl>
@@ -911,7 +909,22 @@ Returns a Spectral object. Unit is preserved during the process.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Signal.from_hdf5">
 <em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_hdf5</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hdf5_object</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chan</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.from_hdf5" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Load Signal from hdf5 object (file or dataset)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hdf5_object</strong> (<em>str</em><em>,</em><em>Path</em><em> or </em><em>opened h5file handle</em>) – File or dataset from opened hdf5 file</p></li>
+<li><p><strong>chan</strong> (<em>int</em>) – channel if there are more than one dataset in the file. Optional, defaults to 1.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The loaded signal</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#measpy.signal.Signal" title="measpy.signal.Signal">measpy.signal.Signal</a></p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Signal.from_wav">
@@ -1489,8 +1502,21 @@ the two signals.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Signal.to_hdf5">
-<span class="sig-name descname"><span class="pre">to_hdf5</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hdf5_object</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">datatype</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.to_hdf5" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">to_hdf5</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hdf5_object</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.to_hdf5" title="Link to this definition"></a></dt>
+<dd><p>Saves the signal in an hdf5 file</p>
+<p>Save Signal in hdf5 file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hdf5_object</strong> (<em>str</em><em>, </em><em>Path</em><em> or </em><em>opened h5file handle</em>) – The file or hdf5 object where to save the data</p></li>
+<li><p><strong>dataset_name</strong> (<em>str</em>) – Name of the hdf5 dataset</p></li>
+<li><p><strong>data_type</strong> (<em>str</em>) – Data format (Numpy dtype)</p></li>
+</ul>
+</dd>
+</dl>
+<p>If parameter hdf5_object is str or path, it is opened with statement,
+else it is an opened h5file handle already in with statement</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Signal.tri">
