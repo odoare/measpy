@@ -256,12 +256,10 @@ class Measurement:
     
     def to_hdf5(self, filename):
         """
-        Save Measurement parameter in hdf5 file
+        Save Measurement in hdf5 file
 
-        Parameters
-        ----------
-        filename : str
-            hdf5 file.
+        :param filename: hdf5 file
+        :type filename: str
 
         """
         mesu = self._to_dict()

@@ -1054,6 +1054,17 @@ class Signal:
 
     @classmethod
     def from_hdf5(cls, hdf5_object, chan = 1):
+        """ Load Signal from hdf5 object (file or dataset)
+
+        :param hdf5_object: File or dataset from opened hdf5 file
+        :type hdf5_object: str,Path or opened h5file handle
+        :param chan: channel if there are more than one dataset in the file. Optional, defaults to 1.
+        :type chan: int
+
+        :return: The loaded signal
+        :rtype: measpy.signal.Signal
+        """
+
         # """
         # Load Signal from hdf5 object (file or dataset)
         # Parameters
@@ -1683,20 +1694,23 @@ class Signal:
                 writer.writerow(['First column is time in seconds'])
             writer.writerows(outdata)
 
-    def to_hdf5(self, hdf5_object, dataset_name, datatype):
-        # """
-        # Save Signal in hdf5 file
-        # Parameters
-        # ----------
-        # hdf5_object : str,Path or opened h5file handle
-        #     File.
-        # dataset_name : str
-        #     Name of the hdf5 dataser.
-        # datatype : str
-        #     Data format (Numpy dtype).
+    def to_hdf5(self, hdf5_object, dataset_name, data_type):
+        """ Saves the signal in an hdf5 file
 
-        # """
-        #if file is str or path open it in with statement, else file is a opened h5file handle already in with statement
+        Save Signal in hdf5 file
+
+        :param hdf5_object: The file or hdf5 object where to save the data
+        :type hdf5_object: str, Path or opened h5file handle
+        :param dataset_name: Name of the hdf5 dataset
+        :type dataset_name: str
+        :param data_type: Data format (Numpy dtype)
+        :type data_type: str
+        
+
+        If parameter hdf5_object is str or path, it is opened with statement,
+        else it is an opened h5file handle already in with statement
+        """
+
         with ExitStack() as stack:
             if isinstance(hdf5_object, (str,Path)):
                 H5file = stack.enter_context(h5py.File(hdf5_object, "x"))
@@ -1705,17 +1719,17 @@ class Signal:
 
             if self._rawvalues.size>0:
                 dataset = H5file.create_dataset(dataset_name, data = self._rawvalues)
-                dataset.attrs["datatype"] = self._rawvalues.dtype.__str__()
-            elif datatype is not None:
-                print(f"There is no data, creating empty dataset {dataset_name} wity type = {datatype}")
-                itemsize = np.dtype(datatype).itemsize
+                dataset.attrs["data_type"] = self._rawvalues.dtype.__str__()
+            elif data_type is not None:
+                print(f"There is no data, creating empty dataset {dataset_name} wity type = {data_type}")
+                itemsize = np.dtype(data_type).itemsize
                 #Chunck memory size should be between 10KiB and 1MiB, (bytes power of two 14 to 19 )
                 power_two_chunck_size = 17
                 chunksize = 2**(power_two_chunck_size-(itemsize-1).bit_length())
                 dataset = H5file.create_dataset(
-                    dataset_name, (0,), maxshape=(None,), dtype=datatype, chunks=(chunksize,)
+                    dataset_name, (0,), maxshape=(None,), dtype=data_type, chunks=(chunksize,)
                 )
-                dataset.attrs["datatype"] = np.dtype(datatype).__str__()
+                dataset.attrs["data_type"] = np.dtype(data_type).__str__()
                 # Create the method that can fill this dataset from queue.
                 self.h5save_data = partial(
                     h5file_write_from_queue,
