@@ -2,7 +2,7 @@
 
 # Uncomment if importing from local measpy directory
 # import sys
-# sys.path.insert(0, "../../measpy")
+# sys.path.insert(0, "..")
 
 import measpy as mp
 import matplotlib.pyplot as plt

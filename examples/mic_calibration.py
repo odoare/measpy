@@ -9,8 +9,8 @@
 # (c) OD - 2021 - 2023
 # https://github.com/odoare/measpy
 
-import sys
-sys.path.insert(0, "..")
+# import sys
+# sys.path.insert(0, "..")
 
 import measpy as mp
 import numpy as np
