@@ -46,7 +46,38 @@ def mic_calibration_level(sig, current_cal=1., target_db = 94.):
     return current_cal*10**( (measured_spl-target_db) / 20 )
 
 def mic_calibration_freq(sig, sigref, Wref=None, noct=3, nperseg=None):
-    """ Microphone frequency responde calibration function
+    """ Microphone frequency response calibration function
+
+        Howto use:
+            - Record mic and refmic signals using for example:
+
+            .. highlight:: python
+            .. code-block:: python
+
+                import measpy as mp
+                FS = 48000
+                DUR = 10
+                pa = mp.Signal(fs=FS, unit='Pa',cal=...)
+                paref = mp.Signal(fs=FS, unit='Pa', cal=...)
+                M = mp.Measurement( device_type='audio',
+                                    fs = FS,
+                                    in_sig=[pa,paref],
+                                    in_map=[1,2],
+                                    dur=DUR,
+                                    in_device='Default')
+                audio_run_measurement(M)
+
+            - Recorded signal is then analysed to get actual calibration
+
+            .. highlight:: python
+            .. code-block:: python
+
+                micresp = mic_calibration_freq(M.in_sig[0],M.in_sig[1],Wref=...)
+
+            Wref=... corresponds to the reference mic response curve.
+
+            - Calibration curve is then the returned measpy.Weighting object
+
     """
     if Wref==None:
         if nperseg==None:
@@ -55,7 +86,6 @@ def mic_calibration_freq(sig, sigref, Wref=None, noct=3, nperseg=None):
             return abs(sig.tfe_welch(sigref, nperseg)).nth_oct_smooth_to_weight(noct)
     else:
         if nperseg==None:
-            return abs(sig.tfe_welch(sigref.rfft().apply_weighting(Wref).irfft())).nth_oct_smooth_to_weight(noct)
+            return abs(sig.tfe_welch(sigref.rfft().apply_weighting(Wref,inverse=True).irfft())).nth_oct_smooth_to_weight(noct)
         else:
-            return abs(sig.tfe_welch(sigref.apply_weighting(Wref), nperseg)).nth_oct_smooth_to_weight(noct)
-
+            return abs(sig.tfe_welch(sigref.apply_weighting(Wref,inverse=True), nperseg)).nth_oct_smooth_to_weight(noct)
