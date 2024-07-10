@@ -246,6 +246,14 @@ def getdimension(item):
     else:
         return item.shape[0], lambda item: item.shape[1]
 
+def all_equal(iterator):
+    iterator = iter(iterator)
+    try:
+        first = next(iterator)
+    except StopIteration:
+        return True
+    return all(first == x for x in iterator)
+
 # def _tfe_farina(y, fs, freqs):
 #     """ Transfer function estimate
 #         Farina's method """
