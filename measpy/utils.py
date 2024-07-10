@@ -66,7 +66,7 @@ def mic_calibration_freq(sig, sigref, Wref=None, noct=3, nperseg=None):
         :type sigref: measpy.signal.Signal
         :param Wref: Reference microphone response function as a Weighting object
         :type Wref: measpy.signal.Weighting
-        :param noct: Specifies the frequency averaging to apply. The returned measpy.signal.Weighting object will be 1/noct^th frequency averaged
+        :param noct: Specifies the frequency averaging to apply. The returned measpy.signal.Weighting object will be 1/noct frequency averaged
         :type noct: int
         :param nperseg: Window size when transfer function estimation is made
         :type nperseg: int
