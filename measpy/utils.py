@@ -9,9 +9,9 @@
 # https://github.com/odoare/measpy
 
 import numpy as np
-import measpy as mp
 import scipy.io.wavfile as wav
 from measpy._tools import siglist_to_array, all_equal
+from .signal import PREF
 
 def mic_calibration_level(sig, current_cal=1., target_db = 94.):
     """ Microphone calibration function
@@ -55,7 +55,7 @@ def mic_calibration_level(sig, current_cal=1., target_db = 94.):
             - Calibration is then the value to use at signal creation
 
     """
-    measured_spl = 20*np.log10(sig.rms/mp.PREF)
+    measured_spl = 20*np.log10(sig.rms/PREF)
     return current_cal*10**( (measured_spl-target_db) / 20 )
 
 def mic_calibration_freq(sig, sigref, Wref=None, noct=3, nperseg=None):
@@ -120,15 +120,15 @@ def mic_calibration_freq(sig, sigref, Wref=None, noct=3, nperseg=None):
 
 def siglist_to_wav(sigl,filename):
     """ Takes a list of signals and export it to a multichannel wave file.
-    Sampling frequencies have to match. Use the resample method if necessary.
+        Sampling frequencies have to match. Use the resample method if necessary.
 
-    :param sigl: A list of single channel signals
-    :type sigl: list of measpy.signal.Signal
-    :param filename: Name of wave file (without extension)
-    :type filename: string
+        :param sigl: A list of single channel signals
+        :type sigl: list of measpy.signal.Signal
+        :param filename: Name of wave file (without extension)
+        :type filename: string
 
-    :return: True if succeded, False if error
-    :rtype: bool
+        :return: True if succeded, False if error
+        :rtype: bool
 
     """
     print([s.fs for s in sigl])
