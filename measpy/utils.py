@@ -23,8 +23,7 @@ def mic_calibration_level(sig, current_cal=1., target_db = 94.):
         :param target_db: dB SPL level of the microphone calibrator
         :type target_db: float
 
-        :return: The actual value to use as calibration level,
-        so that measured dB SPL equals to target_db
+        :return: The actual value to use as calibration level, so that measured dB SPL equals to target_db
         :rtype: float
 
         Howto use:
@@ -64,11 +63,10 @@ def mic_calibration_freq(sig, sigref, Wref=None, noct=3, nperseg=None):
         :param sig: Signal recorded by the microphone to calibrate
         :type sig: measpy.signal.Signal
         :param sigref: Signal recorded by the reference microphone
-        :type sig: measpy.signal.Signal
+        :type sigref: measpy.signal.Signal
         :param Wref: Reference microphone response function as a Weighting object
         :type Wref: measpy.signal.Weighting
-        :param noct: Specifies the frequency averaging to apply.
-        The returned measpy.signal.Weighting object will be 1/noct^th frequency averaged
+        :param noct: Specifies the frequency averaging to apply. The returned measpy.signal.Weighting object will be 1/noct^th frequency averaged
         :type noct: int
         :param nperseg: Window size when transfer function estimation is made
         :type nperseg: int
