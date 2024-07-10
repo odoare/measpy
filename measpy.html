@@ -2129,22 +2129,17 @@ The file then contains three columns:</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>sig</strong> (<a class="reference internal" href="#measpy.signal.Signal" title="measpy.signal.Signal"><em>measpy.signal.Signal</em></a>) – Signal recorded by the microphone to calibrate</p></li>
-<li><p><strong>sigref</strong> – Signal recorded by the reference microphone</p></li>
+<li><p><strong>sigref</strong> (<a class="reference internal" href="#measpy.signal.Signal" title="measpy.signal.Signal"><em>measpy.signal.Signal</em></a>) – Signal recorded by the reference microphone</p></li>
 <li><p><strong>Wref</strong> (<a class="reference internal" href="#measpy.signal.Weighting" title="measpy.signal.Weighting"><em>measpy.signal.Weighting</em></a>) – Reference microphone response function as a Weighting object</p></li>
-<li><p><strong>noct</strong> – Specifies the frequency averaging to apply.</p></li>
+<li><p><strong>noct</strong> (<em>int</em>) – Specifies the frequency averaging to apply. The returned measpy.signal.Weighting object will be 1/noct^th frequency averaged</p></li>
+<li><p><strong>nperseg</strong> (<em>int</em>) – Window size when transfer function estimation is made</p></li>
 </ul>
 </dd>
-</dl>
-<p>The returned measpy.signal.Weighting object will be 1/noct^th frequency averaged
-:type noct: int
-:param nperseg: Window size when transfer function estimation is made
-:type nperseg: int</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>A Weighting object containing the frequency response of the microphone</p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A Weighting object containing the frequency response of the microphone</p>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="#measpy.signal.Weighting" title="measpy.signal.Weighting">measpy.signal.Weighting</a></p>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#measpy.signal.Weighting" title="measpy.signal.Weighting">measpy.signal.Weighting</a></p>
 </dd>
 </dl>
 <dl>
@@ -2192,11 +2187,12 @@ The file then contains three columns:</p>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The actual value to use as calibration level,</p>
+<dd class="field-even"><p>The actual value to use as calibration level, so that measured dB SPL equals to target_db</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
 </dd>
 </dl>
-<p>so that measured dB SPL equals to target_db
-:rtype: float</p>
 <dl>
 <dt>Howto use:</dt><dd><ul class="simple">
 <li><p>Record mic signal with pistonphone using</p></li>
