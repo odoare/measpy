@@ -209,6 +209,12 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="#module-measpy.utils">measpy.utils module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#measpy.utils.mic_calibration_freq"><code class="docutils literal notranslate"><span class="pre">mic_calibration_freq()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#measpy.utils.mic_calibration_level"><code class="docutils literal notranslate"><span class="pre">mic_calibration_level()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#measpy.utils.siglist_to_wav"><code class="docutils literal notranslate"><span class="pre">siglist_to_wav()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -2110,6 +2116,136 @@ The file then contains three columns:</p>
 </dl>
 </dd></dl>
 
+</dd></dl>
+
+</section>
+<section id="module-measpy.utils">
+<span id="measpy-utils-module"></span><h2>measpy.utils module<a class="headerlink" href="#module-measpy.utils" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="measpy.utils.mic_calibration_freq">
+<span class="sig-prename descclassname"><span class="pre">measpy.utils.</span></span><span class="sig-name descname"><span class="pre">mic_calibration_freq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Wref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noct</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nperseg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.utils.mic_calibration_freq" title="Link to this definition"></a></dt>
+<dd><p>Microphone frequency response calibration function</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sig</strong> (<a class="reference internal" href="#measpy.signal.Signal" title="measpy.signal.Signal"><em>measpy.signal.Signal</em></a>) – Signal recorded by the microphone to calibrate</p></li>
+<li><p><strong>sigref</strong> – Signal recorded by the reference microphone</p></li>
+<li><p><strong>Wref</strong> (<a class="reference internal" href="#measpy.signal.Weighting" title="measpy.signal.Weighting"><em>measpy.signal.Weighting</em></a>) – Reference microphone response function as a Weighting object</p></li>
+<li><p><strong>noct</strong> – Specifies the frequency averaging to apply.</p></li>
+</ul>
+</dd>
+</dl>
+<p>The returned measpy.signal.Weighting object will be 1/noct^th frequency averaged
+:type noct: int
+:param nperseg: Window size when transfer function estimation is made
+:type nperseg: int</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A Weighting object containing the frequency response of the microphone</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#measpy.signal.Weighting" title="measpy.signal.Weighting">measpy.signal.Weighting</a></p>
+</dd>
+</dl>
+<dl>
+<dt>Howto use:</dt><dd><ul class="simple">
+<li><p>Record mic and refmic signals using for example:</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">measpy</span> <span class="k">as</span> <span class="nn">mp</span>
+<span class="n">FS</span> <span class="o">=</span> <span class="mi">48000</span>
+<span class="n">DUR</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">pa</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;Pa&#39;</span><span class="p">,</span><span class="n">cal</span><span class="o">=...</span><span class="p">)</span>
+<span class="n">paref</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;Pa&#39;</span><span class="p">,</span> <span class="n">cal</span><span class="o">=...</span><span class="p">)</span>
+<span class="n">M</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Measurement</span><span class="p">(</span> <span class="n">device_type</span><span class="o">=</span><span class="s1">&#39;audio&#39;</span><span class="p">,</span>
+                    <span class="n">fs</span> <span class="o">=</span> <span class="n">FS</span><span class="p">,</span>
+                    <span class="n">in_sig</span><span class="o">=</span><span class="p">[</span><span class="n">pa</span><span class="p">,</span><span class="n">paref</span><span class="p">],</span>
+                    <span class="n">in_map</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span>
+                    <span class="n">dur</span><span class="o">=</span><span class="n">DUR</span><span class="p">,</span>
+                    <span class="n">in_device</span><span class="o">=</span><span class="s1">&#39;Default&#39;</span><span class="p">)</span>
+<span class="n">audio_run_measurement</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Recorded signal is then analysed to get actual calibration</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">micresp</span> <span class="o">=</span> <span class="n">mic_calibration_freq</span><span class="p">(</span><span class="n">M</span><span class="o">.</span><span class="n">in_sig</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">M</span><span class="o">.</span><span class="n">in_sig</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">Wref</span><span class="o">=...</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Wref=… corresponds to the reference mic response curve.</p>
+<ul class="simple">
+<li><p>Calibration curve is then the returned measpy.Weighting object</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="measpy.utils.mic_calibration_level">
+<span class="sig-prename descclassname"><span class="pre">measpy.utils.</span></span><span class="sig-name descname"><span class="pre">mic_calibration_level</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_cal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">94.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.utils.mic_calibration_level" title="Link to this definition"></a></dt>
+<dd><p>Microphone calibration function</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sig</strong> (<em>float</em>) – Signal recorded by the microphone to calibrate</p></li>
+<li><p><strong>current_cal</strong> – Calibration indicated in the recorded signal sig</p></li>
+<li><p><strong>target_db</strong> (<em>float</em>) – dB SPL level of the microphone calibrator</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The actual value to use as calibration level,</p>
+</dd>
+</dl>
+<p>so that measured dB SPL equals to target_db
+:rtype: float</p>
+<dl>
+<dt>Howto use:</dt><dd><ul class="simple">
+<li><p>Record mic signal with pistonphone using</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">measpy</span> <span class="k">as</span> <span class="nn">mp</span>
+<span class="n">FS</span> <span class="o">=</span> <span class="mi">48000</span>
+<span class="n">DUR</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">pa</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;Pa&#39;</span><span class="p">)</span>
+<span class="n">M</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Measurement</span><span class="p">(</span> <span class="n">device_type</span><span class="o">=</span><span class="s1">&#39;audio&#39;</span><span class="p">,</span>
+                    <span class="n">fs</span> <span class="o">=</span> <span class="n">FS</span><span class="p">,</span>
+                    <span class="n">in_sig</span><span class="o">=</span><span class="p">[</span><span class="n">pa</span><span class="p">],</span>
+                    <span class="n">in_map</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="n">dur</span><span class="o">=</span><span class="n">DUR</span><span class="p">,</span>
+                    <span class="n">in_device</span><span class="o">=</span><span class="s1">&#39;Default&#39;</span><span class="p">)</span>
+<span class="n">audio_run_measurement</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Recorded signal is then analysed to get actual calibration</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">newcal</span> <span class="o">=</span> <span class="n">mic_calibration_level</span><span class="p">(</span><span class="n">M</span><span class="o">.</span><span class="n">in_sig</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">current_cal</span><span class="o">=</span><span class="mf">1.</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Calibration is then the value to use at signal creation</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="measpy.utils.siglist_to_wav">
+<span class="sig-prename descclassname"><span class="pre">measpy.utils.</span></span><span class="sig-name descname"><span class="pre">siglist_to_wav</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sigl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.utils.siglist_to_wav" title="Link to this definition"></a></dt>
+<dd><p>Takes a list of signals and export it to a multichannel wave file.
+Sampling frequencies have to match. Use the resample method if necessary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sigl</strong> (<em>list</em><em> of </em><a class="reference internal" href="#measpy.signal.Signal" title="measpy.signal.Signal"><em>measpy.signal.Signal</em></a>) – A list of single channel signals</p></li>
+<li><p><strong>filename</strong> (<em>string</em>) – Name of wave file (without extension)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if succeded, False if error</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
 </dd></dl>
 
 </section>

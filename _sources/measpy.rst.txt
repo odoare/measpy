@@ -40,3 +40,11 @@ measpy.signal module
    :members:
    :undoc-members:
    :show-inheritance:
+
+measpy.utils module
+--------------------
+
+.. automodule:: measpy.utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
