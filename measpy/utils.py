@@ -10,7 +10,7 @@
 
 import numpy as np
 import scipy.io.wavfile as wav
-from measpy._tools import siglist_to_array, all_equal
+from ._tools import siglist_to_array, all_equal
 from .signal import PREF
 
 def mic_calibration_level(sig, current_cal=1., target_db = 94.):
