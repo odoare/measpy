@@ -319,7 +319,7 @@ All the acquired signals are then re-synced from the time lag value.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.measurement.Measurement.sync_prepare">
-<span class="sig-name descname"><span class="pre">sync_prepare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">out_chan</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">added_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.measurement.Measurement.sync_prepare" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">sync_prepare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">out_chan</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">added_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.measurement.Measurement.sync_prepare" title="Link to this definition"></a></dt>
 <dd><p>Prepare measurement for synchronization</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -334,7 +334,7 @@ All the acquired signals are then re-synced from the time lag value.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.measurement.Measurement.sync_render">
-<span class="sig-name descname"><span class="pre">sync_render</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">out_chan</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_chan</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">added_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.measurement.Measurement.sync_render" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">sync_render</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">out_chan</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_chan</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">added_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.measurement.Measurement.sync_render" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -622,11 +622,14 @@ For example a five seconds logarithmic sweep from 20Hz to 20kHz, of dimension vo
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Signal.add_silence">
-<span class="sig-name descname"><span class="pre">add_silence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">extrat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">0)</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.add_silence" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">add_silence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.add_silence" title="Link to this definition"></a></dt>
 <dd><p>Add zeros at the begining and the end of the signal</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>extrat</strong> (<em>tuple</em><em>, </em><em>optional</em>) – time in seconds before and after the original signal, defaults to [0,0]</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>extrat</strong> (<em>tuple</em><em>, </em><em>optional</em>) – time in seconds before and after the original signal, defaults to [0,0]</p></li>
+<li><p><strong>extras</strong> (<em>tuple</em><em>, </em><em>optional</em>) – number of samples before and after the original signal, defaults to [0,0]</p></li>
+</ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>New signal</p>
