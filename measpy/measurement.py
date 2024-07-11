@@ -468,7 +468,7 @@ class Measurement:
             f.write('\n')
             f.write('https://github.com/odoare/measpy')
 
-    def sync_prepare(self,out_chan=0,added_time=1):
+    def sync_prepare(self,out_chan=0,added_samples=None):
         """
         Prepare measurement for synchronization
 
@@ -478,19 +478,32 @@ class Measurement:
         :type in_chan: int
         :param added_time: Duration of silence added before and after the selected output signal
         :type added_time: float
-        """        
-        osig = self.out_sig[out_chan].add_silence((added_time,added_time)).delay(-added_time)
-        self.dur = self.dur+2*added_time
+        """
+        if type(added_samples)==type(None):
+            asp = self.fs
+        elif type(added_samples)==int:
+            asp = added_samples
+        else:
+            raise Exception("added_samples: Wrong type")
+        osig = self.out_sig[out_chan].add_silence(extras=(asp,asp)).delay(-asp/self.fs)
+        self.dur = osig.dur
         self.out_sig[out_chan]=osig
 
-    def sync_render(self,out_chan=0,in_chan=0,added_time=1):
+    def sync_render(self,out_chan=0,in_chan=0,added_samples=None):
+        if type(added_samples)==type(None):
+            asp = self.fs
+        elif type(added_samples)==int:
+            asp = added_samples
+        else:
+            raise Exception("added_samples: Wrong type")
         d = self.in_sig[in_chan].timelag(self.out_sig[out_chan])
-        dt = 1/self.fs
+        ds = round(d*self.fs)
+        # dt = 1/self.fs
         # print("delay: "+str(d)+"s")
-        self.dur = self.dur-2*added_time
-        self.out_sig[out_chan] = self.out_sig[out_chan].cut(dur=(added_time,added_time+self.dur)).delay(added_time)
+        self.dur = self.dur-2*asp/self.fs
+        self.out_sig[out_chan] = self.out_sig[out_chan].cut(pos=(asp,asp+round(self.dur*self.fs))).delay(asp/self.fs)
         for i,s in enumerate(self.in_sig):
-            self.in_sig[i] = s.cut(dur=(added_time+d+dt,added_time+d+dt+self.dur))
+            self.in_sig[i] = s.cut(pos=(asp+ds+1,asp+ds+1+self.out_sig[out_chan].length))
             self.in_sig[i].t0 = self.out_sig[out_chan].t0
         return d
 
@@ -530,4 +543,3 @@ class Measurement:
     #         s.values = s.values[posmax:posmax+M.fs*M.dur]
     #     return M1
     #     del(M1)
-
