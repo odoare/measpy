@@ -459,18 +459,27 @@ class Signal:
             desc=add_step(self.desc, "fades")
         )
 
-    def add_silence(self, extrat=(0, 0)):
+    def add_silence(self, **kwargs):
         """Add zeros at the begining and the end of the signal
 
         :param extrat: time in seconds before and after the original signal, defaults to [0,0]
         :type extrat: tuple, optional
+        :param extras: number of samples before and after the original signal, defaults to [0,0]
+        :type extras: tuple, optional
         :return: New signal
         :rtype: measpy.signal.Signal
         """
+        if ('extrat' in kwargs) and ('extras' in kwargs):
+            raise Exception('Error: extrat and extras cannot be both specified')
+        elif ('extrat' in kwargs):
+            samps = (int(round(kwargs['extrat'][0]*self.fs)),
+                   int(round(kwargs['extrat'][1]*self.fs)))
+        elif ('extras' in kwargs):
+            samps = (kwargs['extras'][0], kwargs['extras'][1])
         return self.similar(raw=np.hstack(
-            (np.zeros(int(np.round(extrat[0]*self.fs))),
+            (np.zeros(samps[0]),
              self.raw,
-             np.zeros(int(np.round(extrat[1]*self.fs)))))
+             np.zeros(samps[1])))
         )
 
     def iir(self, N=2, Wn=(20, 20000), rp=None, rs=None, btype='band',  ftype='butter'):
@@ -1855,7 +1864,7 @@ class Signal:
             # We extract each harmonic peak
             # Silence is added so that all windows are the same length
             # Then all specra have the same characteristics
-            Hnl[ii] = G.cut(dur=(ts[ii], tf[ii])).add_silence((0,l/self.fs+ts[ii]-tf[ii])).rfft()
+            Hnl[ii] = G.cut(dur=(ts[ii], tf[ii])).add_silence(extrat=(0,l/self.fs+ts[ii]-tf[ii])).rfft()
 
             # Phase of spectra are adjusted to compensate for various delays
             Hnl[ii] = Hnl[ii].similar(
