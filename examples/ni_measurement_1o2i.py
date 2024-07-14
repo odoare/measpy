@@ -85,7 +85,7 @@ a = M1.in_sig[0].plot()
 M1.in_sig[1].plot(ax=a)
 
 # Plot an individual signal (channel 1)
-M1.data['In1'].plot()
+M1.in_sig[0].plot()
 
 # Plot the Power spectral density of channel 2 signal 
 # (Welch's method with windows of 2**14 points)

@@ -22,7 +22,7 @@
 import measpy as mp
 from measpy.ni import ni_run_synced_measurement, ni_get_devices
 
-%matplotlib qt
+#%matplotlib qt
 
 #%% List devices
 # This prints a list of identifiers for the devices present in the system

@@ -18,7 +18,7 @@ from measpy.audio import audio_run_measurement, audio_get_devices
 import matplotlib.pyplot as plt
 from datetime import datetime
 
-%matplotlib tk
+# %matplotlib tk
 
 # Duration of the recording
 DUR = 5
