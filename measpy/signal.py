@@ -437,7 +437,8 @@ class Signal:
         else:
             pos = (0, -1)
         return self.similar(
-            raw=np.take(self.raw, range(pos[0], pos[1], np.sign(pos[1]-pos[0])), mode='wrap'),
+            #raw=np.take(self.raw, np.tile(range(pos[0], pos[1], np.sign(pos[1]-pos[0])),(2,1)).T, mode='wrap'),
+            raw=np.take(self.raw, range(pos[0], pos[1], np.sign(pos[1]-pos[0])), mode='wrap', axis=0),
             desc=add_step(self.desc, "Cut between " +
                           str(pos[0])+" and "+str(pos[1]))
         )
@@ -476,11 +477,18 @@ class Signal:
                    int(round(kwargs['extrat'][1]*self.fs)))
         elif ('extras' in kwargs):
             samps = (kwargs['extras'][0], kwargs['extras'][1])
-        return self.similar(raw=np.hstack(
-            (np.zeros(samps[0]),
-             self.raw,
-             np.zeros(samps[1])))
-        )
+        if self.nchannels==1:
+            return self.similar(raw=np.hstack(
+                (np.zeros(samps[0]),
+                self.raw,
+                np.zeros(samps[1])))
+            )
+        else:
+            return self.similar(raw=np.vstack(
+                (np.zeros((samps[0],self.nchannels)),
+                self.raw,
+                np.zeros((samps[1],self.nchannels))))
+            )
 
     def iir(self, N=2, Wn=(20, 20000), rp=None, rs=None, btype='band',  ftype='butter'):
         """Infinite impulse response filter of a signal.
@@ -698,6 +706,23 @@ class Signal:
         """
 
         return self.similar(values=self.values*get_window(window=win, Nx=self.length))
+    
+    def pack_with(self,other):
+        """
+        Pack the signal with other signal
+        Signals must have compatible dimension, length and sampling frequencies.
+        """
+        
+        if not self.unit.same_dimensions_as(other.unit):
+            raise Exception('Incompatible units in addition of sginals')
+        if self.fs != other.fs:
+            raise Exception(
+                'Incompatible sampling frequencies in addition of signals')
+        if self.length != other.length:
+            raise Exception('Incompatible signal lengths')
+        
+        return self.similar(values=np.vstack((self.values.T,other.unit_to(self.unit).values.T)).T)
+
 
     # #################################################################
     # Methods that return an object of type Spectral
@@ -1122,6 +1147,25 @@ class Signal:
                 out._rawvalues = data
         return out
 
+    @classmethod
+    def pack(cls,sigs):
+        """
+        Pack signals in the form of a list of signals and return a multichannel signal
+        """
+        out = sigs[0]
+        for s in sigs[1:]:
+            out = out.pack_with(s)
+        return out
+
+    def unpack(self):
+        """
+        Unpack a multichannel signal and returns a list of signals
+        """
+        outl = []
+        for i in range(self.nchannels):
+            outl.append(self.similar(values=self.values[:,i]))
+        return outl
+
     #######################################################################
     # Properties
     #####################################################################
@@ -1266,6 +1310,19 @@ class Signal:
         raise AttributeError("Property 'time' cannot be set")
 
     @property
+    def nchannels(self):
+        """
+        Number of channels
+        """
+        if len(self.values.shape) == 1 :
+            return 1
+        else:
+            return self.values.shape[1]
+    @nchannels.setter
+    def nchannels(self,val):
+        raise AttributeError("Property 'nchannels' cannot be set")
+
+    @property
     def t0(self):
         """
         Time shifting of the signal (reads the t0 value if it exists, else 0)
@@ -1289,7 +1346,7 @@ class Signal:
         """
         Mean value
         """
-        return np.mean(self.values)*Unit(self.unit)
+        return np.mean(self.values,axis=0)*Unit(self.unit)
 
     @property
     def length(self):
@@ -1318,7 +1375,7 @@ class Signal:
         :return: Max value
         :rtype: unyt.array.unyt_quantity
         """
-        return max(self.values)*unyt.Unit(self.unit)
+        return np.max(self.values,axis=0)*unyt.Unit(self.unit)
     @max.setter
     def max(self,val):
         raise AttributeError("Property 'max' cannot be set")
@@ -1330,7 +1387,7 @@ class Signal:
         :return: Time of maximum
         :rtype: unyt.array.unyt_quantity
         """
-        return self.time[argmax(self.values)]*unyt.Unit('s')
+        return self.time[argmax(self.values,axis=0)]*unyt.Unit('s')
     @tmax.setter
     def tmax(self,val):
         raise AttributeError("Property 'tmax' cannot be set")
@@ -1342,7 +1399,7 @@ class Signal:
         :return: Min value
         :rtype: unyt.array.unyt_quantity
         """
-        return min(self.values)*unyt.Unit(self.unit)
+        return np.min(self.values,axis=0)*unyt.Unit(self.unit)
     @min.setter
     def min(self,val):
         raise AttributeError("Property 'min' cannot be set")
@@ -1354,7 +1411,7 @@ class Signal:
             :return: A quantity
             :rtype: unyt.Quantity      
         """
-        return np.sqrt(np.mean(self.values**2))*self.unit
+        return np.sqrt(np.mean(self.values**2,axis=0))*self.unit
     @rms.setter
     def rms(self,val):
         raise AttributeError("Property 'rms' cannot be set")
