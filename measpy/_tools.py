@@ -54,7 +54,15 @@ def unwrap_around_index(phase,n):
 
 def smooth(in_array,l=20):
     ker = np.ones(l)/l
-    return np.convolve(in_array,ker,mode='same')
+    if len(in_array.shape) == 1:
+        return np.convolve(in_array,ker,mode='same')
+    elif len(in_array.shape) == 2:
+        out = np.zeros_like(in_array)
+        for i in range(in_array.shape[1]):
+            out[:,i] = np.convolve(in_array[:,i],ker,mode='same')
+        return out
+    else:
+        raise Exception('This smooth function manages array of dimension <= 2')
 
 def nth_octave_bands(n,fmin=5,fmax=20000):
     """ 1/nth octave band frequency range calculation """
