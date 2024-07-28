@@ -558,6 +558,12 @@ class Signal:
         """
         return self.similar(unit='1', cal=None, dbfs=None, raw=self.raw, desc=add_step(self.desc, 'Raw data'))
 
+    def apply_calibrations(self):
+        """
+        Returns the same signal with all calibrations applied and cal=1.0, dfbs=1.0
+        """
+        return self.similar(cal=None,dbfs=None,raw=self.values, desc=add_step(self.desc,'Calibrations applied'))
+
     def unit_to(self, unit):
         """
         Change Signal unit
@@ -710,14 +716,17 @@ class Signal:
     def pack_with(self,other):
         """
         Pack the signal with other signal
-        Signals must have compatible dimension, length and sampling frequencies.
+
+        Signals must have compatible unit, length and sampling frequencies.
+        This method returns a new multichannel signal with values packed as columns.
+        The other properties of the resulting signal are that of the initial signal (the instance whose method has been called)
         """
         
         if not self.unit.same_dimensions_as(other.unit):
-            raise Exception('Incompatible units in addition of sginals')
+            raise Exception('Incompatible units during sginal packing')
         if self.fs != other.fs:
             raise Exception(
-                'Incompatible sampling frequencies in addition of signals')
+                'Incompatible sampling frequencies during signal packing')
         if self.length != other.length:
             raise Exception('Incompatible signal lengths')
         
