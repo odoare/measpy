@@ -919,7 +919,7 @@ class Signal:
     @classmethod
     def noise(cls, fs=44100, dur=2.0, amp=1.0, freq_min = 20.0, freq_max=20000.0, unit=None, cal=None, dbfs=None, desc=None):
         """
-        ogarithmic sweep signal creation
+        Logarithmic sweep signal creation
 
         :param fs: Sampling frequency. Defaults to 44100.
         :param dur: Duration in seconds. Defaults to 2.0.

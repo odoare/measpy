@@ -262,6 +262,14 @@ def all_equal(iterator):
         return True
     return all(first == x for x in iterator)
 
+def to_list(elt):
+    if (type(elt)==float or type(elt)==int or type(elt==str) or type(elt)==type(None)):
+        return [elt]
+    elif (type(elt)==list):
+        return elt
+    else:
+        return None
+
 # def _tfe_farina(y, fs, freqs):
 #     """ Transfer function estimate
 #         Farina's method """
