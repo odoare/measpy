@@ -673,7 +673,7 @@ class Signal:
             dbfs = None
         )
 
-    def delay(self,dt):
+    def delay(self,dt=0.):
         """
         Returns a delayed signal by dt. The data arrays are not changed.
         Instead dt is added to the property t0.
