@@ -1,3 +1,24 @@
+# measpy/signalgroup.py
+#
+# --------------------------------------------------
+# measpy package: module defining Signal_group class
+# --------------------------------------------------
+#
+# Part of measpy package for signal acquisition and processing
+# (c) OD - 2021 - 2023
+# https://github.com/odoare/measpy
+
+
+import os
+import copy
+import csv
+from matplotlib.pyplot import title
+from .signal import Signal
+from ._version import get_versions
+__version__ = get_versions()['version']
+from ._tools import (csv_to_dict,
+                        convl1)
+
 known_group_len = {
     'Stereo' : 2,
     'Binau' : 2,
@@ -31,52 +52,48 @@ known_functions = ['smooth',
                     'unit_to_std',
                     'window']
 
-from .signal import Signal
-import copy
-from types import SimpleNamespace
-from matplotlib.pyplot import title
-import csv
-from .utils import siglist_to_wav
-import os
-from ._version import get_versions
-__version__ = get_versions()['version']
-from ._tools import (csv_to_dict,
-                        convl1)
 
-class Signal_group:
+class SignalGroup:
+    """ Signal group
+    """
     def __init__(self,**kwargs):
 
         # if 'sigs' not in kwargs:
         #     raise Exception('No signal list provided')
         if 'group_type' in kwargs:
-            self.group_type = kwargs['group_type']
             if kwargs['group_type'] in known_group_len:
                 if 'sigs' in kwargs:
                     if known_group_len[kwargs['group_type']]!=len(kwargs['sigs']):
                         raise Exception('Number of signals in siglist does not correspond to group type "'+kwargs['group_type']+'"')
+            self.group_type = kwargs.pop('group_type')
         else:
             self.group_type=None
-    
+
         if 'sigs' in kwargs:
-            self.sigs = kwargs['sigs']
+            self.sigs = kwargs.pop('sigs')
         else:
             if 'group_type' in kwargs:
-                if kwargs['group_type'] in known_group_len:
-                    self.sigs = list(Signal() for i in range(known_group_len[kwargs['group_type']]))
-            elif 'ns' in kwargs:
-                self.sigs = list(Signal() for i in range(kwargs['ns']))
+                if self.group_type in known_group_len:
+                    self.sigs = list(Signal() for i in range(known_group_len[self.group_type]))
+            elif 'nchannels' in kwargs:
+                self.sigs = list(Signal() for i in range(kwargs.pop('nchannels')))
             else:
                 self.sigs={}
 
         if 'desc' in kwargs:
-            self.desc = kwargs['desc']
+            self.desc = kwargs.pop('desc')
         else:
             self.desc = 'Signal group'
-        
+
+        for key,value in kwargs.items():
+            self.__dict__[key] = value
+
         for f in known_functions:
             setattr(self,f, lambda f=f, **kwargs : self.apply_function(f,**kwargs))
 
     def apply_function(self,func,**kwargs):
+        """ Applies a Signal function to all signals of a SignalGroup instance
+        """
         out = copy.deepcopy(self)
         for i,s in enumerate(self.sigs):
             fun = getattr(Signal,func)
@@ -84,6 +101,8 @@ class Signal_group:
         return out
 
     def plot(self,**kwargs):
+        """ Plots all signals of a SignalGroup instance
+        """
         for s in self.sigs:
             if 'a' in locals():
                 a = s.plot(ax=a, **kwargs)
@@ -113,7 +132,8 @@ class Signal_group:
     def to_dir(self,dirname):
         """ Stores the parameters and signals in a directory
 
-            :param dirname: Name of the directory, a (1), (2)... is added to the name if directory exists
+            :param dirname: Name of the directory, a (1), (2)...
+                            is added to the name if directory exists
             :type dirname: str
             :return: Actual name to the saved folder (if name conflit is detected)
             :rtype: str                            
@@ -125,22 +145,23 @@ class Signal_group:
             dirname = dirname+'('+str(i)+')'
         os.mkdir(dirname)
         self._params_to_csv(dirname+"/params.csv")
-        if type(self.sigs)!=type(None):
+        if not isinstance(self.sigs,type(None)):
+        # type(self.sigs)!=type(None):
             for i,s in enumerate(self.sigs):
                 s.to_csvwav(dirname+"/sigs_"+str(i))
         self._write_readme(dirname+"/README")
         return dirname
-    
+
     # ------------------------------
     def _to_dict(self,withsig=True):
-        """ Converts a Signal_group object to a dict
+        """ Converts a SignalGroup object to a dict
 
             :param withsig: Optionnally removes the data arrays, defaults to True
             :type withsig: bool
             
         """
         group = copy.deepcopy(self.__dict__)
-        if not(withsig):
+        if not withsig:
             del group['sigs']
             for f in known_functions:
                 del group[f]
@@ -148,7 +169,7 @@ class Signal_group:
 
     # --------------------------------
     def _params_to_csv(self,filename):
-        """ Writes all the Signal_group object parameters to a csv file """
+        """ Writes all the SignalGroup object parameters to a csv file """
         dd = self._to_dict(withsig=False)
         with open(filename, 'w', newline='') as file:
             writer = csv.writer(file)
@@ -168,7 +189,7 @@ class Signal_group:
 
     @classmethod
     def from_dir(cls,dirname):
-        """ Load a Signal_group object from a directory
+        """ Load a SignalGroup object from a directory
 
             :param dirname: Name of the directory
             :type dirname: str                
@@ -189,8 +210,13 @@ class Signal_group:
     @classmethod
     def _from_dict(cls, task_dict):
         self=cls()
-        self.desc = convl1(str,task_dict['desc'])
-        self.group_type = convl1(str,task_dict['group_type'])
+        for k in task_dict.keys():
+            if k=='desc':
+                self.desc = convl1(str,task_dict['desc'])
+            elif k=='group_type':
+                self.group_type = convl1(str,task_dict['group_type'])
+            else:
+                self.__dict__[k]=task_dict[k]
         return self
 
     def __getitem__(self,i):
@@ -198,3 +224,9 @@ class Signal_group:
         can be accessed as if it is a list a Signal instances
         """
         return self.sigs[i]
+
+    def __setitem__(self,i,value):
+        """ We redefine __setitem__ so that a Signal_group instance
+        can be accessed as if it is a list a Signal instances
+        """
+        self.sigs[i] = value

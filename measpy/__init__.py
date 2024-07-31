@@ -11,7 +11,7 @@ from .signal import (Signal,
                             WDBM)
 from .measurement import Measurement
 
-from .signalgroup import Signal_group
+from .signalgroup import SignalGroup
 
 from .utils import (mic_calibration_level,
                         mic_calibration_freq,
