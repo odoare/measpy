@@ -1303,6 +1303,9 @@ class Signal:
     @length.setter
     def length(self,val):
         raise AttributeError("Property 'length' cannot be set")
+    
+    def __len__(self):
+        return self.length
 
     @property
     def dur(oeuf):
