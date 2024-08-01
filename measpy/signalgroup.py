@@ -8,7 +8,6 @@
 # (c) OD - 2021 - 2023
 # https://github.com/odoare/measpy
 
-
 import os
 import copy
 import csv
@@ -235,3 +234,13 @@ class SignalGroup:
 
     def append(self,sig):
         self.sigs.append(sig)
+
+    def __repr__(self):
+        outstring = 'measpy.SignalGroup(\n'
+        outstring += "  desc='"+str(self.desc)+"',\n"
+        outstring += "  grouptype='"+str(self.group_type)+"',\n"
+        outstring += '  sigs='
+        outstring += self.sigs.__repr__()
+        outstring += ')'
+        return outstring
+

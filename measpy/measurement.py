@@ -144,7 +144,7 @@ class Measurement:
             else:
                 dursigs = calc_dur_siglist(self.out_sig)
                 if params['dur']!=dursigs:
-                    print('Selected duration is different thant duration of combined output signals.')
+                    print('Selected duration is different than duration of combined output signals.')
                     print('It is changed to match.')
                 self.dur = dursigs
         else:
@@ -204,7 +204,7 @@ class Measurement:
         if self.out_sig!=None:
             out += ",\n out_device='"+str(self.out_device)+"'"
             out += ',\n out_map='+str(self.out_map)
-            out += ',\n out_sig=list of '+str(len(self.out_sig))+' measpy.signal.Signal'
+            out += ',\n out_sig='+self.out_sig.__repr__()
             out += ",\n io_sync="+str(self.io_sync)
         if self.device_type=='pico':
             out += ",\n in_range="+str(self.in_range)
@@ -213,8 +213,8 @@ class Measurement:
         if self.device_type=='ni':
             out += ",\n in_range="+str(self.in_range)
             out += ",\n out_range="+str(self.out_range)
-            out += ",\n in_iepe="+str(self.in_iepe)            
-        out += ',\n in_sig=list of '+str(len(self.in_sig))+' measpy.signal.Signal'
+            out += ",\n in_iepe="+str(self.in_iepe)
+        out += ',\n in_sig='+self.in_sig.__repr__()
         out +=")"
         
         return out
@@ -488,7 +488,7 @@ class Measurement:
         elif type(added_samples)==int:
             asp = added_samples
         else:
-            raise Exception("added_samples: Wrong type")
+            raise TypeError("added_samples: Wrong type")
         osig = self.out_sig[out_chan].add_silence(extras=(asp,asp)).delay(-asp/self.fs)
         self.dur = osig.dur
         self.out_sig[out_chan]=osig
@@ -499,7 +499,7 @@ class Measurement:
         elif type(added_samples)==int:
             asp = added_samples
         else:
-            raise Exception("added_samples: Wrong type")
+            raise TypeError("added_samples: Wrong type")
         d = self.in_sig[in_chan].timelag(self.out_sig[out_chan])
         ds = round(d*self.fs)
         # dt = 1/self.fs

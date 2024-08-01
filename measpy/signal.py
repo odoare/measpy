@@ -476,10 +476,13 @@ class Signal:
                    int(round(kwargs['extrat'][1]*self.fs)))
         elif ('extras' in kwargs):
             samps = (kwargs['extras'][0], kwargs['extras'][1])
+        else:
+            samps = (0,0)
         return self.similar(raw=np.hstack(
             (np.zeros(samps[0]),
              self.raw,
-             np.zeros(samps[1])))
+             np.zeros(samps[1]))),
+             desc=add_step(self.desc,"Add silence")
         )
 
     def iir(self, N=2, Wn=(20, 20000), rp=None, rs=None, btype='band',  ftype='butter'):
@@ -1901,19 +1904,19 @@ class Signal:
         return (Hnl, Hfr, thd, delay)
 
     def __repr__(self):
-        out = "measpy.Signal("
+        out = "measpy.Signal(\n"
         for arg in self.__dict__.keys():
             if arg == '_unit':
-                out += 'unit='+str(self.__dict__[arg])+",\n"
+                out += '   unit='+str(self.__dict__[arg])+",\n"
             elif arg == '_cal':
-                out += 'cal='+str(self.__dict__[arg])+",\n"
+                out += '   cal='+str(self.__dict__[arg])+",\n"
             elif arg == '_dbfs':
-                out += 'dbfs='+str(self.__dict__[arg])+",\n"
+                out += '   dbfs='+str(self.__dict__[arg])+",\n"
             else:
                 if type(self.__dict__[arg]) == str:
-                    out += arg+"='"+self.__dict__[arg]+"',\n"
+                    out += "   " + arg+"='"+self.__dict__[arg]+"',\n"
                 else:
-                    out += arg+"="+str(self.__dict__[arg])+",\n"
+                    out += "   " + arg+"="+str(self.__dict__[arg])+",\n"
         out += ')'
         return out
  
