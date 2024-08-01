@@ -52,7 +52,6 @@ known_functions = ['smooth',
                     'unit_to_std',
                     'window']
 
-
 class SignalGroup:
     """ Signal group
     """
@@ -64,7 +63,7 @@ class SignalGroup:
             if kwargs['group_type'] in known_group_len:
                 if 'sigs' in kwargs:
                     if known_group_len[kwargs['group_type']]!=len(kwargs['sigs']):
-                        raise Exception('Number of signals in siglist does not correspond to group type "'+kwargs['group_type']+'"')
+                        raise ValueError('Number of signals in siglist does not correspond to group type "'+kwargs['group_type']+'"')
             self.group_type = kwargs.pop('group_type')
         else:
             self.group_type=None
@@ -171,7 +170,7 @@ class SignalGroup:
     def _params_to_csv(self,filename):
         """ Writes all the SignalGroup object parameters to a csv file """
         dd = self._to_dict(withsig=False)
-        with open(filename, 'w', newline='') as file:
+        with open(filename, 'w', newline='', encoding='utf-8') as file:
             writer = csv.writer(file)
             for key in dd:
                 if type(dd[key])==list:
@@ -194,15 +193,15 @@ class SignalGroup:
             :param dirname: Name of the directory
             :type dirname: str                
         """
-        task_dict = csv_to_dict(dirname+'/params.csv')
-        self = cls._from_dict(task_dict)
+        group_dict = csv_to_dict(dirname+'/params.csv')
+        self = cls._from_dict(group_dict)
         more_files = True
         file_ind = 0
         self.sigs=[]
         while more_files:
             try:
                 self.sigs.append(Signal.from_csvwav(dirname+'/sigs_'+str(file_ind)))
-            except:
+            except FileNotFoundError:
                 more_files = False
             file_ind += 1
         return self
@@ -230,3 +229,9 @@ class SignalGroup:
         can be accessed as if it is a list a Signal instances
         """
         self.sigs[i] = value
+
+    def __len__(self):
+        return len(self.sigs)
+
+    def append(self,sig):
+        self.sigs.append(sig)
