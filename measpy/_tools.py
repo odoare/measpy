@@ -13,13 +13,13 @@ import numpy as np
 import h5py
 
 def csv_to_dict(filename):
-    """ Conversion from a CSV (produced by the class Measurement) to a dict
+    """ Conversion from a CSV (produced by the class Measurement or SignalGroup) to a dict
           Default separator is (,)
           First row is the key string
           The value is a list
     """
     dd={}
-    with open(filename, 'r') as file:
+    with open(filename, 'r', encoding='utf-8') as file:
         reader = csv.reader(file)
         for row in reader:
             dd[row[0]]=row[1:]
