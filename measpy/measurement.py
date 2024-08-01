@@ -8,70 +8,74 @@
 # (c) OD - 2021 - 2023
 # https://github.com/odoare/measpy
 
-from .signal import Signal
+import csv
+import os
+from copy import copy
 from functools import partial
-
-from ._tools import (csv_to_dict, 
-                     convl, 
-                     convl1,  
+import h5py
+import numpy as np
+#import matplotlib.pyplot as plt
+from .signal import Signal
+from .signalgroup import SignalGroup
+from ._tools import (csv_to_dict,
+                     convl,
+                     convl1,
                      calc_dur_siglist,
                      h5file_write_from_queue)
-
-import numpy as np
-import matplotlib.pyplot as plt
-
-from copy import copy
 
 from ._version import get_versions
 __version__ = get_versions()['version']
 del get_versions
-
-from copy import copy,deepcopy
-import csv
-import os
-import h5py
 
 class Measurement:
     # ---------------------------
     def __init__(self, **params):
         # Check out_sig contents
         if 'out_sig' in params:
-            non=params['out_sig']!=None
-            sig=type(params['out_sig'])!=list
-            if non&sig:
-                raise Exception("out_sig must but be a list of measpy.signal.Signal or None")
-            else:
-                #print(list((type(s)==Signal for s in params['out_sig'])))
-                if all((type(s)==Signal for s in params['out_sig'])):
-                    # print('These are all signals')
-                    if all(s.fs==params['out_sig'][0].fs for s in params['out_sig']):
-                        # print('Same fs for all signals')
-                        self.out_sig = params['out_sig']
+            osg = params['out_sig']
+            if isinstance(osg,list):
+                if all((isinstance(s,Signal) for s in osg)):
+                    if all(s.fs==osg[0].fs for s in osg):
+                        self.out_sig = SignalGroup(sigs=osg,desc='Output signals')
                     else:
-                        raise Exception("Signals in out_sig list have different sampling frequencies")                     
+                        raise ValueError("Signals in out_sig list have different sampling frequencies")                     
                 else:
-                    raise Exception("Some elements of out_sig list are not Signals")
+                    raise ValueError("Some elements of out_sig list are not Signals")
+            elif isinstance(osg,SignalGroup):
+                if all(s.fs==osg[0].fs for s in osg):
+                    self.out_sig = osg
+                else:
+                    raise ValueError("Signals in out_sig SignalGroup have different sampling frequencies")                     
+            elif isinstance(osg,type(None)):
+                self.out_sig = None
+            else:
+                raise ValueError("out_sig must but be a list of measpy.signal.Signal or measpy.signalgroup.SignalGroup or None")
         else:
             self.out_sig = None
 
         # Check in_sig contents
         if 'in_sig' in params:
-            non=params['in_sig']!=None
-            sig=type(params['in_sig'])!=list
-            if non&sig:
-                raise Exception("in_sig must but be a list of measpy.signal.Signal or None")
-            else:
-                if all((type(s)==Signal for s in params['in_sig'])):
-                    # print('These are all signals')
-                    if all(s.fs==params['in_sig'][0].fs for s in params['in_sig']):
-                        # print('Same fs for all signals')
-                        self.in_sig = params['in_sig']
+            isg = params['in_sig']
+            if isinstance(isg,list):
+                if all((isinstance(s,Signal) for s in isg)):
+                    if all(s.fs==isg[0].fs for s in isg):
+                        self.in_sig = SignalGroup(sigs=isg,desc='Input signals')
                     else:
-                        raise Exception("Signals in in_sig list have different sampling frequencies")                     
+                        raise ValueError("Signals in in_sig list have different sampling frequencies")
                 else:
-                    raise Exception("Some elements of in_sig list are not Signals")
+                    raise ValueError("Some elements of in_sig list are not Signals")
+            elif isinstance(isg,SignalGroup):
+                if all(s.fs==isg[0].fs for s in isg):
+                    self.in_sig = isg
+                else:
+                    raise ValueError("Signals in in_sig SignalGroup have different sampling frequencies")
+            elif isinstance(osg,type(None)):
+                self.in_sig = None
+            else:
+                raise ValueError("in_sig must but be a list of measpy.signal.Signal or measpy.signalgroup.SignalGroup or None")
         else:
             self.in_sig = None
+
 
         #Check sampling frequencies
         if type(self.out_sig)==type(None):
