@@ -249,10 +249,14 @@ class Measurement:
             dirname = dirname+'('+str(i)+')'
         os.mkdir(dirname)
         self._params_to_csv(dirname+"/params.csv")
-        if type(self.in_sig)!=type(None):
+        if isinstance(self.in_sig,SignalGroup):
+            self.in_sig.to_dir(dirname+"/in_sig")
+        if isinstance(self.in_sig,list):
             for i,s in enumerate(self.in_sig):
                 s.to_csvwav(dirname+"/in_sig_"+str(i))
-        if type(self.out_sig)!=type(None):
+        if isinstance(self.out_sig,SignalGroup):
+            self.out_sig.to_dir(dirname+"/out_sig")
+        if isinstance(self.out_sig,list):
             for i,s in enumerate(self.out_sig):
                 s.to_csvwav(dirname+"/out_sig_"+str(i))
         self._write_readme(dirname+"/README")
@@ -317,20 +321,35 @@ class Measurement:
 
     # ------------------------
     @classmethod
-    def from_dir(cls,dirname):
+    def from_dir(cls,dirname, version='0.2'):
         """ Load a measurement object from a directory
 
             :param dirname: Name of the directory
-            :type dirname: str                
+            :type dirname: str
+            :param version: Specifies the Measpy version
+            used to save the measurement data, defaults to '0.2'.
+            Possible values are '0.1' for 0.1.x versions,
+            '0.2' for 0.2.x versions
+            :type version: str            
         """
-
-        task_dict = csv_to_dict(dirname+'/params.csv')
-        self = cls._from_dict(task_dict)
-        if 'in_map' in task_dict:
-            self.in_sig = list(Signal.from_csvwav(dirname+'/in_sig_'+str(i)) for i in range(len(task_dict['in_map'])) )
-        if 'out_map' in task_dict:
-            self.out_sig = list(Signal.from_csvwav(dirname+'/out_sig_'+str(i)) for i in range(len(task_dict['out_map'])) )
-        return self
+        if version=='0.1':
+            task_dict = csv_to_dict(dirname+'/params.csv')
+            self = cls._from_dict(task_dict)
+            if 'in_map' in task_dict:
+                self.in_sig = SignalGroup(sigs=list(Signal.from_csvwav(dirname+'/in_sig_'+str(i)) for i in range(len(task_dict['in_map'])) ), desc='Input signals')
+            if 'out_map' in task_dict:
+                self.out_sig = SignalGroup(sigs=list(Signal.from_csvwav(dirname+'/out_sig_'+str(i)) for i in range(len(task_dict['out_map'])) ), desc='Output signals')
+            return self
+        elif version=='0.2':
+            task_dict = csv_to_dict(dirname+'/params.csv')
+            self = cls._from_dict(task_dict)
+            if 'in_map' in task_dict:
+                self.in_sig = SignalGroup.from_dir(dirname+'/in_sig')
+            if 'out_map' in task_dict:
+                self.out_sig = SignalGroup.from_dir(dirname+'/out_sig')
+            return self
+        else:
+            raise ValueError('Specified version not recognized')
 
     @classmethod
     def from_hdf5(cls,filename):
@@ -468,9 +487,15 @@ class Measurement:
     # -------------------------------
     def _write_readme(self,filename):
         with open(filename, 'w') as f:
+            f.write('Measurement directory')
+            f.write('\n\n')
             f.write('Created with measpy version '+__version__)
-            f.write('\n')
+            f.write('\n\n')
             f.write('https://github.com/odoare/measpy')
+            f.write('\n\n')
+            f.write('Import the data with:\n')
+            f.write('import measpy as mp\n')
+            f.write('M = mp.Measurement.from_dir("path_to_directory")')
 
     def sync_prepare(self,out_chan=0,added_samples=None):
         """

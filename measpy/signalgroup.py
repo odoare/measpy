@@ -51,6 +51,8 @@ known_functions = ['smooth',
                     'unit_to_std',
                     'window']
 
+known_properties = ['length', 'dur']
+
 class SignalGroup:
     """ Signal group
     """
@@ -73,10 +75,10 @@ class SignalGroup:
             if 'group_type' in kwargs:
                 if self.group_type in known_group_len:
                     self.sigs = list(Signal() for i in range(known_group_len[self.group_type]))
-            elif 'nchannels' in kwargs:
-                self.sigs = list(Signal() for i in range(kwargs.pop('nchannels')))
+            elif 'nsigs' in kwargs:
+                self.sigs = list(Signal() for i in range(kwargs.pop('nsigs')))
             else:
-                self.sigs={}
+                self.sigs=[]
 
         if 'desc' in kwargs:
             self.desc = kwargs.pop('desc')
@@ -180,7 +182,7 @@ class SignalGroup:
     # -------------------------------
     def _write_readme(self,filename):
         with open(filename, 'w') as f:
-            f.write('Signal group directory\n')
+            f.write('Signal group directory\n\n')
             f.write('Created with measpy version '+__version__)
             f.write('\n')
             f.write('https://github.com/odoare/measpy')
@@ -232,6 +234,13 @@ class SignalGroup:
     def __len__(self):
         return len(self.sigs)
 
+    @property
+    def nsigs(self):
+        return len(self.sigs)
+    @nsigs.setter
+    def nsigs(self,values):
+        raise AttributeError('Property nsigs cannot be set.')
+
     def append(self,sig):
         self.sigs.append(sig)
 
@@ -243,4 +252,3 @@ class SignalGroup:
         outstring += self.sigs.__repr__()
         outstring += ')'
         return outstring
-
