@@ -51,7 +51,7 @@ known_functions = ['smooth',
                     'unit_to_std',
                     'window']
 
-known_properties = ['length', 'dur']
+#known_properties = ['length', 'dur']
 
 class SignalGroup:
     """ Signal group
@@ -109,24 +109,6 @@ class SignalGroup:
                 title (self.desc)
             else:
                 a = s.plot(**kwargs)
-
-    # def to_csvwav(self,filename):
-    #     """Saves the signal into a pair of files:
-
-    #     * A CSV file with the signal parameters
-    #     * A WAV file with the raw data
-
-    #     If the str parameter filename='file', the created files are file.csv and file.wav
-
-    #     :param filename: string for the base file name
-    #     :type filename: str
-    #     """
-    #     with open(filename+'.csv', 'w', newline='') as file:
-    #         writer = csv.writer(file)
-    #         for arg in self.__dict__.keys():
-    #             if arg != 'sigs':
-    #                 writer.writerow([arg, self.__dict__[arg]])
-    #     siglist_to_wav(filename+'.wav', int(round(self.fs)), self.raw)
 
     # -----------------------
     def to_dir(self,dirname):
@@ -241,6 +223,26 @@ class SignalGroup:
     def nsigs(self,values):
         raise AttributeError('Property nsigs cannot be set.')
 
+    @property
+    def length(self):
+        return [s.length for s in self.sigs]
+
+    @property
+    def dur(self):
+        return [s.dur for s in self.sigs]
+
+    @property
+    def fs(self):
+        return [s.fs for s in self.sigs]
+
+    @property
+    def unit(self):
+        return [s.unit for s in self.sigs]
+    
+    @property
+    def dbfs(self):
+        return [s.dbfs for s in self.sigs]
+
     def append(self,sig):
         self.sigs.append(sig)
 
@@ -252,3 +254,21 @@ class SignalGroup:
         outstring += self.sigs.__repr__()
         outstring += ')'
         return outstring
+
+    # def to_csvwav(self,filename):
+    #     """Saves the signal into a pair of files:
+
+    #     * A CSV file with the signal parameters
+    #     * A WAV file with the raw data
+
+    #     If the str parameter filename='file', the created files are file.csv and file.wav
+
+    #     :param filename: string for the base file name
+    #     :type filename: str
+    #     """
+    #     with open(filename+'.csv', 'w', newline='') as file:
+    #         writer = csv.writer(file)
+    #         for arg in self.__dict__.keys():
+    #             if arg != 'sigs':
+    #                 writer.writerow([arg, self.__dict__[arg]])
+    #     siglist_to_wav(filename+'.wav', int(round(self.fs)), self.raw)
