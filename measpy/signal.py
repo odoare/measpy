@@ -1043,18 +1043,47 @@ class Signal:
         convert_to_fp = kwargs.setdefault("convert_to_fp", True)
 
         out = cls()
-        with open(filename+'.csv', 'r') as file:
+        with open(filename+'.csv', 'r', encoding="utf-8") as file:
             reader = csv.reader(file)
             for row in reader:
                 if row[0] == '_unit' or row[0] == 'unit':
-                    out.__dict__[row[0]] = Unit(row[1])
+                    if len(row)<3:
+                        out._unit = Unit(row[1])
+                    else:
+                        out._unit = list(Unit(e) for e in row[1:])
+                if row[0] == '_cal':
+                    print(row[1:])
+                    if len(row)<3:
+                        try:
+                            out._cal = float(row[1])
+                        except:
+                            out._cal = row[1]
+                    else:
+                        try:
+                            out._cal = np.array(list(float(e) for e in row[1:]))
+                        except:
+                            out._cal = row[1:]
+                if row[0] == '_dbfs':
+                    if len(row)<3:
+                        try:
+                            out._dbfs = float(row[1])
+                        except:
+                            out._dbfs = row[1]
+                    else:
+                        try:
+                            out._dbfs = np.array(list((float(e) for e in row[1:])))
+                        except:
+                            out._dbfs = row[1:]
                 elif len(row) < 3:
                     try:
                         out.__dict__[row[0]] = float(row[1])
                     except:
                         out.__dict__[row[0]] = row[1]
                 else:
-                    out.__dict__[row[0]] = row[1:]
+                    try:
+                        out.__dict__[row[0]] = np.array(list(float(e) for e in row[1:]))
+                    except:
+                        out.__dict__[row[0]] = row[1:]
         _, y = wav.read(filename+'.wav')
         if (convert_to_fp and np.issubdtype(y.dtype, np.integer)):
             min = float(np.iinfo(y.dtype).max)
@@ -1471,6 +1500,18 @@ class Signal:
         raise AttributeError("Property 'rms' cannot be set")
 
     # #################################################################
+    # Enumerator functions
+    # #################################################################
+
+    def __getitem__(self,i):
+        if i>self.nchannels-1:
+            raise ValueError(f'Signal has {self.nchannels} channels, channel index parameter is too large.')
+        if i<0:
+            raise ValueError(f'Negative indev value not allowed.')
+        else:
+            return self.unpack()[i]
+
+    # #################################################################
     # Operators
     # ###################################################################
 
@@ -1752,11 +1793,14 @@ class Signal:
         :param filename: string for the base file name
         :type filename: str
         """
-        with open(filename+'.csv', 'w', newline='') as file:
+        with open(filename+'.csv', 'w', newline='', encoding="utf-8") as file:
             writer = csv.writer(file)
-            for arg in self.__dict__.keys():
+            for arg,val in self.__dict__.items():
                 if arg != '_rawvalues':
-                    writer.writerow([arg, self.__dict__[arg]])
+                    if isinstance(val,(list,np.ndarray)):
+                        writer.writerow([arg]+list(val))
+                    else:
+                        writer.writerow([arg]+[val])
         wav.write(filename+'.wav', int(round(self.fs)), self.raw)
 
     def to_csvtxt(self, filename, datatype='raw', includetime=False):
