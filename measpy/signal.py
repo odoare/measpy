@@ -749,6 +749,9 @@ class Signal:
         """ FFT of the signal.
             Returns a Spectral object. Unit is preserved during the process.
         """
+        if self.nchannels>1:
+            raise NotImplementedError('Transfer function calculation not implemented for multichannels signals.')
+
         return Spectral(values=np.fft.fft(self.values, norm=norm),
                         fs=self.fs,
                         unit=self.unit*Unit('s'),
@@ -760,6 +763,9 @@ class Signal:
         """ Real FFT of the signal.
             Returns a Spectral object. Unit is preserved during the process.
         """
+        if self.nchannels>1:
+            raise NotImplementedError('Transfer function calculation not implemented for multichannels signals.')
+
         odd = np.mod(self.length, 2) == 1
         return Spectral(values=np.fft.rfft(self.values, norm=norm),
                         fs=self.fs,
@@ -793,6 +799,10 @@ class Signal:
 
         :return: A Spectral object
         """
+
+        if self.nchannels>1 or x.nchannels>1:
+            raise NotImplementedError('Transfer function calculation not implemented for multichannels signals.')
+
         if self.fs != x.fs:
             raise Exception('Sampling frequencies have to be the same')
         if self.length != x.length:
@@ -838,6 +848,9 @@ class Signal:
         :return: A Spectral object
 
         """
+        if self.nchannels>1 or x.nchannels>1:
+            raise NotImplementedError('Coherence not implemented for multichannels signals.')
+
         if self.fs != x.fs:
             raise Exception('Sampling frequencies have to be the same')
         if self.length != x.length:
@@ -880,6 +893,9 @@ class Signal:
 
         """
 
+        if self.nchannels>1:
+            raise NotImplementedError('PSD not implemented for multichannels signals.')
+
         # Set default values for welch's kwargs
         if not "fs" in kwargs:
             kwargs["fs"] = self.fs
@@ -906,6 +922,10 @@ class Signal:
         :return: The FRF calculated by the Farina's method (2000)
         :rtype: measpy.signal.Spectral
         """
+
+        if self.nchannels>1:
+            raise NotImplementedError('Transfer function calculation not implemented for multichannels signals.')
+
         leng = int(2**np.ceil(np.log2(self.length)))
         Y = np.fft.rfft(self.values, leng)/self.fs
         f = np.linspace(0, self.fs/2, num=round(leng/2)+1)  # frequency axis
@@ -1524,20 +1544,30 @@ class Signal:
         :rtype: Signal
         """
 
-        if not self.unit.same_dimensions_as(other.unit):
-            raise Exception('Incompatible units in addition of sginals')
         if self.fs != other.fs:
-            raise Exception(
+            raise ValueError(
                 'Incompatible sampling frequencies in addition of signals')
         if self.length != other.length:
-            raise Exception('Incompatible signal lengths')
+            raise ValueError('Incompatible signal lengths')
 
-        return self.similar(
-            values=self.values+other.unit_to(self.unit).values,
-            cal=None,
-            dbfs=None,
-            desc=self.desc+'\n + '+other.desc
-        )
+        if self.nchannels>1:
+            if other.nchannels==self.nchannels:
+                raise NotImplementedError("Addition of multichannel signals is not yet implemented")
+            if other.nchannels==1:
+                raise NotImplementedError("Addition of multichannel signals is not yet implemented")
+            else:
+                raise ValueError(f'Arrays could not be broadcast together with channel count of {self.nchannels} and {other.nchannels}')
+        elif other.nchannels>1:
+            raise NotImplementedError("Addition of multichannel signals is not yet implemented")
+        else:
+            if not self.unit.same_dimensions_as(other.unit):
+                raise ValueError('Incompatible units in addition of sginals')
+            return self.similar(
+                values=self.values+other.unit_to(self.unit).values,
+                cal=None,
+                dbfs=None,
+                desc=self.desc+'\n + '+other.desc
+            )
 
     def __add__(self, other):
         """Add something to the signal
@@ -1545,10 +1575,10 @@ class Signal:
         :param other: Something to add to
         :type other: Signal, float, int, scalar quantity
         """
-        if type(other) == Signal:
+        if isinstance(other, Signal):
             return self._add(other)
 
-        if (type(other) == float) or (type(other) == int) or (type(other) == complex) or isinstance(other, numbers.Number):
+        if isinstance(other, (float,int,complex,numbers.Number) ):
             # print('Add with a number without unit, it is considered to be of same unit')
             return self._add(
                 self.similar(
@@ -1556,9 +1586,9 @@ class Signal:
                     desc=str(other)
                 )
             )
-        if type(other) == unyt.array.unyt_quantity:
+        if isinstance(other,unyt.array.unyt_quantity):
             if not self.unit.same_dimensions_as(other.units):
-                raise Exception('Incompatible units in addition of sginals')
+                raise ValueError('Incompatible units in addition of sginals')
             a = other.units.get_conversion_factor(self.unit)[0]
             return self._add(
                 self.similar(
@@ -1566,14 +1596,14 @@ class Signal:
                     desc=str(other)
                 )
             )
-        if type(other) == np.ndarray:
+        if isinstance(other, np.ndarray):
             return self._add(
                 self.similar(
                     value=other,
                     desc='array'
                 )
             )
-        if type(other) == unyt.array.unyt_array:
+        if isinstance(other,unyt.array.unyt_array):
             return self._add(
                 self.similar(
                     values=other.value,
@@ -1582,7 +1612,7 @@ class Signal:
                 )
             )
         else:
-            raise Exception(
+            raise TypeError(
                 'Incompatible type when adding something to a Signal')
 
     def __radd__(self, other):
@@ -1619,18 +1649,28 @@ class Signal:
         :type other: Signal
         """
         if self.fs != other.fs:
-            raise Exception(
+            raise ValueError(
                 'Incompatible sampling frequencies in multiplication of signals')
         if self.length != other.length:
-            raise Exception(
+            raise ValueError(
                 'Incompatible signal lengths in multiplication of signals')
-
-        return self.similar(
-            raw=self.values*other.values,
-            unit=self.unit*other.unit,
-            cal=None,
-            dbfs=None,
-            desc=self.desc+'\n * '+other.desc
+        
+        if self.nchannels>1:
+            if other.nchannels==self.nchannels:
+                raise NotImplementedError("Addition of multichannel signals is not yet implemented")
+            if other.nchannels==1:
+                raise NotImplementedError("Addition of multichannel signals is not yet implemented")
+            else:
+                raise ValueError(f'Arrays could not be broadcast together with channel count of {self.nchannels} and {other.nchannels}')
+        elif other.nchannels>1:
+            raise NotImplementedError("Addition of multichannel signals is not yet implemented")
+        else:
+            return self.similar(
+                raw=self.values*other.values,
+                unit=self.unit*other.unit,
+                cal=None,
+                dbfs=None,
+                desc=self.desc+'\n * '+other.desc
         )
 
     def __mul__(self, other):
@@ -1674,7 +1714,7 @@ class Signal:
                 )
             )
         else:
-            raise Exception(
+            raise TypeError(
                 'Incompatible type when multipling something with a Signal')
 
     def __rmul__(self, other):
@@ -1722,7 +1762,7 @@ class Signal:
         """
         if type(other) == Signal:
             if self.fs != other.fs:
-                raise Exception(
+                raise ValueError(
                     'Incompatible sampling frequencies in division of signals')
             return self._div(other)
 
@@ -1740,7 +1780,7 @@ class Signal:
                 )
             )
         else:
-            raise Exception(
+            raise TypeError(
                 'Incompatible type when multipling something with a Signal')
 
     def __rtruediv__(self, other):
@@ -1845,7 +1885,7 @@ class Signal:
         elif datatype == 'values':
             outdata = self.values[:, None]
         else:
-            raise Exception("'"+str(datatype) +
+            raise ValueError("'"+str(datatype) +
                             "' is not a possible choice for datatype option")
         if includetime:
             outdata = np.concatenate((self.time[:, None], outdata), 1)
