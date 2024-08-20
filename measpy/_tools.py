@@ -11,6 +11,8 @@
 import csv
 import numpy as np
 import h5py
+import numbers
+from unyt import Unit
 
 def csv_to_dict(filename):
     """ Conversion from a CSV (produced by the class Measurement) to a dict
@@ -40,7 +42,12 @@ def convl1(fun,xx):
     return yy
 
 def add_step(a,b):
-    return a+'\n -->'+b
+    if isinstance(a,str):
+        return a+'\n -->'+b
+    if isinstance(a,list):
+        return list(s+'\n -->'+b for s in a)
+    else:
+        raise TypeError('First argument has to be a string or list of strings')
 
 def wrap(phase):
     """ Opposite of np.unwrap   
@@ -262,13 +269,23 @@ def all_equal(iterator):
         return True
     return all(first == x for x in iterator)
 
-def to_list(elt):
-    if (type(elt)==float or type(elt)==int or type(elt==str) or type(elt)==type(None)):
-        return [elt]
-    elif (type(elt)==list):
-        return elt
+def to_list(elt,n):
+    if isinstance(elt,(numbers.Number,str,Unit)):
+        return [elt] * n
+    elif isinstance(elt,(list,np.ndarray)):
+        return list(elt)
     else:
-        return None
+        return [None] * n
+
+def array_mult_unitlist(values,unit):
+    """ Multiplies an array with a unyt instance
+    or a list of unyts with the same numer of elements
+    """
+    out = np.zeros_like(values)
+    if isinstance(unit,list):
+        return list(values[i]*u for i,u in enumerate(unit))
+    else:
+        return values*unit
 
 # def _tfe_farina(y, fs, freqs):
 #     """ Transfer function estimate
