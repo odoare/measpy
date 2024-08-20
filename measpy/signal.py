@@ -54,7 +54,9 @@ from ._tools import (add_step,
                            tri,
                            unwrap_around_index,
                            get_index,
-                           h5file_write_from_queue)
+                           h5file_write_from_queue,
+                           array_mult_unitlist,
+                           to_list)
 
 ##################
 ##              ##
@@ -722,16 +724,22 @@ class Signal:
         The other properties of the resulting signal are that of the initial signal (the instance whose method has been called)
         """
         
-        if not self.unit.same_dimensions_as(other.unit):
-            raise Exception('Incompatible units during sginal packing')
-        if self.fs != other.fs:
-            raise Exception(
-                'Incompatible sampling frequencies during signal packing')
+        # if not self.unit.same_dimensions_as(other.unit):
+        #     raise Exception('Incompatible units during sginal packing')
+        # if self.fs != other.fs:
+        #     raise Exception(
+        #         'Incompatible sampling frequencies during signal packing')
         if self.length != other.length:
             raise Exception('Incompatible signal lengths')
-        
-        return self.similar(values=np.vstack((self.values.T,other.unit_to(self.unit).values.T)).T)
-
+        if self.fs != other.fs:
+            raise Exception('Incompatible signal sampling frequencies')
+        nc1 = self.nchannels
+        nc2 = other.nchannels
+        return self.similar(unit=to_list(self.unit,nc1)+to_list(other.unit,nc2),
+                            cal=to_list(self.cal,nc1)+to_list(other.cal,nc2),
+                            dbfs=to_list(self.dbfs,nc1)+to_list(other.dbfs,nc2),
+                            desc=to_list(self.desc,nc1)+to_list(other.desc,nc2),
+                            raw=np.vstack((self.raw.T,other.raw.T)).T)
 
     # #################################################################
     # Methods that return an object of type Spectral
@@ -1171,8 +1179,13 @@ class Signal:
         Unpack a multichannel signal and returns a list of signals
         """
         outl = []
-        for i in range(self.nchannels):
-            outl.append(self.similar(values=self.values[:,i]))
+        nc = self.nchannels
+        for i in range(nc):
+            outl.append(self.similar(values=self.values[:,i],
+                desc=to_list(self.desc,nc)[i],
+                dbfs=to_list(self.dbfs,nc)[i],
+                cal=to_list(self.cal,nc)[i],
+                unit=to_list(self.unit,nc)[i] ))
         return outl
 
     #######################################################################
@@ -1182,26 +1195,36 @@ class Signal:
     @property
     def unit(self):
         """
-        Physical unit of the signal
+        Physical unit of the signal(s)
         """
         if hasattr(self,'_unit'):
             return self._unit
         else:
-            return Unit('1')   
+            return np.ones(self.nchannels)*Unit('1')
     @unit.setter
     def unit(self,val):
-        if val==None:
+        if isinstance(val,str):
+            if Unit(val)==Unit('1'):
+                try:
+                    del(self._unit)
+                except:
+                    pass
+            else:
+                try:
+                    u=Unit(val)
+                except:
+                    raise ValueError('String argument cannot be converted to unit')
+                self._unit = u
+        elif isinstance(val,list):
+            try:
+                self._unit = list((Unit(un) for un in val))
+            except:
+                raise ValueError('List item cannot be converted to unit')
+        elif val==None:
             try:
                 del(self._unit)
             except:
                 pass
-        elif Unit(val)==Unit('1'):
-            try:
-                del(self._unit)
-            except:
-                pass
-        else:
-            self._unit = Unit(val)
 
     @property
     def dbfs(self):
@@ -1211,16 +1234,25 @@ class Signal:
         if hasattr(self,'_dbfs'):
             return self._dbfs
         else:
-            return 1.0   
+            return 1.0
     @dbfs.setter
     def dbfs(self,val):
-        if val==None:
-            try:
+        if val is None:
+            if hasattr(self,'_dbfs'):
                 del(self._dbfs)
-            except:
-                pass
         else:
-            self._dbfs = val
+            if isinstance(val,numbers.Number):
+                if val==1.0:
+                    if hasattr(self,'_dbfs'):
+                        del(self._dbfs)
+                else:
+                    self._dbfs = val
+            elif isinstance(val,list): # todo: check list length
+                self._dbfs = np.array(val)
+            elif isinstance(val,np.ndarray): #todo: check length
+                self._dbfs = val
+            else:
+                raise ValueError('dbfs type must be number or list of numbers or numpy array')
 
     @property
     def cal(self):
@@ -1230,16 +1262,27 @@ class Signal:
         if hasattr(self,'_cal'):
             return self._cal
         else:
-            return 1.0    
+            return 1.0 
     @cal.setter
     def cal(self,val):
-        if val==None:
-            try:
+        if val is None:
+            if hasattr(self,'_cal'):
                 del(self._cal)
-            except:
-                pass
         else:
-            self._cal = val
+            if isinstance(val,numbers.Number):            
+                if val==1.0:
+                    if hasattr(self,'_cal'):
+                        del(self._cal)
+                else:
+                    self._cal = val
+            elif isinstance(val,list): # todo: check list length
+                self._cal = np.array(val)
+            elif isinstance(val,np.ndarray): #todo: check length
+                self._cal = val
+            elif isinstance(val,str):
+                self._cal = val
+            else:
+                raise ValueError('cal type must be number or list of numbers or numpy array or str')
 
     @property
     def invcal(self):
@@ -1249,14 +1292,12 @@ class Signal:
         if hasattr(self,'_invcal'):
             return self._invcal
         else:
-            return 1.0 
+            return 1.0
     @invcal.setter
     def invcal(self,val):
-        if val==None:
-            try:
+        if val is None:
+            if hasattr(self, '_invcal'):
                 del(self._invcal)
-            except:
-                pass
         else:
             self._invcal = val
 
@@ -1275,7 +1316,7 @@ class Signal:
         """
         Values as 1D numpy array
         """
-        if isinstance(self.cal, (int, float)):
+        if isinstance(self.cal, (int, float, np.ndarray)) and isinstance(self.dbfs, (int, float, np.ndarray)):
             return self._rawvalues*self.dbfs/self.cal
         elif type(self.cal) == str:
             d = {}
@@ -1287,7 +1328,7 @@ class Signal:
             print('cal property not recognized')
     @values.setter
     def values(self, val):
-        if isinstance(self.cal, (int, float)):
+        if isinstance(self.cal, (int, float, np.ndarray)) and isinstance(self.dbfs, (int, float, np.ndarray)):
             self._rawvalues = val*self.cal/self.dbfs
         elif type(self.cal) == str:
             if hasattr(self, 'invcal'):
@@ -1355,8 +1396,8 @@ class Signal:
         """
         Mean value
         """
-        return np.mean(self.values,axis=0)*Unit(self.unit)
-
+        #return np.mean(self.values,axis=0)*Unit(self.unit)
+        return array_mult_unitlist(np.mean(self.values,axis=0),self.unit)
     @property
     def length(self):
         """
@@ -1384,7 +1425,8 @@ class Signal:
         :return: Max value
         :rtype: unyt.array.unyt_quantity
         """
-        return np.max(self.values,axis=0)*unyt.Unit(self.unit)
+        #return np.max(self.values,axis=0)*unyt.Unit(self.unit)
+        return array_mult_unitlist(np.max(self.values,axis=0),self.unit)
     @max.setter
     def max(self,val):
         raise AttributeError("Property 'max' cannot be set")
@@ -1408,7 +1450,8 @@ class Signal:
         :return: Min value
         :rtype: unyt.array.unyt_quantity
         """
-        return np.min(self.values,axis=0)*unyt.Unit(self.unit)
+        #return np.min(self.values,axis=0)*unyt.Unit(self.unit)
+        return array_mult_unitlist(np.min(self.values,axis=0),self.unit)
     @min.setter
     def min(self,val):
         raise AttributeError("Property 'min' cannot be set")
@@ -1420,7 +1463,9 @@ class Signal:
             :return: A quantity
             :rtype: unyt.Quantity      
         """
-        return np.sqrt(np.mean(self.values**2,axis=0))*self.unit
+        #return np.sqrt(np.mean(self.values**2,axis=0))*self.unit
+        return array_mult_unitlist(np.sqrt(np.mean(self.values**2,axis=0)),self.unit)
+
     @rms.setter
     def rms(self,val):
         raise AttributeError("Property 'rms' cannot be set")
@@ -2004,7 +2049,19 @@ class Signal:
             :rtype: matplotlib.axes._axes.Axes
         """
 
-        kwargs.setdefault("label", self.desc+' ['+str(self.unit.units)+']')
+        if self.nchannels > 1:
+            if isinstance(self.desc,list):
+                if isinstance(self.unit, list):
+                    kwargs.setdefault("label", list(f'{self.desc[i]} [{self.unit[i].units}]' for i in range(self.nchannels)) )
+                else:
+                    kwargs.setdefault("label", list(f'{d} [{self.unit.units}]' for d in self.desc) )
+            else:
+                if isinstance(self.unit, list):
+                    kwargs.setdefault("label", list(f'{self.desc}, chan {i} [{u.units}]' for i,u in enumerate(self.unit)) )
+                else:
+                    kwargs.setdefault("label", list(f'{self.desc}, chan {i} [{self.unit.units}]' for i in range(self.nchannels)) )
+        else:
+            kwargs.setdefault("label", self.desc )
 
         if ax == None:
             _, ax = plt.subplots(1)
