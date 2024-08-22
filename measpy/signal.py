@@ -1262,13 +1262,13 @@ class Signal:
                 try:
                     u=Unit(val)
                 except:
-                    raise ValueError('String argument cannot be converted to unit')
+                    raise ValueError('unit string argument cannot be converted to unit')
                 self._unit = u
         elif isinstance(val,list):
             try:
                 self._unit = list((Unit(un) for un in val))
             except:
-                raise ValueError('List item cannot be converted to unit')
+                raise ValueError('At least one list item cannot be converted to unit')
         elif val==None:
             try:
                 del(self._unit)
@@ -1657,13 +1657,13 @@ class Signal:
         
         if self.nchannels>1:
             if other.nchannels==self.nchannels:
-                raise NotImplementedError("Addition of multichannel signals is not yet implemented")
+                raise NotImplementedError("Multiplication of multichannel signals is not yet implemented")
             if other.nchannels==1:
-                raise NotImplementedError("Addition of multichannel signals is not yet implemented")
+                raise NotImplementedError("Multiplication of multichannel signals is not yet implemented")
             else:
                 raise ValueError(f'Arrays could not be broadcast together with channel count of {self.nchannels} and {other.nchannels}')
         elif other.nchannels>1:
-            raise NotImplementedError("Addition of multichannel signals is not yet implemented")
+            raise NotImplementedError("Multiplication of multichannel signals is not yet implemented")
         else:
             return self.similar(
                 raw=self.values*other.values,
@@ -1729,6 +1729,10 @@ class Signal:
         """Signal inverse
         """
         # Calibration and dbfs are reset to 1.0 during the process
+
+        if self.nchannels>1:
+            raise NotImplementedError("Inverse of multichannel signals is not yet implemented")
+
         return self.similar(
             values=self.values**(-1),
             unit=1/self.unit,
@@ -1743,15 +1747,25 @@ class Signal:
         :param other: other signal
         :type other: Signal
         """
-        # if self.fs!=other.fs:
-        #     raise Exception('Incompatible sampling frequencies in addition of signals')
+        if self.fs!=other.fs:
+            raise ValueError('Incompatible sampling frequencies in addition of signals')
 
-        return self.similar(
-            raw=self.values/other.values,
-            unit=self.unit/other.unit,
-            cal=None,
-            dbfs=None,
-            desc=self.desc+' / '+other.desc
+        if self.nchannels>1:
+            if other.nchannels==self.nchannels:
+                raise NotImplementedError("Division of multichannel signals is not yet implemented")
+            if other.nchannels==1:
+                raise NotImplementedError("Division of multichannel signals is not yet implemented")
+            else:
+                raise ValueError(f'Arrays could not be broadcast together with channel count of {self.nchannels} and {other.nchannels}')
+        elif other.nchannels>1:
+            raise NotImplementedError("Division of multichannel signals is not yet implemented")
+        else:
+            return self.similar(
+                raw=self.values/other.values,
+                unit=self.unit/other.unit,
+                cal=None,
+                dbfs=None,
+                desc=self.desc+' / '+other.desc
         )
 
     def __truediv__(self, other):
@@ -1809,7 +1823,7 @@ class Signal:
     
     def __matmul__(self, other):
         """
-        @ (matmul) operator convolves two signals
+        @ (matmul) operator is used for convolution of two signals
 
         :param other: other signal
         :type other: Signal
@@ -1859,25 +1873,14 @@ class Signal:
         :type includetime: bool
 
         """
-        with open(filename+'.csv', 'w', newline='') as file:
+        with open(filename+'.csv', 'w', newline='', encoding="utf-8") as file:
             writer = csv.writer(file)
-            for arg in self.__dict__.keys():
+            for arg,val in self.__dict__.items():
                 if arg != '_rawvalues':
-                    writer.writerow([arg, self.__dict__[arg]])
-        if datatype == 'raw':
-            outdata = self.raw[:, None]
-        elif datatype == 'volts':
-            outdata = self.volts[:, None]
-        elif datatype == 'values':
-            outdata = self.values[:, None]
-        else:
-            raise Exception("'"+str(datatype) +
-                            "' is not a possible choice for datatype option")
-        if includetime:
-            outdata = np.concatenate((self.time[:, None], outdata), 1)
-        np.savetxt(filename+'_'+datatype+'.txt', outdata)
-    
-    def to_csv(self,filename, datatype='raw', includetime=False):
+                    if isinstance(val,(list,np.ndarray)):
+                        writer.writerow([arg]+list(val))
+                    else:
+                        writer.writerow([arg]+[val])
         if datatype == 'raw':
             outdata = self.raw[:, None]
         elif datatype == 'volts':
@@ -1889,13 +1892,43 @@ class Signal:
                             "' is not a possible choice for datatype option")
         if includetime:
             outdata = np.concatenate((self.time[:, None], outdata), 1)
-        with open(filename+'.csv', 'w', newline='') as file:
+        np.savetxt(filename+'_'+datatype+'.txt', outdata)
+    
+    def to_csv(self,filename, datatype='raw', includetime=False):
+        """Saves the signal into a single CSV file
+
+        If the str parameter filename='file', the created file is file.csv
+
+        :param filename: string for the base file name (no extension)
+        :type filename: str
+        :param datatype: string for the optionnal data format (defaults to 'raw')
+        :type datatype: str
+        :param includetime: does the txt contains a time column ?
+        :type includetime: bool
+
+        """
+        if datatype == 'raw':
+            outdata = self.raw[:, None]
+        elif datatype == 'volts':
+            outdata = self.volts[:, None]
+        elif datatype == 'values':
+            outdata = self.values[:, None]
+        else:
+            raise ValueError("'"+str(datatype) +
+                            "' is not a possible choice for datatype option")
+        if includetime:
+            outdata = np.concatenate((self.time[:, None], outdata), 1)
+        with open(filename+'.csv', 'w', newline='', encoding="utf-8") as file:
             writer = csv.writer(file)
-            for arg in self.__dict__.keys():
+            for arg,val in self.__dict__.items():
                 if arg != '_rawvalues':
-                    writer.writerow([arg, self.__dict__[arg]])
+                    if isinstance(val,(list,np.ndarray)):
+                        writer.writerow([arg]+list(val))
+                    else:
+                        writer.writerow([arg]+[val])
             if includetime:
                 writer.writerow(['First column is time in seconds'])
+            writer.writerow([f'Below are data in the {datatype} format'])    
             writer.writerows(outdata)
 
     def to_hdf5(self, hdf5_object, dataset_name, data_type):
