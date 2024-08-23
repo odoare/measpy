@@ -694,6 +694,10 @@ class Signal:
         :rtype: measpy.signal.Signal
 
         """
+
+        if self.nchannels>1 or other.nchannels>1:
+            raise NotImplementedError('Transfer function calculation not implemented for multichannels signals.')
+
         if self.fs != other.fs:
             raise ValueError(
                 'Incompatible sampling frequencies in convolution of two signals')
