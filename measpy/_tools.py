@@ -69,7 +69,7 @@ def smooth(in_array,l=20):
             out[:,i] = np.convolve(in_array[:,i],ker,mode='same')
         return out
     else:
-        raise Exception('This smooth function manages array of dimension <= 2')
+        raise ValueError('This smooth function manages array of dimension <= 2')
 
 def nth_octave_bands(n,fmin=5,fmax=20000):
     """ 1/nth octave band frequency range calculation """

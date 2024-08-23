@@ -13,8 +13,14 @@
 
 
 # from warnings import WarningMessage
-import numpy as np
 from pathlib import Path
+import csv
+import copy
+import numbers
+from contextlib import ExitStack
+from functools import partial
+
+import numpy as np
 import matplotlib.pyplot as plt
 from numpy.core.fromnumeric import argmax
 from scipy.signal import (welch,
@@ -32,12 +38,7 @@ from scipy.signal import (welch,
 # from scipy.interpolate import InterpolatedUnivariateSpline
 from csaps import csaps
 import scipy.io.wavfile as wav
-import csv
-import copy
-import numbers
-from contextlib import ExitStack
 import h5py
-from functools import partial
 
 import unyt
 from unyt import Unit
@@ -204,7 +205,7 @@ class Signal:
         # and cal are the correct ones BEFORE values are calculated
         # Thus, we run the loop two times
 
-        for arg in kwargs:
+        for arg,val in kwargs.items():
             if arg == 'values':
                 pass
             elif arg == 'volts':
@@ -212,27 +213,27 @@ class Signal:
             elif arg == 'raw':
                 pass
             elif arg == 'unit':
-                self.unit = kwargs[arg]
+                self.unit = val
             elif arg == 't0':
-                self.t0 = kwargs[arg]
+                self.t0 = val
             elif arg == 'dbfs':
-                self.dbfs = kwargs[arg]    
+                self.dbfs = val
             elif arg == 'cal':
-                self.cal = kwargs[arg]   
+                self.cal = val
             elif arg == 'dur':
                 raise AttributeError("Property 'dur' cannot be set")
             else:
-                self.__dict__[arg] = kwargs[arg]
+                self.__dict__[arg] = val
 
         self.raw = np.array([])
 
-        for arg in kwargs:
+        for arg,val in kwargs.items():
             if arg == 'values':
-                self.values = kwargs[arg]
+                self.values = val
             elif arg == 'volts':
-                self.volts = kwargs[arg]
+                self.volts = val
             elif arg == 'raw':
-                self.raw = kwargs[arg]
+                self.raw = val
 
     def similar(self, **kwargs):
         """ Returns a copy of the Signal object
@@ -275,7 +276,7 @@ class Signal:
         # We have to make sure that properties such as dbfs
         # and cal are the correct ones BEFORE values are calculated
         # Thus, we run the loop two times
-        for arg in kwargs:
+        for arg,val in kwargs.items():
             if arg == 'values':
                 pass
             elif arg == 'volts':
@@ -283,22 +284,22 @@ class Signal:
             elif arg == 'raw':
                 pass
             elif arg == 'unit':
-                out.unit = kwargs[arg]  
+                out.unit = val
             elif arg == 't0':
-                out.t0 = kwargs[arg]
+                out.t0 = val
             elif arg == 'dbfs':
-                out.dbfs = kwargs[arg]
+                out.dbfs = val
             elif arg == 'cal':
-                out.cal = kwargs[arg]
+                out.cal = val
             else:
-                out.__dict__[arg] = kwargs[arg]
-        for arg in kwargs:
+                out.__dict__[arg] = val
+        for arg,val in kwargs.items():
             if arg == 'values':
-                out.values = kwargs[arg]
+                out.values = val
             elif arg == 'volts':
-                out.volts = kwargs[arg]
+                out.volts = val
             elif arg == 'raw':
-                out.raw = kwargs[arg]
+                out.raw = val
         return out
 
     def rms_smooth(self, nperseg=512):
@@ -346,10 +347,10 @@ class Signal:
             :rtype: measpy.signal.Signal
 
         """
-        if type(ref) != unyt.array.unyt_quantity:
-            raise Exception('ref is not a unyt quantity')
+        if not isinstance(ref,unyt.array.unyt_quantity):
+            raise TypeError('ref is not a unyt quantity')
         if not self.unit.same_dimensions_as(ref.units):
-            raise Exception('ref has an incompatible unit')
+            raise ValueError('ref has an incompatible unit')
         ref.convert_to_units(self.unit)
         return self.similar(
             raw=20*np.log10(self.values*self.unit/ref),
@@ -576,12 +577,12 @@ class Signal:
         :return: Signal converted to the new unit
         :rtype: measpy.signal.Signal
         """
-        if type(unit) == str:
+        if isinstance(unit,str):
             unit = Unit(unit)
         if not self.unit.same_dimensions_as(unit):
-            raise Exception('Incompatible units')
+            raise ValueError('Incompatible units')
         a = list(self.unit.get_conversion_factor(unit))
-        if a[1] == None:
+        if a[1] is None:
             a[1] = 0
         return self.similar(
             values=a[0]*self.values-a[1],
@@ -679,7 +680,7 @@ class Signal:
 
         """
         if self.fs != other.fs:
-            raise Exception(
+            raise ValueError(
                 'Incompatible sampling frequencies in convolution of two signals')
         return self.similar(
             values = convolve(self.values,other.values),
@@ -712,6 +713,9 @@ class Signal:
         :return: A windowed signal
         :rtype: measpy.signal.Signal, default to "hann"
         """
+    
+        if self.nchannels>1:
+            raise NotImplementedError('Transfer function calculation not implemented for multichannels signals.')
 
         return self.similar(values=self.values*get_window(window=win, Nx=self.length))
     
@@ -730,9 +734,9 @@ class Signal:
         #     raise Exception(
         #         'Incompatible sampling frequencies during signal packing')
         if self.length != other.length:
-            raise Exception('Incompatible signal lengths')
+            raise ValueError('Incompatible signal lengths')
         if self.fs != other.fs:
-            raise Exception('Incompatible signal sampling frequencies')
+            raise ValueError('Incompatible signal sampling frequencies')
         nc1 = self.nchannels
         nc2 = other.nchannels
         return self.similar(unit=to_list(self.unit,nc1)+to_list(other.unit,nc2),
@@ -801,12 +805,12 @@ class Signal:
         """
 
         if self.nchannels>1 or x.nchannels>1:
-            raise NotImplementedError('Transfer function calculation not implemented for multichannels signals.')
+            raise NotImplementedError('Transfer function calculation not implemented for multichannel signals.')
 
         if self.fs != x.fs:
-            raise Exception('Sampling frequencies have to be the same')
+            raise ValueError('Sampling frequencies have to be the same')
         if self.length != x.length:
-            raise Exception('Lengths have to be the same')
+            raise ValueError('Lengths have to be the same')
 
         # Set default values for welch's kwargs
         if not "fs" in kwargs:
@@ -852,9 +856,9 @@ class Signal:
             raise NotImplementedError('Coherence not implemented for multichannels signals.')
 
         if self.fs != x.fs:
-            raise Exception('Sampling frequencies have to be the same')
+            raise ValueError('Sampling frequencies have to be the same')
         if self.length != x.length:
-            raise Exception('Lengths have to be the same')
+            raise ValueError('Lengths have to be the same')
 
         return Spectral(
             values=coherence(self.values, x.values, **kwargs)[1],
@@ -897,9 +901,9 @@ class Signal:
             raise NotImplementedError('PSD not implemented for multichannels signals.')
 
         # Set default values for welch's kwargs
-        if not "fs" in kwargs:
+        if "fs" not in kwargs:
             kwargs["fs"] = self.fs
-        if not "nperseg" in kwargs:
+        if "nperseg" not in kwargs:
             kwargs["nperseg"] = 2**(np.ceil(np.log2(self.fs)))
 
         return Spectral(
@@ -962,7 +966,7 @@ class Signal:
         :return: A noise signal
         :rtype: measpy.signal.Signal
         """
-        if desc==None:
+        if desc is None:
             desc = 'Noise '+str(freq_min)+'-'+str(freq_max)+'Hz'
         return cls(
             raw=noise(fs, dur, amp, freq_min, freq_max),
@@ -993,7 +997,7 @@ class Signal:
         :return: A sweep signal
         :rtype: measpy.signal.Signal
         """
-        if desc==None:
+        if desc is None:
             desc = 'Logsweep '+str(freq_min)+'-'+str(freq_max)+'Hz'
         return cls(
             raw=log_sweep(fs, dur, amp, freq_min, freq_max),
@@ -1008,7 +1012,7 @@ class Signal:
 
     @classmethod
     def sine(cls, fs=44100, dur=2.0, amp=1.0, freq=1000.0, unit=None, cal=None, dbfs=None, desc=None):
-        if desc==None:
+        if desc is None:
             desc = 'Sine '+str(freq)+'Hz'
         return cls(
             raw=sine(fs, dur, amp, freq),
@@ -1022,7 +1026,7 @@ class Signal:
     
     @classmethod
     def saw(cls, fs=44100, dur=2.0, amp=1.0, freq=1000.0, unit=None, cal=None, dbfs=None, desc=None):
-        if desc==None:
+        if desc is None:
             desc = 'Saw '+str(freq)+'Hz'
         return cls(
             raw=saw(fs, dur, amp, freq),
@@ -1036,7 +1040,7 @@ class Signal:
     
     @classmethod
     def tri(cls, fs=44100, dur=2.0, amp=1.0, freq=1000.0, unit=None, cal=None, dbfs=None, desc=None):
-        if desc==None:
+        if desc is None:
             desc = 'Tri '+str(freq)+'Hz'
         return cls(
             raw=tri(fs, dur, amp, freq),
@@ -1106,13 +1110,13 @@ class Signal:
                         out.__dict__[row[0]] = row[1:]
         _, y = wav.read(filename+'.wav')
         if (convert_to_fp and np.issubdtype(y.dtype, np.integer)):
-            min = float(np.iinfo(y.dtype).max)
-            max = float(np.iinfo(y.dtype).min)
-            middle = (max-min)/2
-            amp = max-middle
-            out._rawvalues = (y.astype(dtype=float)-middle)/amp     
+            minval = float(np.iinfo(y.dtype).max)
+            maxval = float(np.iinfo(y.dtype).min)
+            middle = (maxval-minval)/2
+            amp = maxval-middle
+            out._rawvalues = (y.astype(dtype=float)-middle)/amp
         else:
-            out._rawvalues = y   
+            out._rawvalues = y
         return out
 
     @classmethod
@@ -1143,10 +1147,10 @@ class Signal:
         out = cls(desc=desc, unit=unit, cal=cal, dbfs=dbfs)
         out.fs, y = wav.read(filename)
         if (convert_to_fp and np.issubdtype(y.dtype, np.integer)):
-            min = float(np.iinfo(y.dtype).min)
-            max = float(np.iinfo(y.dtype).max)
-            middle = np.ceil((max+min)/2)
-            amp = max-middle
+            minval = float(np.iinfo(y.dtype).min)
+            maxval = float(np.iinfo(y.dtype).max)
+            middle = np.ceil((maxval+minval)/2)
+            amp = maxval-middle
             out._rawvalues = (y.astype(dtype=float)-middle)/amp
         else:
             out._rawvalues = y
@@ -1367,7 +1371,7 @@ class Signal:
         """
         if isinstance(self.cal, (int, float, np.ndarray)) and isinstance(self.dbfs, (int, float, np.ndarray)):
             return self._rawvalues*self.dbfs/self.cal
-        elif type(self.cal) == str:
+        elif isinstance(self.cal,str):
             d = {}
             d['x'] = self.raw*self.dbfs
             command = 'y='+self.cal
@@ -1379,7 +1383,7 @@ class Signal:
     def values(self, val):
         if isinstance(self.cal, (int, float, np.ndarray)) and isinstance(self.dbfs, (int, float, np.ndarray)):
             self._rawvalues = val*self.cal/self.dbfs
-        elif type(self.cal) == str:
+        elif isinstance(self.cal,str):
             if hasattr(self, 'invcal'):
                 d = {'np': np, 'y': val}
                 exec('x='+self.invcal, d)
@@ -1527,7 +1531,7 @@ class Signal:
         if i>self.nchannels-1:
             raise ValueError(f'Signal has {self.nchannels} channels, channel index parameter is too large.')
         if i<0:
-            raise ValueError(f'Negative indev value not allowed.')
+            raise ValueError('Negative indev value not allowed.')
         else:
             return self.unpack()[i]
 
@@ -1774,16 +1778,16 @@ class Signal:
         :param other: other signal
         :type other: Signal
         """
-        if type(other) == Signal:
+        if isinstance(other,Signal):
             if self.fs != other.fs:
                 raise ValueError(
                     'Incompatible sampling frequencies in division of signals')
             return self._div(other)
 
-        if (type(other) == float) or (type(other) == int) or (type(other) == complex) or isinstance(other, numbers.Number):
+        if isinstance(other,numbers.Number):
             return self.similar(raw=self.raw/other, desc=self.desc+'/'+str(other))
 
-        if type(other) == unyt.array.unyt_quantity:
+        if isinstance(other,unyt.array.unyt_quantity):
             return self._div(
                 self.similar(
                     raw=np.ones_like(self.raw)*other.v,
@@ -2016,6 +2020,9 @@ class Signal:
         :rtype: tuple
         """
 
+        if self.nchannels>1:
+            raise NotImplementedError('Transfer function calculation not implemented for multichannels signals.')
+
         # Compute transfer function using Farina's method
         sp = self.tfe_farina((freq_min,freq_max))
 
@@ -2130,18 +2137,18 @@ class Signal:
 
     def __repr__(self):
         out = "measpy.Signal("
-        for arg in self.__dict__.keys():
+        for arg,val in self.__dict__.items():
             if arg == '_unit':
-                out += 'unit='+str(self.__dict__[arg])+",\n"
+                out += 'unit='+str(val)+",\n"
             elif arg == '_cal':
-                out += 'cal='+str(self.__dict__[arg])+",\n"
+                out += 'cal='+str(val)+",\n"
             elif arg == '_dbfs':
-                out += 'dbfs='+str(self.__dict__[arg])+",\n"
+                out += 'dbfs='+str(val)+",\n"
             else:
-                if type(self.__dict__[arg]) == str:
-                    out += arg+"='"+self.__dict__[arg]+"',\n"
+                if isinstance(val,str):
+                    out += arg+"='"+val+"',\n"
                 else:
-                    out += arg+"="+str(self.__dict__[arg])+",\n"
+                    out += arg+"="+str(val)+",\n"
         out += ')'
         return out
  
@@ -2153,6 +2160,10 @@ class Signal:
             :param x: Other signal to compute the timelag with
             :type x: measpy.signal.Signal
         """
+
+        if self.nchannels>1:
+            raise NotImplementedError('Transfer function calculation not implemented for multichannels signals.')
+
         c = self.corr(x)
         return c.time[np.argmax(c.values)]
 
@@ -2180,7 +2191,7 @@ class Signal:
         else:
             kwargs.setdefault("label", self.desc )
 
-        if ax == None:
+        if ax is None:
             _, ax = plt.subplots(1)
         ax.plot(self.time, self.values, **kwargs)
         ax.set_xlabel('Time (s)')
@@ -2202,8 +2213,13 @@ class Signal:
             :return: an axes object
             :rtype: matplotlib.axes._axes.Axes
         """
+
+        if self.nchannels>1:
+            raise NotImplementedError('Transfer function calculation not implemented for multichannels signals.')
+
+
         f, t, Sxx = spectrogram(self.values, self.fs, **kwargs)
-        if ax == None:
+        if ax is None:
             _, ax = plt.subplots(1)
         if dbvalue:
             ax.pcolormesh(t, f, 20*np.log10(Sxx), shading='gouraud')
@@ -2251,7 +2267,7 @@ class Spectral:
 
     def __init__(self, **kwargs):
         if ('values' in kwargs) and ('dur' in kwargs):
-            raise Exception('Error: values and dur cannot be both specified.')
+            raise ValueError('Error: values and dur cannot be both specified.')
         values = kwargs.setdefault("values", None)
         fs = kwargs.setdefault("fs", 1)
         desc = kwargs.setdefault("desc", 'Spectral data')
@@ -2384,10 +2400,10 @@ class Spectral:
         :rtype: measpy.signal.Spectral
         """
 
-        if type(unit) == str:
+        if isinstance(unit,str):
             unit = Unit(unit)
         if not self.unit.same_dimensions_as(unit):
-            raise Exception('Incompatible units')
+            raise ValueError('Incompatible units')
         a = self.unit.get_conversion_factor(unit)[0]
         return self.similar(
             values=a*self.values,
@@ -2550,7 +2566,7 @@ class Spectral:
             of the spectral data set
         """
         if not (self.full):
-            raise Exception(
+            raise ValueError(
                 'Error: the spectrum is not full, use irfft instead')
         return Signal(raw=np.fft.ifft(self.values, norm=self.norm),
                       desc=add_step(self.desc, 'IFFT'),
@@ -2654,15 +2670,15 @@ class Spectral:
         """
 
         if not self.unit.same_dimensions_as(other.unit):
-            raise Exception(
+            raise ValueError(
                 'Incompatible units in addition of Spectral obk=jects')
         if self.fs != other.fs:
-            raise Exception(
+            raise ValueError(
                 'Incompatible sampling frequencies in addition of Spectral objects')
         if self.length != other.length:
-            raise Exception('Incompatible lengths')
+            raise ValueError('Incompatible lengths')
         if self.full != other.full:
-            raise Exception(
+            raise ValueError(
                 'Spectral objects are not of the same type (full property)')
 
         return self.similar(
@@ -2690,7 +2706,7 @@ class Spectral:
 
         if type(other) == unyt.array.unyt_quantity:
             if not self.unit.same_dimensions_as(other.units):
-                raise Exception('Incompatible units in addition of sginals')
+                raise ValueError('Incompatible units in addition of sginals')
             a = other.units.get_conversion_factor(self.unit)[0]
             return self._add(
                 self.similar(
@@ -2699,7 +2715,7 @@ class Spectral:
                 )
             )
         else:
-            raise Exception(
+            raise ValueError(
                 'Incompatible type when adding something to a Signal')
 
     def __radd__(self, other):
@@ -2736,13 +2752,13 @@ class Spectral:
         :type other: Signal
         """
         if self.fs != other.fs:
-            raise Exception(
+            raise ValueError(
                 'Incompatible sampling frequencies in multiplication of signals')
         if self.length != other.length:
-            raise Exception(
+            raise ValueError(
                 'Incompatible signal lengths in multiplication of signals')
         if self.full != other.full:
-            raise Exception(
+            raise ValueError(
                 'Spectral objects are not of the same type (full property)')
 
         return self.similar(
@@ -2757,13 +2773,13 @@ class Spectral:
         :param other: other Spectral object
         :type other: Spectral
         """
-        if type(other) == Spectral:
+        if isinstance(other,Spectral):
             return self._mul(other)
 
-        if (type(other) == float) or (type(other) == int) or (type(other) == complex) or isinstance(other, numbers.Number):
+        if isinstance(other,numbers.Number):
             return self.similar(values=other*self.values, desc=str(other)+'*'+self.desc)
 
-        if type(other) == unyt.array.unyt_quantity:
+        if isinstance(other,unyt.array.unyt_quantity):
             return self._mul(
                 self.similar(
                     raw=np.ones_like(self.values)*other.v,
@@ -2772,7 +2788,7 @@ class Spectral:
                 )
             )
         else:
-            raise Exception(
+            raise ValueError(
                 'Incompatible type when multipling something with a Signal')
 
     def __rmul__(self, other):
@@ -2817,19 +2833,19 @@ class Spectral:
         :param other: other spectral object
         :type other: Spectral
         """
-        if type(other) == Spectral:
+        if isinstance(other,Spectral):
             if self.fs != other.fs:
-                raise Exception('Incompatible sampling frequencies')
+                raise ValueError('Incompatible sampling frequencies')
             if self.full != other.full:
-                raise Exception('Incompatible spectral types (full)')
+                raise ValueError('Incompatible spectral types (full)')
             return self._div(other)
 
-        if (type(other) == float) or (type(other) == int) or (type(other) == complex) or isinstance(other, numbers.Number):
+        if isinstance(other,numbers.Number):
             safe_division = np.divide(self.values, other, out=np.zeros_like(
                 self.values), where=np.abs(other) != 0)
             return self.similar(values=safe_division, desc=self.desc+'/'+str(other))
 
-        if type(other) == unyt.array.unyt_quantity:
+        if isinstance(other,unyt.array.unyt_quantity):
             return self._div(
                 self.similar(
                     values=np.ones_like(self.values)*other.v,
@@ -2838,7 +2854,7 @@ class Spectral:
                 )
             )
         else:
-            raise Exception(
+            raise ValueError(
                 'Incompatible type when dividing something with a Signal')
 
     def __rtruediv__(self, other):
@@ -2879,9 +2895,10 @@ class Spectral:
         :return: A spectral object
         :rtype: measpy.Signal.spectral
         """
-        if (type(x) != Signal) & (type(y) != Signal):
-            raise Exception('x and y inputs have to be Signal')
-        return y.tfe_welch(x, **kwargs)
+        if isinstance(x,Signal) and isinstance(y,Signal):
+            return y.tfe_welch(x, **kwargs)
+        else:
+            raise TypeError('x and y inputs have to be Signal')
 
     #####################################################################
     # Properties
@@ -3056,14 +3073,14 @@ class Spectral:
     
     def __repr__(self):
         out = "measpy.Spectral("
-        for arg in self.__dict__.keys():
+        for arg,val in self.__dict__.items():
             if arg == '_unit':
-                out += 'unit='+str(self.__dict__[arg])+",\n"
+                out += 'unit='+str(val)+",\n"
             else:
-                if type(self.__dict__[arg]) == str:
-                    out += arg+"='"+self.__dict__[arg]+"',\n"
+                if isinstance(val,str):
+                    out += arg+"='"+val+"',\n"
                 else:
-                    out += arg+"="+str(self.__dict__[arg])+",\n"
+                    out += arg+"="+str(val)+",\n"
         out += ')'
         return out
 
@@ -3129,7 +3146,7 @@ class Weighting:
         """
         out = cls([], [], 'Weighting')
         out.phase = []
-        with open(filename, 'r') as file:
+        with open(filename, 'r', encoding='utf-8') as file:
             reader = csv.reader(file)
             n = 0
             for row in reader:
@@ -3176,7 +3193,7 @@ class Weighting:
         :type asradians: bool
         """
 
-        with open(filename, 'w', newline='') as file:
+        with open(filename, 'w', newline='',encoding='utf-8') as file:
             writer = csv.writer(file)
             writer.writerow([self.desc])
             if asdB:
@@ -3189,11 +3206,11 @@ class Weighting:
             else:
                 outphase = 180*self.phase/np.pi
 
-            for n in range(len(self.freqs)):
+            for i,_ in enumerate(self.freqs):
                 writer.writerow(
-                    [self.freqs[n],
-                     outamp[n],
-                     outphase[n]]
+                    [self.freqs[i],
+                     outamp[i],
+                     outphase[i]]
                 )
 
     @property
