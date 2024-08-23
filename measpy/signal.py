@@ -458,6 +458,10 @@ class Signal:
         :return: Faded signal
         :rtype: measpy.signal.Signal
         """
+
+        if self.nchannels>1:
+            raise NotImplementedError('Transfer function calculation not implemented for multichannels signals.')
+
         return self.similar(
             raw=apply_fades(self.raw, fades),
             desc=add_step(self.desc, "fades")
@@ -518,7 +522,7 @@ class Signal:
                         analog=False, ftype=ftype, fs=self.fs,
                         output='sos')
         return self.similar(
-            values=sosfilt(sos, self.values),
+            values=sosfilt(sos, self.values, axis=0),
             desc=add_step(self.desc, 'filtered'))
 
     def hilbert(self):
@@ -529,7 +533,7 @@ class Signal:
         :return: A signal
         :rtype: measpy.signal.Signal
         """
-        return self.similar(values=np.imag(hilbert(self.values)), desc=add_step(self.desc, 'hilbert'))
+        return self.similar(values=np.imag(hilbert(self.values,  axis=0)), desc=add_step(self.desc, 'hilbert'))
 
     def hilbert_ana(self):
         """
@@ -540,7 +544,7 @@ class Signal:
         :rtype: measpy.signal.Signal
 
         """
-        return self.similar(values=hilbert(self.values), desc=add_step(self.desc, 'hilbert_ana'))
+        return self.similar(values=hilbert(self.values, axis=0), desc=add_step(self.desc, 'hilbert_ana'))
 
     def as_volts(self):
         """
@@ -577,6 +581,10 @@ class Signal:
         :return: Signal converted to the new unit
         :rtype: measpy.signal.Signal
         """
+
+        if self.nchannels>1:
+            raise NotImplementedError('Transfer function calculation not implemented for multichannels signals.')
+
         if isinstance(unit,str):
             unit = Unit(unit)
         if not self.unit.same_dimensions_as(unit):
@@ -598,6 +606,10 @@ class Signal:
         :return: Signal converted to the new unit
         :rtype: measpy.signal.Signal
         """
+
+        if self.nchannels>1:
+            raise NotImplementedError('Transfer function calculation not implemented for multichannels signals.')
+
         return self.unit_to(self.unit.get_base_equivalent())
 
     def normalize(self):
@@ -606,6 +618,9 @@ class Signal:
         :return: Dimensionless normalized signal
         :rtype: measpy.signal.Signal
         """
+
+        if self.nchannels>1:
+            raise NotImplementedError('Transfer function calculation not implemented for multichannels signals.')
 
         return (self/self.max).similar(desc=add_step(self.desc, "Normalize"))
 
