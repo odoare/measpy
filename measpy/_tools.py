@@ -272,20 +272,28 @@ def all_equal(iterator):
 def to_list(elt,n):
     if isinstance(elt,(numbers.Number,str,Unit)):
         return [elt] * n
-    elif isinstance(elt,(list,np.ndarray)):
+    if isinstance(elt,(list,np.ndarray)):
         return list(elt)
-    else:
-        return [None] * n
+    return [None] * n
 
 def array_mult_unitlist(values,unit):
     """ Multiplies an array with a unyt instance
     or a list of unyts with the same numer of elements
     """
-    out = np.zeros_like(values)
     if isinstance(unit,list):
         return list(values[i]*u for i,u in enumerate(unit))
-    else:
-        return values*unit
+    return values*unit
+
+def mix_dicts(a,b,na,nb):
+    out = {}
+    for k,v in a.items():
+        vb = b.pop(k,None)
+        out[k] = to_list(v,na)+to_list(vb,nb)
+    for k,v in b.items():
+        va = a.pop(k,None)
+        out[k] = to_list(va,na)+to_list(v,nb)
+    return out
+
 
 # def _tfe_farina(y, fs, freqs):
 #     """ Transfer function estimate
