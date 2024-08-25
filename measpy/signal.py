@@ -57,7 +57,8 @@ from ._tools import (add_step,
                            get_index,
                            h5file_write_from_queue,
                            array_mult_unitlist,
-                           to_list)
+                           to_list,
+                           mix_dicts)
 
 ##################
 ##              ##
@@ -620,7 +621,7 @@ class Signal:
         """
 
         if self.nchannels>1:
-            raise NotImplementedError('Transfer function calculation not implemented for multichannels signals.')
+            return Signal.pack(tuple(self[i].normalize() for i in range(self.nchannels)))
 
         return (self/self.max).similar(desc=add_step(self.desc, "Normalize"))
 
@@ -742,9 +743,9 @@ class Signal:
         """
         Pack the signal with other signal
 
-        Signals must have compatible unit, length and sampling frequencies.
+        Signals must have compatible length and sampling frequencies.
         This method returns a new multichannel signal with values packed as columns.
-        The other properties of the resulting signal are that of the initial signal (the instance whose method has been called)
+        The other properties of the resulting signal are arranged as lists or numpy array if possible
         """
         
         # if not self.unit.same_dimensions_as(other.unit):
@@ -758,11 +759,16 @@ class Signal:
             raise ValueError('Incompatible signal sampling frequencies')
         nc1 = self.nchannels
         nc2 = other.nchannels
-        return self.similar(unit=to_list(self.unit,nc1)+to_list(other.unit,nc2),
-                            cal=to_list(self.cal,nc1)+to_list(other.cal,nc2),
-                            dbfs=to_list(self.dbfs,nc1)+to_list(other.dbfs,nc2),
-                            desc=to_list(self.desc,nc1)+to_list(other.desc,nc2),
-                            raw=np.vstack((self.raw.T,other.raw.T)).T)
+        out = self.similar(raw=np.vstack((self.raw.T,other.raw.T)).T)
+        dicta = copy.deepcopy(self.__dict__)
+        del dicta['_rawvalues']
+        del dicta['fs']
+        dictb = copy.deepcopy(other.__dict__)
+        del dictb['_rawvalues']        
+        del dictb['fs']
+        out = self.similar(raw=np.vstack((self.raw.T,other.raw.T)).T)
+        out.__dict__ = out.__dict__ | mix_dicts(dicta,dictb,nc1,nc2)
+        return out
 
     # #################################################################
     # Methods that return an object of type Spectral
@@ -1558,7 +1564,7 @@ class Signal:
         if i>self.nchannels-1:
             raise ValueError(f'Signal has {self.nchannels} channels, channel index parameter is too large.')
         if i<0:
-            raise ValueError('Negative indev value not allowed.')
+            raise ValueError('Negative index value not allowed.')
         else:
             return self.unpack()[i]
 
