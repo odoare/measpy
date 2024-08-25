@@ -571,7 +571,7 @@ class Signal:
         """
         return self.similar(cal=None,dbfs=None,raw=self.values, desc=add_step(self.desc,'Calibrations applied'))
 
-    def unit_to(self, unit):
+    def unit_to(self, newunit):
         """
         Change Signal unit
 
@@ -583,21 +583,21 @@ class Signal:
         """
 
         if self.nchannels>1:
-            raise NotImplementedError('Transfer function calculation not implemented for multichannels signals.')
+            raise NotImplementedError('Unit conversion not implemented for multichannels signals.')
 
-        if isinstance(unit,str):
-            unit = Unit(unit)
-        if not self.unit.same_dimensions_as(unit):
+        if isinstance(newunit,str):
+            newunit = Unit(newunit)
+        if not self.unit.same_dimensions_as(newunit):
             raise ValueError('Incompatible units')
-        a = list(self.unit.get_conversion_factor(unit))
+        a = list(self.unit.get_conversion_factor(newunit))
         if a[1] is None:
             a[1] = 0
         return self.similar(
+            unit=newunit,
             values=a[0]*self.values-a[1],
             cal=None,
             dbfs=None,
-            unit=unit,
-            desc=add_step(self.desc, 'Unit to '+str(unit))
+            desc=add_step(self.desc, 'Unit to '+str(newunit))
         )
 
     def unit_to_std(self):
@@ -696,7 +696,7 @@ class Signal:
         """
 
         if self.nchannels>1 or other.nchannels>1:
-            raise NotImplementedError('Transfer function calculation not implemented for multichannels signals.')
+            raise NotImplementedError('Convolution calculation not implemented for multichannels signals.')
 
         if self.fs != other.fs:
             raise ValueError(
@@ -1246,15 +1246,19 @@ class Signal:
             out = out.pack_with(s)
         return out
 
-    def unpack(self):
+    def unpack(self,add_chan_in_desc=True):
         """
         Unpack a multichannel signal and returns a list of signals
         """
         outl = []
-        nc = self.nchannels
+        nc = self.nchannels            
         for i in range(nc):
+            if nc>1 and isinstance(self.desc,str) and add_chan_in_desc:
+                added_str=f' chan {i}'
+            else:
+                added_str=''
             outl.append(self.similar(values=self.values[:,i],
-                desc=to_list(self.desc,nc)[i],
+                desc=to_list(self.desc,nc)[i]+added_str,
                 dbfs=to_list(self.dbfs,nc)[i],
                 cal=to_list(self.cal,nc)[i],
                 unit=to_list(self.unit,nc)[i] ))
@@ -1272,10 +1276,10 @@ class Signal:
         if hasattr(self,'_unit'):
             return self._unit
         else:
-            return np.ones(self.nchannels)*Unit('1')
+            return Unit('1')
     @unit.setter
     def unit(self,val):
-        if isinstance(val,str):
+        if isinstance(val,(str,unyt.unit_object.Unit)):
             if Unit(val)==Unit('1'):
                 try:
                     del(self._unit)
@@ -1319,12 +1323,14 @@ class Signal:
                         del(self._dbfs)
                 else:
                     self._dbfs = val
-            elif isinstance(val,list): # todo: check list length
-                self._dbfs = np.array(val)
-            elif isinstance(val,np.ndarray): #todo: check length
-                self._dbfs = val
+            elif isinstance(val,(list,np.ndarray)): # todo: check list length
+                if np.all(np.array(val)==1):
+                    if hasattr(self,'_dbfs'):
+                        del(self._dbfs)
+                else:
+                    self._dbfs = np.array(val)
             else:
-                raise ValueError('dbfs type must be number or list of numbers or numpy array')
+                raise TypeError('dbfs type must be number or list of numbers or numpy array')
 
     @property
     def cal(self):
@@ -1347,10 +1353,12 @@ class Signal:
                         del(self._cal)
                 else:
                     self._cal = val
-            elif isinstance(val,list): # todo: check list length
-                self._cal = np.array(val)
-            elif isinstance(val,np.ndarray): #todo: check length
-                self._cal = val
+            elif isinstance(val,(list,np.ndarray)): # todo: check list length
+                if np.all(np.array(val)==1):
+                    if hasattr(self,'_cal'):
+                        del(self._cal)
+                else:
+                    self._cal = np.array(val)
             elif isinstance(val,str):
                 self._cal = val
             else:
@@ -1572,42 +1580,37 @@ class Signal:
                 'Incompatible sampling frequencies in addition of signals')
         if self.length != other.length:
             raise ValueError('Incompatible signal lengths')
+        if not self.unit.same_dimensions_as(other.unit):
+            raise ValueError('Incompatible units in addition of sginals')
 
-        if self.nchannels>1:
-            if other.nchannels==self.nchannels:
-                raise NotImplementedError("Addition of multichannel signals is not yet implemented")
-            if other.nchannels==1:
-                raise NotImplementedError("Addition of multichannel signals is not yet implemented")
-            else:
-                raise ValueError(f'Arrays could not be broadcast together with channel count of {self.nchannels} and {other.nchannels}')
-        elif other.nchannels>1:
-            raise NotImplementedError("Addition of multichannel signals is not yet implemented")
-        else:
-            if not self.unit.same_dimensions_as(other.unit):
-                raise ValueError('Incompatible units in addition of sginals')
-            return self.similar(
-                values=self.values+other.unit_to(self.unit).values,
-                cal=None,
-                dbfs=None,
-                desc=self.desc+'\n + '+other.desc
+        return self.similar(
+            values=self.values+other.unit_to(self.unit).values,
+            cal=None,
+            dbfs=None,
+            desc=self.desc+' + '+other.desc
             )
 
-    def __add__(self, other):
+    def __add__(self, other, add_chan_in_desc=True):
         """Add something to the signal
 
         :param other: Something to add to
         :type other: Signal, float, int, scalar quantity
         """
         if isinstance(other, Signal):
+            if self.nchannels != other.nchannels:
+                raise ValueError('Added signals must have same number of channels.')
+            if self.nchannels>1:
+                return Signal.pack(tuple(self[i]._add(other.unpack(add_chan_in_desc=add_chan_in_desc)[i]) for i in range(self.nchannels)))
             return self._add(other)
 
         if isinstance(other, (float,int,complex,numbers.Number) ):
             # print('Add with a number without unit, it is considered to be of same unit')
-            return self._add(
+            return self.__add__(
                 self.similar(
                     values=np.ones_like(self.values)*other,
                     desc=str(other)
-                )
+                ),
+            add_chan_in_desc=False
             )
         if isinstance(other,unyt.array.unyt_quantity):
             if not self.unit.same_dimensions_as(other.units):
@@ -1647,7 +1650,10 @@ class Signal:
         return self.__add__(other)
 
     def __neg__(self):
-        return self.similar(raw=-1*self.raw, desc='-'+self.desc)
+        if self.nchannels>1:
+            return Signal.pack(tuple(self[i].__neg__() for i in range(self.nchannels)))
+        else:
+            return self.similar(raw=-1*self.raw, desc='-'+self.desc)
 
     def __sub__(self, other):
         """Substraction of two signals
@@ -1678,62 +1684,55 @@ class Signal:
             raise ValueError(
                 'Incompatible signal lengths in multiplication of signals')
         
-        if self.nchannels>1:
-            if other.nchannels==self.nchannels:
-                raise NotImplementedError("Multiplication of multichannel signals is not yet implemented")
-            if other.nchannels==1:
-                raise NotImplementedError("Multiplication of multichannel signals is not yet implemented")
-            else:
-                raise ValueError(f'Arrays could not be broadcast together with channel count of {self.nchannels} and {other.nchannels}')
-        elif other.nchannels>1:
-            raise NotImplementedError("Multiplication of multichannel signals is not yet implemented")
-        else:
-            return self.similar(
-                raw=self.values*other.values,
-                unit=self.unit*other.unit,
-                cal=None,
-                dbfs=None,
-                desc=self.desc+'\n * '+other.desc
+        return self.similar(
+            raw=self.values*other.values,
+            unit=self.unit*other.unit,
+            cal=None,
+            dbfs=None,
+            desc=self.desc+' * '+other.desc
         )
 
-    def __mul__(self, other):
+    def __mul__(self, other, add_chan_in_desc=True):
         """Multiplication of two signals
 
         :param other: other signal
         :type other: Signal
         """
-        if type(other) == Signal:
+        if isinstance(other,Signal):
+            if self.nchannels != other.nchannels:
+                raise ValueError('Added signals must have same number of channels.')
+            if self.nchannels>1:
+                return Signal.pack(tuple(self[i]._mul(other.unpack(add_chan_in_desc=add_chan_in_desc)[i]) for i in range(self.nchannels)))
             return self._mul(other)
 
-        if (type(other) == float) or (type(other) == int) or (type(other) == complex) or isinstance(other, numbers.Number):
-            return self.similar(raw=other*self.raw, desc=str(other)+'*'+self.desc)
+        if isinstance(other, numbers.Number):
+            return self.__mul__(self.similar(raw=other*np.ones_like(self.raw), unit='1', cal=1., dbfs=1., desc=str(other)), add_chan_in_desc=False)
 
-        if type(other) == unyt.array.unyt_quantity:
-            return self._mul(
+        if isinstance(other,unyt.array.unyt_quantity):
+            return self.__mul__(
                 self.similar(
                     raw=np.ones_like(self.raw)*other.v,
                     unit=other.units,
                     cal=None,
                     dbfs=None,
-                    desc=str(other)
+                    desc=str(other)),
+                add_chan_in_desc=False)
+        if isinstance(other,unyt.array.unyt_array):
+            return self.__mul__(
+                self.similar(
+                    values=other.value,
+                    unit=other.units,
+                    desc='unyt array'
                 )
             )
-        if type(other) == np.ndarray:
-            return self._mul(
+        if isinstance(other,np.ndarray):
+            return self.__mul__(
                 self.similar(
                     raw=other,
                     unit=None,
                     cal=None,
                     dbfs=None,
                     desc='array'
-                )
-            )
-        if type(other) == unyt.array.unyt_array:
-            return self._mul(
-                self.similar(
-                    values=other.value,
-                    unit=other.units,
-                    desc='unyt array'
                 )
             )
         else:
@@ -1754,15 +1753,15 @@ class Signal:
         # Calibration and dbfs are reset to 1.0 during the process
 
         if self.nchannels>1:
-            raise NotImplementedError("Inverse of multichannel signals is not yet implemented")
-
-        return self.similar(
-            values=self.values**(-1),
-            unit=1/self.unit,
-            cal=None,
-            dbfs=None,
-            desc='1/'+self.desc
-        )
+            return Signal.pack(tuple(self[i].__invert__() for i in range(self.nchannels)))
+        else:
+            return self.similar(
+                values=self.values**(-1),
+                unit=1/self.unit,
+                cal=None,
+                dbfs=None,
+                desc='1/'+self.desc
+            )
 
     def _div(self, other):
         """Division of two signals
@@ -1772,24 +1771,17 @@ class Signal:
         """
         if self.fs!=other.fs:
             raise ValueError('Incompatible sampling frequencies in addition of signals')
+        if self.length != other.length:
+            raise ValueError(
+                'Incompatible signal lengths in multiplication of signals')
 
-        if self.nchannels>1:
-            if other.nchannels==self.nchannels:
-                raise NotImplementedError("Division of multichannel signals is not yet implemented")
-            if other.nchannels==1:
-                raise NotImplementedError("Division of multichannel signals is not yet implemented")
-            else:
-                raise ValueError(f'Arrays could not be broadcast together with channel count of {self.nchannels} and {other.nchannels}')
-        elif other.nchannels>1:
-            raise NotImplementedError("Division of multichannel signals is not yet implemented")
-        else:
-            return self.similar(
-                raw=self.values/other.values,
-                unit=self.unit/other.unit,
-                cal=None,
-                dbfs=None,
-                desc=self.desc+' / '+other.desc
-        )
+        return self.similar(
+            raw=self.values/other.values,
+            unit=self.unit/other.unit,
+            cal=None,
+            dbfs=None,
+            desc=self.desc+' / '+other.desc
+    )
 
     def __truediv__(self, other):
         """Division of two signals
@@ -1798,9 +1790,10 @@ class Signal:
         :type other: Signal
         """
         if isinstance(other,Signal):
-            if self.fs != other.fs:
-                raise ValueError(
-                    'Incompatible sampling frequencies in division of signals')
+            if self.nchannels != other.nchannels:
+                raise ValueError('Added signals must have same number of channels.')
+            if self.nchannels>1:
+                return Signal.pack(tuple(self[i]._div(other[i]) for i in range(self.nchannels)))
             return self._div(other)
 
         if isinstance(other,numbers.Number):
@@ -2412,21 +2405,22 @@ class Spectral:
         else:
             return self*self.similar(w=w, unit=Unit('1'), desc=w.desc)
 
-    def unit_to(self, unit):
+    def unit_to(self, newunit):
         """ Converts to a new compatible unit
 
         :return: New spectral object (with new unit)
         :rtype: measpy.signal.Spectral
         """
 
-        if isinstance(unit,str):
-            unit = Unit(unit)
-        if not self.unit.same_dimensions_as(unit):
+        # if isinstance(unit,str):
+        #     unit = Unit(unit)
+        if not self.unit.same_dimensions_as(newunit):
             raise ValueError('Incompatible units')
-        a = self.unit.get_conversion_factor(unit)[0]
+        a = self.unit.get_conversion_factor(newunit)[0]
         return self.similar(
             values=a*self.values,
-            desc=add_step(self.desc, 'Unit to '+str(unit))
+            unit=newunit,
+            desc=add_step(self.desc, 'Unit to '+str(newunit))
         )
 
     def apply_dBA(self):
