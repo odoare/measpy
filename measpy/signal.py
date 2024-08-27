@@ -1263,11 +1263,13 @@ class Signal:
                 added_str=f' chan {i}'
             else:
                 added_str=''
-            outl.append(self.similar(values=self.values[:,i],
-                desc=to_list(self.desc,nc)[i]+added_str,
-                dbfs=to_list(self.dbfs,nc)[i],
-                cal=to_list(self.cal,nc)[i],
-                unit=to_list(self.unit,nc)[i] ))
+            outelt = Signal(values=self.values[:,i],
+                desc=to_list(self.desc,nc)[i]+added_str)
+            for k,v in self.__dict__.items():
+                a = to_list(v,nc)[i]
+                if (not k in('_rawvalues','desc')) and (a is not None):
+                    outelt.__dict__[k]=a
+            outl.append(outelt)
         return outl
 
     #######################################################################
@@ -1797,7 +1799,7 @@ class Signal:
         """
         if isinstance(other,Signal):
             if self.nchannels != other.nchannels:
-                raise ValueError('Added signals must have same number of channels.')
+                raise ValueError('Signals must have same number of channels.')
             if self.nchannels>1:
                 return Signal.pack(tuple(self[i]._div(other[i]) for i in range(self.nchannels)))
             return self._div(other)
@@ -2234,7 +2236,6 @@ class Signal:
 
         if self.nchannels>1:
             raise NotImplementedError('Transfer function calculation not implemented for multichannels signals.')
-
 
         f, t, Sxx = spectrogram(self.values, self.fs, **kwargs)
         if ax is None:
