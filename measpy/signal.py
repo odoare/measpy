@@ -1094,12 +1094,13 @@ class Signal:
         with open(filename+'.csv', 'r', encoding="utf-8") as file:
             reader = csv.reader(file)
             for row in reader:
+                print(row[0])
                 if row[0] == '_unit' or row[0] == 'unit':
                     if len(row)<3:
                         out._unit = Unit(row[1])
                     else:
                         out._unit = list(Unit(e) for e in row[1:])
-                if row[0] == '_cal':
+                elif row[0] == '_cal':
                     print(row[1:])
                     if len(row)<3:
                         try:
@@ -1110,8 +1111,12 @@ class Signal:
                         try:
                             out._cal = np.array(list(float(e) for e in row[1:]))
                         except:
-                            out._cal = row[1:]
-                if row[0] == '_dbfs':
+                            try:
+                                out._cal = [None if x=='' else float(x) for x in row[1:]]
+                                print(out._cal)
+                            except:
+                                out._cal = row[1:]
+                elif row[0] == '_dbfs':
                     if len(row)<3:
                         try:
                             out._dbfs = float(row[1])
@@ -1119,7 +1124,8 @@ class Signal:
                             out._dbfs = row[1]
                     else:
                         try:
-                            out._dbfs = np.array(list((float(e) for e in row[1:])))
+                            dbfs = [None if x=='' else x for x in row[1:]]
+                            out._dbfs = np.array(list((float(e) for e in dbfs)))
                         except:
                             out._dbfs = row[1:]
                 elif len(row) < 3:
@@ -1141,6 +1147,7 @@ class Signal:
             out._rawvalues = (y.astype(dtype=float)-middle)/amp
         else:
             out._rawvalues = y
+        print(out._cal)
         return out
 
     @classmethod
@@ -1956,13 +1963,17 @@ class Signal:
             for arg,val in self.__dict__.items():
                 if arg != '_rawvalues':
                     if isinstance(val,(list,np.ndarray)):
+                        print("array")
                         writer.writerow([arg]+list(val))
                     else:
                         writer.writerow([arg]+[val])
             if includetime:
                 writer.writerow(['First column is time in seconds'])
             writer.writerow([f'Below are data in the {datatype} format'])    
-            writer.writerows(outdata)
+            for r in outdata:
+                print(r.tolist()[0])
+                writer.writerow(r.tolist()[0])
+
 
     def to_hdf5(self, hdf5_object, dataset_name, data_type):
         """ Saves the signal in an hdf5 file
