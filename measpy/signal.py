@@ -759,7 +759,6 @@ class Signal:
             raise ValueError('Incompatible signal sampling frequencies')
         nc1 = self.nchannels
         nc2 = other.nchannels
-        out = self.similar(raw=np.vstack((self.raw.T,other.raw.T)).T)
         dicta = copy.deepcopy(self.__dict__)
         del dicta['_rawvalues']
         del dicta['fs']
@@ -1346,7 +1345,10 @@ class Signal:
         cal property the calibration data (a value, tuple of values or a string function)
         """
         if hasattr(self,'_cal'):
-            return self._cal
+            if self._cal is not None:
+                return self._cal
+            else:
+                return 1.0
         else:
             return 1.0 
     @cal.setter
@@ -1412,6 +1414,11 @@ class Signal:
             command = 'y='+self.cal
             exec(command, d)
             return d['y']
+        elif isinstance(self.cal,list):
+            # Here we convert a list of values to ndarray
+            # (converting eventual None values to 1.0)
+            cal = np.array([1.0 if x is None else x for x in self.cal])
+            return self._rawvalues*self.dbfs/cal
         else:
             print('cal property not recognized')
     @values.setter
@@ -1424,8 +1431,10 @@ class Signal:
                 exec('x='+self.invcal, d)
                 self._rawvalues = d['x']/self.dbfs
             else:
-                print(
-                    'cal property seems to be a function whereas no invcal property has been given: values cannot be set')
+                raise ValueError(
+                    'cal property seems to be a function whereas no invcal property has been given: values cannot be set this way')
+        else:
+            raise TypeError('Argument should be a number, a numpy array or a string')
 
     @property
     def volts(self):
@@ -1452,10 +1461,10 @@ class Signal:
         """
         Number of channels
         """
-        if len(self.values.shape) == 1 :
+        if len(self._rawvalues.shape) == 1 :
             return 1
         else:
-            return self.values.shape[1]
+            return self._rawvalues.shape[1]
     @nchannels.setter
     def nchannels(self,val):
         raise AttributeError("Property 'nchannels' cannot be set")
