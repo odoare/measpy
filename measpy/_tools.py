@@ -11,6 +11,8 @@
 import csv
 import numpy as np
 import h5py
+import numbers
+from unyt import Unit
 
 def csv_to_dict(filename):
     """ Conversion from a CSV (produced by the class Measurement) to a dict
@@ -40,7 +42,12 @@ def convl1(fun,xx):
     return yy
 
 def add_step(a,b):
-    return a+'\n -->'+b
+    if isinstance(a,str):
+        return a+'\n -->'+b
+    if isinstance(a,list):
+        return list(s+'\n -->'+b for s in a)
+    else:
+        raise TypeError('First argument has to be a string or list of strings')
 
 def wrap(phase):
     """ Opposite of np.unwrap   
@@ -54,7 +61,15 @@ def unwrap_around_index(phase,n):
 
 def smooth(in_array,l=20):
     ker = np.ones(l)/l
-    return np.convolve(in_array,ker,mode='same')
+    if len(in_array.shape) == 1:
+        return np.convolve(in_array,ker,mode='same')
+    elif len(in_array.shape) == 2:
+        out = np.zeros_like(in_array)
+        for i in range(in_array.shape[1]):
+            out[:,i] = np.convolve(in_array[:,i],ker,mode='same')
+        return out
+    else:
+        raise ValueError('This smooth function manages array of dimension <= 2')
 
 def nth_octave_bands(n,fmin=5,fmax=20000):
     """ 1/nth octave band frequency range calculation """
@@ -144,6 +159,15 @@ def get_index(array,value):
     Get the index of the nearest value
     """
     return np.argmin((array-value)**2)
+
+def decodeH5str(h5str):
+    if h5str == "None":
+        return
+    else:
+        try:
+            return float(h5str)
+        except:
+            return h5str.strip("\'")
 
 def h5file_write_from_queue(queue, filename, dataset_name):
     """
@@ -253,6 +277,32 @@ def all_equal(iterator):
     except StopIteration:
         return True
     return all(first == x for x in iterator)
+
+def to_list(elt,n):
+    if isinstance(elt,(numbers.Number,str,Unit)):
+        return [elt] * n
+    if isinstance(elt,(list,np.ndarray)):
+        return list(elt)
+    return [None] * n
+
+def array_mult_unitlist(values,unit):
+    """ Multiplies an array with a unyt instance
+    or a list of unyts with the same numer of elements
+    """
+    if isinstance(unit,list):
+        return list(values[i]*u for i,u in enumerate(unit))
+    return values*unit
+
+def mix_dicts(a,b,na,nb):
+    out = {}
+    for k,v in a.items():
+        vb = b.pop(k,None)
+        out[k] = to_list(v,na)+to_list(vb,nb)
+    for k,v in b.items():
+        va = a.pop(k,None)
+        out[k] = to_list(va,na)+to_list(v,nb)
+    return out
+
 
 # def _tfe_farina(y, fs, freqs):
 #     """ Transfer function estimate
