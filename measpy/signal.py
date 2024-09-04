@@ -58,7 +58,8 @@ from ._tools import (add_step,
                            h5file_write_from_queue,
                            array_mult_unitlist,
                            to_list,
-                           mix_dicts)
+                           mix_dicts,
+                           decodeH5str)
 
 ##################
 ##              ##
@@ -1188,7 +1189,7 @@ class Signal:
         return out
 
     @classmethod
-    def from_hdf5(cls, hdf5_object, chan = 1):
+    def from_hdf5(cls, hdf5_object, dataset_name=""):
         """ Load Signal from hdf5 object (file or dataset)
 
         :param hdf5_object: File or dataset from opened hdf5 file
@@ -1214,39 +1215,37 @@ class Signal:
         # out : Signal
 
         # """
-        out = cls()
+        out = []
         with ExitStack() as stack:
             if isinstance(hdf5_object, (str,Path)):
                 H5file = stack.enter_context(h5py.File(hdf5_object, "r"))
-                datasets = [v for v in H5file.values()]
-                if len(datasets)>1 and chan == 1:
-                    print(f"Warning there is more than one dataset in current file : {list(H5file.keys())}")
-                dataset = datasets[chan-1]
+                if dataset_name:
+                    datasets = [H5file[dataset_name]]
+                else:
+                    datasets = [v for v in H5file.values()]
             else:
-                dataset = hdf5_object
-            data = np.asarray(dataset)
-            if data.ndim>1:
-                idx = list(dataset.attrs["channel"]).index(chan)
+                datasets = [hdf5_object]
+            for dataset in datasets:
+                sig = cls()
+                data = np.asarray(dataset)
                 for key,val in dataset.attrs.items():
                     if key == '_unit' or key == 'unit':
-                        out.__dict__[key] = Unit(val[idx])
+                        if val.startswith("["):
+                            sig.__dict__[key] = [Unit(decodeH5str(v) or "") for v in val.strip('][').split(', ')]
+                        else:
+                            sig.__dict__[key] = Unit(val)
                     else:
-                        try:
-                            out.__dict__[key] = float(val[idx])
-                        except:
-                            out.__dict__[key] = val[idx]
-                out._rawvalues = data[:,idx]
+                        if val.startswith("["):
+                            sig.__dict__[key] = [decodeH5str(v) for v in val.strip('][').split(', ')]
+                        else:
+                            sig.__dict__[key] = decodeH5str(val)
+                    sig._rawvalues = data
+                    out.append(sig)
+            if (Nsig := len(datasets))>1:
+                print(f"Warning there are {Nsig} signals in current file : {list(H5file.keys())}")
+                return out
             else:
-                for key,val in dataset.attrs.items():
-                    if key == '_unit' or key == 'unit':
-                        out.__dict__[key] = Unit(val)
-                    else:
-                        try:
-                            out.__dict__[key] = float(val)
-                        except:
-                            out.__dict__[key] = val
-                out._rawvalues = data
-        return out
+                return out[0]
 
     @classmethod
     def pack(cls,sigs):
@@ -1975,7 +1974,7 @@ class Signal:
                 writer.writerow(r.tolist()[0])
 
 
-    def to_hdf5(self, hdf5_object, dataset_name, data_type):
+    def to_hdf5(self, hdf5_object, dataset_name="in_sigs", data_type=None):
         """ Saves the signal in an hdf5 file
 
         Save Signal in hdf5 file
@@ -1992,6 +1991,8 @@ class Signal:
         else it is an opened h5file handle already in with statement
         """
 
+        if data_type is None :
+            data_type = self._rawvalues.dtype
         with ExitStack() as stack:
             if isinstance(hdf5_object, (str,Path)):
                 H5file = stack.enter_context(h5py.File(hdf5_object, "x"))
@@ -2003,13 +2004,20 @@ class Signal:
                 dataset.attrs["data_type"] = self._rawvalues.dtype.__str__()
             elif data_type is not None:
                 print(f"There is no data, creating empty dataset {dataset_name} wity type = {data_type}")
-                itemsize = np.dtype(data_type).itemsize
                 #Chunck memory size should be between 10KiB and 1MiB, (bytes power of two 14 to 19 )
                 power_two_chunck_size = 17
-                chunksize = 2**(power_two_chunck_size-(itemsize-1).bit_length())
-                dataset = H5file.create_dataset(
-                    dataset_name, (0,), maxshape=(None,), dtype=data_type, chunks=(chunksize,)
-                )
+                itemsize = np.dtype(data_type).itemsize
+                if self.nchannels>1:
+                    itemsize *= self.nchannels
+                    chunksize = 2**(power_two_chunck_size-(itemsize-1).bit_length())
+                    dataset = H5file.create_dataset(
+                        dataset_name, (0,self.nchannels), maxshape=(None,self.nchannels), dtype=data_type, chunks=(chunksize,self.nchannels)
+                    )
+                else:
+                    chunksize = 2**(power_two_chunck_size-(itemsize-1).bit_length())
+                    dataset = H5file.create_dataset(
+                        dataset_name, (0,), maxshape=(None,), dtype=data_type, chunks=(chunksize,)
+                    )
                 dataset.attrs["data_type"] = np.dtype(data_type).__str__()
                 # Create the method that can fill this dataset from queue.
                 self.h5save_data = partial(
@@ -2017,15 +2025,12 @@ class Signal:
                     filename=H5file.filename,
                     dataset_name=dataset_name,
                     )
-                # print("To save data from a Queue.queue use the method h5save_data")
+                print(f"The method h5save_data(queue) will save data from the queue in the file {H5file.filename}")
             else:
-                raise TypeError("Cannot create dataset if type not specified")
+                raise TypeError("Cannot create empty dataset if the type is not specified")
             for key, value in self.__dict__.items():
                 if key not in ['_rawvalues',"h5save_data"]:
-                    try:
-                        Val = value.__str__()
-                    except AttributeError:
-                        Val = value
+                    Val = value.__str__()
                     dataset.attrs[key] = Val
 
     def harmonic_disto(self, nh=4, freq_min=20.0, freq_max=20000.0, delay=None, win_max_length=2**15, prop_before=0.25, nsmooth=24, debug_plot=False):
