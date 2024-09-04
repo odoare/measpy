@@ -103,6 +103,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.abs"><code class="docutils literal notranslate"><span class="pre">Signal.abs()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.add_silence"><code class="docutils literal notranslate"><span class="pre">Signal.add_silence()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.angle"><code class="docutils literal notranslate"><span class="pre">Signal.angle()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.apply_calibrations"><code class="docutils literal notranslate"><span class="pre">Signal.apply_calibrations()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.as_raw"><code class="docutils literal notranslate"><span class="pre">Signal.as_raw()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.as_volts"><code class="docutils literal notranslate"><span class="pre">Signal.as_volts()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.cal"><code class="docutils literal notranslate"><span class="pre">Signal.cal</span></code></a></li>
@@ -133,8 +134,11 @@
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.max"><code class="docutils literal notranslate"><span class="pre">Signal.max</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.mean"><code class="docutils literal notranslate"><span class="pre">Signal.mean</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.min"><code class="docutils literal notranslate"><span class="pre">Signal.min</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.nchannels"><code class="docutils literal notranslate"><span class="pre">Signal.nchannels</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.noise"><code class="docutils literal notranslate"><span class="pre">Signal.noise()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.normalize"><code class="docutils literal notranslate"><span class="pre">Signal.normalize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.pack"><code class="docutils literal notranslate"><span class="pre">Signal.pack()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.pack_with"><code class="docutils literal notranslate"><span class="pre">Signal.pack_with()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.plot"><code class="docutils literal notranslate"><span class="pre">Signal.plot()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.psd"><code class="docutils literal notranslate"><span class="pre">Signal.psd()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.raw"><code class="docutils literal notranslate"><span class="pre">Signal.raw</span></code></a></li>
@@ -162,6 +166,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.unit"><code class="docutils literal notranslate"><span class="pre">Signal.unit</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.unit_to"><code class="docutils literal notranslate"><span class="pre">Signal.unit_to()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.unit_to_std"><code class="docutils literal notranslate"><span class="pre">Signal.unit_to_std()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.unpack"><code class="docutils literal notranslate"><span class="pre">Signal.unpack()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.values"><code class="docutils literal notranslate"><span class="pre">Signal.values</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.volts"><code class="docutils literal notranslate"><span class="pre">Signal.volts</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.window"><code class="docutils literal notranslate"><span class="pre">Signal.window()</span></code></a></li>
@@ -658,6 +663,12 @@ For example a five seconds logarithmic sweep from 20Hz to 20kHz, of dimension vo
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="measpy.signal.Signal.apply_calibrations">
+<span class="sig-name descname"><span class="pre">apply_calibrations</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.apply_calibrations" title="Link to this definition"></a></dt>
+<dd><p>Returns the same signal with all calibrations applied and cal=1.0, dfbs=1.0</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Signal.as_raw">
 <span class="sig-name descname"><span class="pre">as_raw</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.as_raw" title="Link to this definition"></a></dt>
 <dd><p>Returns the signal raw values, dimensionless, no calibration applied, no dbfs applied.</p>
@@ -917,7 +928,7 @@ Returns a Spectral object. Unit is preserved during the process.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Signal.from_hdf5">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_hdf5</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hdf5_object</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chan</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.from_hdf5" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_hdf5</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hdf5_object</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.from_hdf5" title="Link to this definition"></a></dt>
 <dd><p>Load Signal from hdf5 object (file or dataset)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1136,10 +1147,16 @@ Note: This method is exactly the hilbert function of the scipy module.</p>
 </dl>
 </dd></dl>
 
+<dl class="py property">
+<dt class="sig sig-object py" id="measpy.signal.Signal.nchannels">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nchannels</span></span><a class="headerlink" href="#measpy.signal.Signal.nchannels" title="Link to this definition"></a></dt>
+<dd><p>Number of channels</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Signal.noise">
 <em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">noise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">44100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dur</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dbfs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">desc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.noise" title="Link to this definition"></a></dt>
-<dd><p>ogarithmic sweep signal creation</p>
+<dd><p>Logarithmic sweep signal creation</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -1175,6 +1192,21 @@ Note: This method is exactly the hilbert function of the scipy module.</p>
 <dd class="field-even"><p><a class="reference internal" href="#measpy.signal.Signal" title="measpy.signal.Signal">measpy.signal.Signal</a></p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="measpy.signal.Signal.pack">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sigs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.pack" title="Link to this definition"></a></dt>
+<dd><p>Pack signals in the form of a list of signals and return a multichannel signal</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="measpy.signal.Signal.pack_with">
+<span class="sig-name descname"><span class="pre">pack_with</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.pack_with" title="Link to this definition"></a></dt>
+<dd><p>Pack the signal with other signal</p>
+<p>Signals must have compatible length and sampling frequencies.
+This method returns a new multichannel signal with values packed as columns.
+The other properties of the resulting signal are arranged as lists or numpy array if possible</p>
 </dd></dl>
 
 <dl class="py method">
@@ -1471,7 +1503,18 @@ the two signals.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Signal.to_csv">
 <span class="sig-name descname"><span class="pre">to_csv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">datatype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'raw'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includetime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.to_csv" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Saves the signal into a single CSV file</p>
+<p>If the str parameter filename=’file’, the created file is file.csv</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<em>str</em>) – string for the base file name (no extension)</p></li>
+<li><p><strong>datatype</strong> (<em>str</em>) – string for the optionnal data format (defaults to ‘raw’)</p></li>
+<li><p><strong>includetime</strong> (<em>bool</em>) – does the txt contains a time column ?</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Signal.to_csvtxt">
@@ -1511,7 +1554,7 @@ the two signals.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Signal.to_hdf5">
-<span class="sig-name descname"><span class="pre">to_hdf5</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hdf5_object</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.to_hdf5" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">to_hdf5</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hdf5_object</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'in_sigs'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.to_hdf5" title="Link to this definition"></a></dt>
 <dd><p>Saves the signal in an hdf5 file</p>
 <p>Save Signal in hdf5 file</p>
 <dl class="field-list simple">
@@ -1535,12 +1578,12 @@ else it is an opened h5file handle already in with statement</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="measpy.signal.Signal.unit">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">unit</span></span><a class="headerlink" href="#measpy.signal.Signal.unit" title="Link to this definition"></a></dt>
-<dd><p>Physical unit of the signal</p>
+<dd><p>Physical unit of the signal(s)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Signal.unit_to">
-<span class="sig-name descname"><span class="pre">unit_to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">unit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.unit_to" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">unit_to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">newunit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.unit_to" title="Link to this definition"></a></dt>
 <dd><p>Change Signal unit</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1570,6 +1613,12 @@ else it is an opened h5file handle already in with statement</p>
 <dd class="field-even"><p><a class="reference internal" href="#measpy.signal.Signal" title="measpy.signal.Signal">measpy.signal.Signal</a></p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="measpy.signal.Signal.unpack">
+<span class="sig-name descname"><span class="pre">unpack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">add_chan_in_desc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.unpack" title="Link to this definition"></a></dt>
+<dd><p>Unpack a multichannel signal and returns a list of signals</p>
 </dd></dl>
 
 <dl class="py property">
@@ -2015,7 +2064,7 @@ by interpolating a Weighting object (parameter w)</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Spectral.unit_to">
-<span class="sig-name descname"><span class="pre">unit_to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">unit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Spectral.unit_to" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">unit_to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">newunit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Spectral.unit_to" title="Link to this definition"></a></dt>
 <dd><p>Converts to a new compatible unit</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
