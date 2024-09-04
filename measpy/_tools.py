@@ -160,6 +160,15 @@ def get_index(array,value):
     """
     return np.argmin((array-value)**2)
 
+def decodeH5str(h5str):
+    if h5str == "None":
+        return
+    else:
+        try:
+            return float(h5str)
+        except:
+            return h5str.strip("\'")
+
 def h5file_write_from_queue(queue, filename, dataset_name):
     """
     Write data received from a queue in HDF5 dataset
