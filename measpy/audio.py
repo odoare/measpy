@@ -37,13 +37,16 @@ def audio_run_measurement(M):
 
     """
 
+    if len(M.in_sig) != len(M.in_map) and len(M.in_sig) != 1:
+        raise ValueError(f"in_sig property of measurement must be a list of one multichannel signal or a list of {len(M.in_map)} single channel signals")
+
     if M.device_type!='audio':
         print("Warning: deviceType != 'audio'. Changing to 'audio'.")
         M.device_type='audio'
     if M.in_device=='':
         print("Warning: no device specified, changing to None")
         M.in_device=None
-    if M.out_sig!=None:
+    if M.out_sig is not None:
         if M.out_device=='':
             print("Warning: no device specified, changing to None")
             M.out_device=None
@@ -54,28 +57,28 @@ def audio_run_measurement(M):
 
     # Set the audio devices to use
     # And prepare the output arrays
-    if M.out_sig!=None:
+    if M.out_sig is not None:
         outx = siglist_to_array(M.out_sig)
         tmin = t_min(M.out_sig)
-        if M.in_sig!=None:
+        if M.in_sig is not None:
             sd.default.device=(M.in_device,M.out_device)
         else:
             sd.default.device=(M.out_device)
     else:
         tmin = 0
-        if M.in_sig!=None:
+        if M.in_sig is not None:
             sd.default.device=(M.in_device)
         else:
-            raise Exception('No input nor output defined.')
+            raise ValueError('No input nor output defined.')
 
-    if M.out_sig==None:
+    if M.out_sig is None:
         y = sd.rec(int(M.dur * M.fs),
                 samplerate=M.fs,
                 mapping=M.in_map,
                 blocking=False)
     else:
-        if M.in_sig==None:
-            y = sd.play(outx,
+        if M.in_sig is None:
+            sd.play(outx,
                     samplerate=M.fs,
                     mapping=M.out_map,
                     blocking=False)
@@ -88,11 +91,15 @@ def audio_run_measurement(M):
             
     sd.wait()
 
-    if M.in_sig!=None:
+    if M.in_sig is not None:
         print(M.in_sig)
-        for i,s in enumerate(M.in_sig):
-            s.raw = np.array(y[:,i])
-            s.t0 = tmin
+        if len(M.in_sig) == len(M.in_map):
+            for i,s in enumerate(M.in_sig):
+                s.raw = np.array(y[:,i])
+                s.t0 = tmin
+        elif len(M.in_sig) == 1:
+            M.in_sig[0].raw = np.array(y)
+
 
 def audio_run_synced_measurement(M,in_chan=0,out_chan=0):
     """
