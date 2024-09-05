@@ -1272,7 +1272,8 @@ class Signal:
                 desc=to_list(self.desc,nc)[i]+added_str)
             for k,v in self.__dict__.items():
                 a = to_list(v,nc)[i]
-                if (not k in('_rawvalues','desc')) and (a is not None):
+                # We ignore _index property as it is reverved for iterations
+                if (not k in('_rawvalues','desc','_index')) and (a is not None):
                     outelt.__dict__[k]=a
             outl.append(outelt)
         return outl
@@ -1584,6 +1585,18 @@ class Signal:
             raise ValueError('Negative index value not allowed.')
         else:
             return self.unpack()[i]
+        
+    def __iter__(self):
+        self._index = 0
+        return self
+    
+    def __next__(self):
+        if self._index < self.nchannels:
+            self._index += 1
+            return self.__getitem__(self._index-1)
+        else:
+            del self._index
+            raise StopIteration
 
     # #################################################################
     # Operators
