@@ -39,37 +39,36 @@ class Measurement:
             non=params['out_sig']!=None
             sig=type(params['out_sig'])!=list
             if non&sig:
-                raise Exception("out_sig must but be a list of measpy.signal.Signal or None")
+                raise TypeError("out_sig must but be a list of measpy.signal.Signal or None")
             else:
                 #print(list((type(s)==Signal for s in params['out_sig'])))
-                if all((type(s)==Signal for s in params['out_sig'])):
+                if all((isinstance(s,Signal) for s in params['out_sig'])):
                     # print('These are all signals')
                     if all(s.fs==params['out_sig'][0].fs for s in params['out_sig']):
                         # print('Same fs for all signals')
                         self.out_sig = params['out_sig']
                     else:
-                        raise Exception("Signals in out_sig list have different sampling frequencies")                     
+                        raise ValueError("Signals in out_sig list have different sampling frequencies")                     
                 else:
-                    raise Exception("Some elements of out_sig list are not Signals")
+                    raise TypeError("Some elements of out_sig list are not Signals")
         else:
             self.out_sig = None
 
         # Check in_sig contents
         if 'in_sig' in params:
-            non=params['in_sig']!=None
-            sig=type(params['in_sig'])!=list
-            if non&sig:
-                raise Exception("in_sig must but be a list of measpy.signal.Signal or None")
+            non=params['in_sig'] is not None
+            if non & (not isinstance(params['in_sig'],(Signal,list))):
+                raise TypeError("in_sig must but be a Signal or a list of measpy.signal.Signal or None")
             else:
-                if all((type(s)==Signal for s in params['in_sig'])):
+                if all((isinstance(s,Signal) for s in params['in_sig'])):
                     # print('These are all signals')
                     if all(s.fs==params['in_sig'][0].fs for s in params['in_sig']):
                         # print('Same fs for all signals')
                         self.in_sig = params['in_sig']
                     else:
-                        raise Exception("Signals in in_sig list have different sampling frequencies")                     
+                        raise ValueError("Signals in in_sig list have different sampling frequencies")                     
                 else:
-                    raise Exception("Some elements of in_sig list are not Signals")
+                    raise TypeError("Some elements of in_sig list are not Signals")
         else:
             self.in_sig = None
 
@@ -111,7 +110,10 @@ class Measurement:
         if type(self.out_sig)!=type(None):
             if 'out_map' in params:
                 if len(params['out_map'])!=len(self.out_sig):
-                    raise Exception('Lengths of out_map and out_sig do not correspond.')
+                    if len(self.out_sig)!=1:
+                        raise Exception('Lengths of out_map and out_sig do not correspond.')
+                    else:
+                        print(f"out_sig contains one signal whereas len(out_map)={len(params['out_map'])}, the signal will be multichannel")
                 self.out_map = params['out_map']
             else:
                 self.out_map = list(range(1,len(self.out_sig)+1))
@@ -119,15 +121,17 @@ class Measurement:
         if type(self.in_sig)!=type(None):
             if 'in_map' in params:
                 if len(params['in_map'])!=len(self.in_sig):
-                    raise Exception('Lengths of in_map and in_sig do not correspond.')
+                    if len(self.in_sig)!=1:
+                        raise Exception('Lengths of in_map and in_sig do not correspond.')
+                    else:
+                        print(f"in_sig contains one signal whereas len(in_map)={len(params['in_map'])}, the signal will be multichannel")    
                 self.in_map = params['in_map']
             else:
                 self.in_map = list(range(1,len(self.in_sig)+1))
                 print("in_map not given, it is set to default value of: "+str(self.in_map))
-                print(self.in_map)
             if 'in_threshold' in params:
-                if len(params['in_threshold'])!=len(self.in_sig):
-                    raise Exception('Lengths of in_threshold and in_sig do not correspond.')
+                if len(params['in_threshold'])!=len(self.in_map):
+                    raise Exception('Lengths of in_threshold and in_map do not correspond.')
                 self.in_threshold = params['in_threshold']
 
         self.in_device = params.setdefault("in_device",'')
