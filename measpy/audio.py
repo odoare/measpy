@@ -35,20 +35,20 @@ def audio_run_measurement(M):
 
     """
 
-    if len(M.in_sig) != len(M.in_map) and len(M.in_sig) != 1:
+    if isinstance(M.in_sig,list) and len(M.in_sig) != len(M.in_map):
         raise ValueError(f"in_sig property of measurement must be a multichannel signal or a list of {len(M.in_map)} single channel signals")
 
     in_multichannel = isinstance(M.in_sig,Signal)
 
-    if len(M.out_sig) != len(M.out_map) and len(M.out_sig) != 1:
+    if isinstance(M.out_sig,list) and len(M.out_sig) != len(M.out_map):
         raise ValueError(f"out_sig property of measurement must be a multichannel signal or a list of {len(M.out_map)} single channel signals")
 
     out_multichannel = isinstance(M.out_sig,Signal)
 
-    if M.device_type!='audio':
+    if M.device_type != 'audio':
         print("Warning: deviceType != 'audio'. Changing to 'audio'.")
         M.device_type='audio'
-    if M.in_device=='':
+    if M.in_device == '':
         print("Warning: no device specified, changing to None")
         M.in_device=None
     if M.out_sig is not None:
@@ -100,13 +100,13 @@ def audio_run_measurement(M):
     sd.wait()
 
     if M.in_sig is not None:
-        if isinstance(M.in_sig,list):
+        if in_multichannel:
+            M.in_sig[0].raw = np.array(y)
+            M.in_sig.t0 = tmin
+        else:
             for i,s in enumerate(M.in_sig):
                 s.raw = np.array(y[:,i])
                 s.t0 = tmin
-        elif isinstance(M.in_sig,Signal):
-            M.in_sig[0].raw = np.array(y)
-            M.in_sig.t0 = tmin
 
 def audio_run_synced_measurement(M,in_chan=0,out_chan=0):
     """
