@@ -1268,7 +1268,7 @@ class Signal:
                 added_str=f' chan {i}'
             else:
                 added_str=''
-            outelt = Signal(values=self.values[:,i],
+            outelt = Signal(raw=self.raw[:,i],
                 desc=to_list(self.desc,nc)[i]+added_str)
             for k,v in self.__dict__.items():
                 a = to_list(v,nc)[i]
@@ -1616,6 +1616,10 @@ class Signal:
         :return: Sum of signals
         :rtype: Signal
         """
+
+        print("In _add")
+        print(self)
+        print(other)
 
         if self.fs != other.fs:
             raise ValueError(
