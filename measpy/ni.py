@@ -8,15 +8,15 @@
 # (c) OD - 2021 - 2023
 # https://github.com/odoare/measpy
 
-import nidaqmx
-import nidaqmx.constants as niconst
-
-from ._tools import siglist_to_array, t_min
-
-import numpy as np
-
 from datetime import datetime
 from time import sleep
+
+import nidaqmx
+import nidaqmx.constants as niconst
+import numpy as np
+
+from ._tools import siglist_to_array, t_min
+from .signal import Signal
 
 def _n_to_ain(n):
     return 'ai'+str(n-1)
@@ -48,8 +48,15 @@ def ni_run_measurement(M):
     system = nidaqmx.system.System.local()
     nsamps = int(round(M.dur*M.fs))
 
-    if len(M.in_sig) != len(M.in_map) and len(M.in_sig) != 1:
-        raise ValueError(f"in_sig property of measurement must be a list of one multichannel signal or a list of {len(M.in_map)} single channel signals")
+    if isinstance(M.in_sig,list) and len(M.in_sig) != len(M.in_map):
+        raise ValueError(f"in_sig property of measurement must be a multichannel signal or a list of {len(M.in_map)} single channel signals")
+
+    in_multichannel = isinstance(M.in_sig,Signal)
+
+    if isinstance(M.out_sig,list) and len(M.out_sig) != len(M.out_map):
+        raise ValueError(f"out_sig property of measurement must be a multichannel signal or a list of {len(M.out_map)} single channel signals")
+
+    out_multichannel = isinstance(M.out_sig,Signal)
 
     if M.device_type!='ni':
         print("Warning: deviceType != 'ni'. Changing to 'ni'.")
@@ -69,7 +76,10 @@ def ni_run_measurement(M):
 
     if hasattr(M, 'out_sig'):
         if M.out_sig is not None:
-            outx = siglist_to_array(M.out_sig)
+            if out_multichannel:
+                outx = siglist_to_array(M.out_sig.unpack())
+            else:
+                outx = siglist_to_array(M.out_sig)
             tmin = t_min(M.out_sig)
             if M.out_device=='':
                 print("Warning: no output device specified, changing to "+system.devices[0].name)
@@ -172,13 +182,17 @@ def ni_run_measurement(M):
 
     if M.in_sig is not None:
         y=np.array(y).T
-        if len(M.in_sig)==1:
-            M.in_sig[0].raw = y
-            M.in_sig[0].t0 = tmin
+        if in_multichannel:
+            M.in_sig.raw = y
+            M.in_sig.t0=tmin
         else:
-            for i,s in enumerate(M.in_sig):
-                s.raw = y[:,i]
-                s.t0 = tmin
+            if len(M.in_sig)==1:
+                M.in_sig[0].raw = y
+                M.in_sig[0].t0 = tmin
+            else:
+                for i,s in enumerate(M.in_sig):
+                    s.raw = y[:,i]
+                    s.t0 = tmin
 
 def ni_run_synced_measurement(M,in_chan=0,out_chan=0,added_time=1):
     """
