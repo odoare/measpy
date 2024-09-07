@@ -31,14 +31,14 @@ def convl(fun,xx):
     if type(xx) in [np.ndarray ,list]:
         yy=list(map(fun,xx))
     else:
-        yy=fun(xx) 
+        yy=fun(xx)
     return yy
 
 def convl1(fun,xx):
     if type(xx) in [np.ndarray ,list]:
-        yy=fun(xx[0])
+        yy=None if xx[0]=='None' else fun(xx[0])
     else:
-        yy=fun(xx) 
+        yy=None if xx=='None' else fun(xx)
     return yy
 
 def add_step(a,b):
