@@ -1095,7 +1095,6 @@ class Signal:
         with open(filename+'.csv', 'r', encoding="utf-8") as file:
             reader = csv.reader(file)
             for row in reader:
-                print(row[0])
                 if row[0] == '_unit' or row[0] == 'unit':
                     if len(row)<3:
                         out._unit = Unit(row[1])
@@ -1135,10 +1134,12 @@ class Signal:
                     except:
                         out.__dict__[row[0]] = row[1]
                 else:
-                    try:
-                        out.__dict__[row[0]] = np.array(list(float(e) for e in row[1:]))
-                    except:
-                        out.__dict__[row[0]] = row[1:]
+                    out.__dict__[row[0]] = []
+                    for i,e in enumerate(row[1:]):
+                        try:
+                            out.__dict__[row[0]] += [None if e=='' else float(e)]
+                        except:
+                            out.__dict__[row[0]] += [None if e=='' else e]
         _, y = wav.read(filename+'.wav')
         if (convert_to_fp and np.issubdtype(y.dtype, np.integer)):
             minval = float(np.iinfo(y.dtype).max)
@@ -1148,7 +1149,6 @@ class Signal:
             out._rawvalues = (y.astype(dtype=float)-middle)/amp
         else:
             out._rawvalues = y
-        print(out._cal)
         return out
 
     @classmethod
@@ -1583,8 +1583,11 @@ class Signal:
             raise ValueError(f'Signal has {self.nchannels} channels, channel index parameter is too large.')
         if i<0:
             raise ValueError('Negative index value not allowed.')
-        else:
-            return self.unpack()[i]
+        
+        if self.nchannels == 1:
+            return self
+        
+        return self.unpack()[i]
         
     def __iter__(self):
         self._index = 0
@@ -1597,6 +1600,9 @@ class Signal:
         else:
             del self._index
             raise StopIteration
+        
+    def __len__(self):
+        return self.nchannels
 
     # #################################################################
     # Operators

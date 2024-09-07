@@ -8,8 +8,16 @@
 # (c) OD - 2021 - 2023
 # https://github.com/odoare/measpy
 
-from .signal import Signal
+from os.path import isfile
+from copy import copy,deepcopy
+import csv
+import os
+
 from functools import partial
+import numpy as np
+import h5py
+
+from .signal import Signal
 
 from ._tools import (csv_to_dict, 
                      convl, 
@@ -17,30 +25,29 @@ from ._tools import (csv_to_dict,
                      calc_dur_siglist,
                      h5file_write_from_queue)
 
-import numpy as np
-import matplotlib.pyplot as plt
-
-from copy import copy
-
 from ._version import get_versions
 __version__ = get_versions()['version']
 del get_versions
 
-from copy import copy,deepcopy
-import csv
-import os
-import h5py
 
 class Measurement:
     # ---------------------------
     def __init__(self, **params):
         # Check out_sig contents
         if 'out_sig' in params:
-            non=params['out_sig']!=None
-            sig=type(params['out_sig'])!=list
-            if non&sig:
-                raise TypeError("out_sig must but be a list of measpy.signal.Signal or None")
-            else:
+
+            non=params['out_sig'] is not None
+
+            print(type(params['in_sig']))
+
+            if non & (not isinstance(params['in_sig'],(Signal,list))):
+                raise TypeError("out_sig must but be a Signal, a list of measpy.signal.Signal or None")
+
+            if isinstance(params['out_sig'],Signal):
+                self.out_sig = params['out_sig']
+            elif isinstance(params['out_sig'],list):
+                if len(params['out_sig']) != len(params['out_map']):
+                    raise ValueError('Measurement out_map has not the same number of values than the number of signals in out_sig list')
                 #print(list((type(s)==Signal for s in params['out_sig'])))
                 if all((isinstance(s,Signal) for s in params['out_sig'])):
                     # print('These are all signals')
@@ -49,17 +56,24 @@ class Measurement:
                         self.out_sig = params['out_sig']
                     else:
                         raise ValueError("Signals in out_sig list have different sampling frequencies")                     
-                else:
-                    raise TypeError("Some elements of out_sig list are not Signals")
+            else:
+                raise TypeError("Some elements of out_sig list are not Signals")
         else:
             self.out_sig = None
 
         # Check in_sig contents
         if 'in_sig' in params:
+
             non=params['in_sig'] is not None
+            
             if non & (not isinstance(params['in_sig'],(Signal,list))):
                 raise TypeError("in_sig must but be a Signal or a list of measpy.signal.Signal or None")
-            else:
+            
+            if isinstance(params['in_sig'],Signal):
+                self.in_sig = params['in_sig']
+            elif isinstance(params['in_sig'],list):
+                if len(params['in_sig']) != len(params['in_sig']):
+                    raise ValueError('Measurement in_map has not the same number of values than the number of signals in in_sig list')
                 if all((isinstance(s,Signal) for s in params['in_sig'])):
                     # print('These are all signals')
                     if all(s.fs==params['in_sig'][0].fs for s in params['in_sig']):
@@ -73,8 +87,8 @@ class Measurement:
             self.in_sig = None
 
         #Check sampling frequencies
-        if type(self.out_sig)==type(None):
-            if type(self.in_sig)==type(None):
+        if isinstance(self.out_sig,type(None)):
+            if isinstance(self.in_sig,type(None)):
                 #raise Exception("This is a task with no input nor output ?")
                 print("This is a task with no input nor output ?")
             else:
@@ -167,7 +181,7 @@ class Measurement:
             self.upsampling_factor = params.setdefault("upsampling_factor",1)
             self.in_coupling = params.setdefault("in_coupling",list('dc' for b in self.in_map))
             self.sig_gen = params.setdefault("sig_gen",False)
-            if self.sig_gen != None:
+            if self.sig_gen is not None:
                 self.offset = params.setdefault("offset",0.0)
                 self.wave = params.setdefault("wave",0)
                 self.amp = params.setdefault("amp",1.0)
@@ -202,9 +216,12 @@ class Measurement:
         except:
             pass
         if self.out_sig!=None:
-            out += ",\n out_device='"+str(self.out_device)+"'"
+            out += ",\n out_device="+str(self.out_device)
             out += ',\n out_map='+str(self.out_map)
-            out += ',\n out_sig=list of '+str(len(self.out_sig))+' measpy.signal.Signal'
+            if isinstance(self.out_sig,list):
+                out += ',\n out_sig=list of '+str(len(self.out_sig))+' measpy.signal.Signal'
+            else:
+                out += ',\n out_sig=multichannel measpy.signal.Signal'
             out += ",\n io_sync="+str(self.io_sync)
         if self.device_type=='pico':
             out += ",\n in_range="+str(self.in_range)
@@ -214,7 +231,10 @@ class Measurement:
             out += ",\n in_range="+str(self.in_range)
             out += ",\n out_range="+str(self.out_range)
             out += ",\n in_iepe="+str(self.in_iepe)            
-        out += ',\n in_sig=list of '+str(len(self.in_sig))+' measpy.signal.Signal'
+        if isinstance(self.in_sig,list):
+            out += ',\n in_sig=list of '+str(len(self.in_sig))+' measpy.signal.Signal'
+        else:
+            out += ',\n in_sig=multichannel measpy.signal.Signal'
         out +=")"
         
         return out
@@ -249,12 +269,16 @@ class Measurement:
             dirname = dirname+'('+str(i)+')'
         os.mkdir(dirname)
         self._params_to_csv(dirname+"/params.csv")
-        if type(self.in_sig)!=type(None):
+        if isinstance(self.in_sig,list):
             for i,s in enumerate(self.in_sig):
                 s.to_csvwav(dirname+"/in_sig_"+str(i))
-        if type(self.out_sig)!=type(None):
+        elif isinstance(self.in_sig,Signal):
+            self.in_sig.to_csvwav(dirname+"/in_sig")
+        if isinstance(self.out_sig,list):
             for i,s in enumerate(self.out_sig):
                 s.to_csvwav(dirname+"/out_sig_"+str(i))
+        elif isinstance(self.out_sig,Signal):
+            self.out_sig.to_csvwav(dirname+"/out_sig")
         self._write_readme(dirname+"/README")
         return dirname
     
@@ -326,10 +350,22 @@ class Measurement:
 
         task_dict = csv_to_dict(dirname+'/params.csv')
         self = cls._from_dict(task_dict)
+
         if 'in_map' in task_dict:
-            self.in_sig = list(Signal.from_csvwav(dirname+'/in_sig_'+str(i)) for i in range(len(task_dict['in_map'])) )
+            if isfile(f'{dirname}/in_sig.wav'):
+                print('in_sig is a multichannel signal')
+                self.in_sig = Signal.from_csvwav(f'{dirname}/in_sig')
+            else:
+                print('in_sig is a list of signals')
+                self.in_sig = list(Signal.from_csvwav(dirname+'/in_sig_'+str(i)) for i in range(len(task_dict['in_map'])) )
         if 'out_map' in task_dict:
-            self.out_sig = list(Signal.from_csvwav(dirname+'/out_sig_'+str(i)) for i in range(len(task_dict['out_map'])) )
+            if isfile(f'{dirname}/out_sig.wav'):
+                print('out_sig is a multichannel signal')
+                self.out_sig = Signal.from_csvwav(f'{dirname}/out_sig')
+            else:
+                print('out_sig is a list of signals')
+                self.out_sig = list(Signal.from_csvwav(dirname+'/out_sig_'+str(i)) for i in range(len(task_dict['out_map'])) )
+
         return self
 
     @classmethod

@@ -8,16 +8,14 @@
 # (c) OD - 2021 - 2023
 # https://github.com/odoare/measpy
 
+from datetime import datetime
+import numpy as np
 
 import sounddevice as sd
 
 from ._tools import siglist_to_array, t_min
+from .signal import Signal
 
-import numpy as np
-from numpy.matlib import repmat
-
-from datetime import datetime
-from time import time, sleep
 
 def audio_run_measurement(M):
     """
@@ -38,7 +36,14 @@ def audio_run_measurement(M):
     """
 
     if len(M.in_sig) != len(M.in_map) and len(M.in_sig) != 1:
-        raise ValueError(f"in_sig property of measurement must be a list of one multichannel signal or a list of {len(M.in_map)} single channel signals")
+        raise ValueError(f"in_sig property of measurement must be a multichannel signal or a list of {len(M.in_map)} single channel signals")
+
+    in_multichannel = isinstance(M.in_sig,Signal)
+
+    if len(M.out_sig) != len(M.out_map) and len(M.out_sig) != 1:
+        raise ValueError(f"out_sig property of measurement must be a multichannel signal or a list of {len(M.out_map)} single channel signals")
+
+    out_multichannel = isinstance(M.out_sig,Signal)
 
     if M.device_type!='audio':
         print("Warning: deviceType != 'audio'. Changing to 'audio'.")
@@ -58,7 +63,10 @@ def audio_run_measurement(M):
     # Set the audio devices to use
     # And prepare the output arrays
     if M.out_sig is not None:
-        outx = siglist_to_array(M.out_sig)
+        if out_multichannel:
+            outx = siglist_to_array(M.out_sig.unpack())
+        else:
+            outx = siglist_to_array(M.out_sig)
         tmin = t_min(M.out_sig)
         if M.in_sig is not None:
             sd.default.device=(M.in_device,M.out_device)
@@ -92,14 +100,13 @@ def audio_run_measurement(M):
     sd.wait()
 
     if M.in_sig is not None:
-        print(M.in_sig)
-        if len(M.in_sig) == len(M.in_map):
+        if isinstance(M.in_sig,list):
             for i,s in enumerate(M.in_sig):
                 s.raw = np.array(y[:,i])
                 s.t0 = tmin
-        elif len(M.in_sig) == 1:
+        elif isinstance(M.in_sig,Signal):
             M.in_sig[0].raw = np.array(y)
-
+            M.in_sig.t0 = tmin
 
 def audio_run_synced_measurement(M,in_chan=0,out_chan=0):
     """
