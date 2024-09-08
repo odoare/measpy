@@ -49,11 +49,11 @@ def audio_run_measurement(M):
         print("Warning: deviceType != 'audio'. Changing to 'audio'.")
         M.device_type='audio'
     if M.in_device == '':
-        print("Warning: no device specified, changing to None")
+        print("Warning: no input device specified, changing to None")
         M.in_device=None
     if M.out_sig is not None:
         if M.out_device=='':
-            print("Warning: no device specified, changing to None")
+            print("Warning: no output device specified, changing to None")
             M.out_device=None
 
     now = datetime.now()

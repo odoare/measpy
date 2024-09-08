@@ -38,7 +38,7 @@ class Measurement:
 
             non=params['out_sig'] is not None
 
-            print(type(params['in_sig']))
+            # print(type(params['in_sig']))
 
             if non & (not isinstance(params['in_sig'],(Signal,list))):
                 raise TypeError("out_sig must but be a Signal, a list of measpy.signal.Signal or None")
@@ -535,7 +535,7 @@ class Measurement:
         elif type(added_samples)==int:
             asp = added_samples
         else:
-            raise Exception("added_samples: Wrong type")
+            raise TypeError("added_samples: Wrong type")
         d = self.in_sig[in_chan].timelag(self.out_sig[out_chan])
         ds = round(d*self.fs)
         # dt = 1/self.fs

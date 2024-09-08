@@ -1101,7 +1101,7 @@ class Signal:
                     else:
                         out._unit = list(Unit(e) for e in row[1:])
                 elif row[0] == '_cal':
-                    print(row[1:])
+                    # print(row[1:])
                     if len(row)<3:
                         try:
                             out._cal = float(row[1])
@@ -1113,7 +1113,7 @@ class Signal:
                         except:
                             try:
                                 out._cal = [None if x=='' else float(x) for x in row[1:]]
-                                print(out._cal)
+                                # print(out._cal)
                             except:
                                 out._cal = row[1:]
                 elif row[0] == '_dbfs':
@@ -1617,10 +1617,6 @@ class Signal:
         :rtype: Signal
         """
 
-        print("In _add")
-        print(self)
-        print(other)
-
         if self.fs != other.fs:
             raise ValueError(
                 'Incompatible sampling frequencies in addition of signals')
@@ -1985,7 +1981,7 @@ class Signal:
             for arg,val in self.__dict__.items():
                 if arg != '_rawvalues':
                     if isinstance(val,(list,np.ndarray)):
-                        print("array")
+                        # print("array")
                         writer.writerow([arg]+list(val))
                     else:
                         writer.writerow([arg]+[val])
@@ -1993,7 +1989,7 @@ class Signal:
                 writer.writerow(['First column is time in seconds'])
             writer.writerow([f'Below are data in the {datatype} format'])    
             for r in outdata:
-                print(r.tolist()[0])
+                # print(r.tolist()[0])
                 writer.writerow(r.tolist()[0])
 
 
