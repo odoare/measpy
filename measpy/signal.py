@@ -1262,7 +1262,9 @@ class Signal:
         Unpack a multichannel signal and returns a list of signals
         """
         outl = []
-        nc = self.nchannels            
+        nc = self.nchannels
+        if nc==1:
+            return [self]            
         for i in range(nc):
             if nc>1 and isinstance(self.desc,str) and add_chan_in_desc:
                 added_str=f' chan {i}'
