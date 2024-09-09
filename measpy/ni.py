@@ -167,7 +167,12 @@ def ni_run_measurement(M):
         if len(M.out_map)==1:
             outtask.write(outx[:,0], auto_start=False)
         else:
-            outtask.write(outx.T, auto_start=False)
+            # If there are more than one output channel,
+            # the outx.T array argument produces an error.
+            # Temporary dirty fix consists of converting
+            # the array to a list.
+            # TODO: Find better solution
+            outtask.write((outx.T).tolist(), auto_start=False)
 
         outtask.start() # Start the write task first, waiting for the analog input sample clock
 
@@ -194,7 +199,7 @@ def ni_run_measurement(M):
                     s.raw = y[:,i]
                     s.t0 = tmin
 
-def ni_run_synced_measurement(M,in_chan=0,out_chan=0,added_time=1):
+def ni_run_synced_measurement(M,in_chan=0,out_chan=0):
     """
     Before running a measurement, added_time second of silence
     is added at the begining and end of the selected output channel.
@@ -214,9 +219,9 @@ def ni_run_synced_measurement(M,in_chan=0,out_chan=0,added_time=1):
     :return: Measured delay between i/o sync channels
     :rtype: float
     """
-    M.sync_prepare(out_chan=out_chan,added_time=added_time)
+    M.sync_prepare(out_chan=out_chan)
     ni_run_measurement(M)
-    d = M.sync_render(in_chan=in_chan,out_chan=out_chan,added_time=added_time)
+    d = M.sync_render(in_chan=in_chan,out_chan=out_chan)
     return d
 
 def ni_get_devices():
