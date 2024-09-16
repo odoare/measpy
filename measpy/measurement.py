@@ -281,7 +281,7 @@ class Measurement:
             self.out_sig.to_csvwav(dirname+"/out_sig")
         self._write_readme(dirname+"/README")
         return dirname
-    
+
     def to_hdf5(self, filename):
         """
         Save Measurement in hdf5 file
@@ -293,51 +293,21 @@ class Measurement:
         mesu = self._to_dict()
         in_sig = mesu.pop("in_sig",None)
         out_sig = mesu.pop("out_sig",None)
-        datatype = mesu.pop("datatype",None)
-        multichannel = mesu.pop("multichannel",False)
+        data_type = mesu.pop("data_type",None)
         with h5py.File(filename, "x") as H5file:
             for name, value in mesu.items():
                 if value is not None:
                     H5file.attrs[name] = value
-            if type(in_sig)!=type(None):
-                if multichannel:
-                    raise NotImplementedError
-                    in_sig.to_hdf5(H5file, "in_sigs", datatype)
-                elif (Nchannel := len(mesu["in_map"])) > 1 and in_sig[0].dur == 0:
-                    itemsize = Nchannel*np.dtype(datatype).itemsize
-                    #Chunck memory size should be between 10KiB and 1MiB, (bytes power of two 14 to 19 )
-                    power_two_chunck_size = 17
-                    chunksize = 2**(power_two_chunck_size-(itemsize-1).bit_length())
-                    dataset = H5file.create_dataset(
-                        "in_sigs", (0,Nchannel), maxshape=(None,Nchannel), dtype=datatype, chunks=(chunksize,Nchannel)
-                    )
-                    temp_dic = {}
-                    for index,s in zip(mesu["in_map"],in_sig):
-                        temp_dic.setdefault("channel",[]).append(index)
-                        for key, value in s.__dict__.items():
-                            if key not in ['_rawvalues',"h5save_data"]:
-                                try:
-                                    Val = value.__str__()
-                                except AttributeError:
-                                    Val = value
-                                temp_dic.setdefault(key,[]).append(Val)
-                        for key, value in temp_dic.items():
-                            dataset.attrs[key] = value
-                    self.h5save_data = partial(
-                        h5file_write_from_queue,
-                        filename=H5file.filename,
-                        dataset_name="in_sigs",
-                        )
-                else:
-                    for index,s in zip(mesu["in_map"],in_sig):
-                        s.to_hdf5(H5file, f"in_sig_{index}", datatype)
-            if type(out_sig)!=type(None):
-                if multichannel:
-                    raise NotImplementedError
-                    out_sig.to_hdf5(H5file, "out_sigs", datatype)
-                else:
-                    for index,s in zip(mesu["out_map"],out_sig):
-                        s.to_hdf5(H5file, f"out_sig_{index}", datatype)
+            if isinstance(in_sig,list):
+                in_sig = Signal.pack(in_sig)
+            if isinstance(in_sig,Signal):
+                in_sig.to_hdf5(H5file, "in_sig", data_type)
+                self.h5save_data = in_sig.h5save_data
+            if isinstance(out_sig,list):
+                out_sig = Signal.pack(out_sig)
+            if isinstance(out_sig,Signal):
+                out_sig.to_hdf5(H5file, "out_sig", data_type)
+        self.filename = filename
 
     # ------------------------
     @classmethod
@@ -376,20 +346,11 @@ class Measurement:
                 task_dict[key] = val
             self = cls._from_dict(task_dict)
             if 'in_map' in task_dict:
-                index = task_dict["in_map"]
-                in_sig = [None]*len(index)
-                try:
-                    in_sig = [Signal.from_hdf5(H5file["in_sigs"],chan) for chan in index]
-                except KeyError:
-                    for i, ind in enumerate(index):
-                        in_sig[i] = Signal.from_hdf5(H5file[f"in_sig_{ind}"])
+                in_sig = Signal.from_hdf5(H5file["in_sig"])
             else:
                 in_sig = None
             if 'out_map' in task_dict:
-                index = task_dict["out_map"]
-                out_sig = [None]*len(index)
-                for i, ind in enumerate(index):
-                    out_sig[i] = Signal.from_hdf5(H5file[f"out_sig_{ind}"])
+                out_sig = Signal.from_hdf5(H5file["out_sig"])
             else:
                 out_sig = None
             self.in_sig = in_sig
