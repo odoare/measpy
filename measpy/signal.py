@@ -2045,6 +2045,7 @@ class Signal:
                     h5file_write_from_queue,
                     filename=H5file.filename,
                     dataset_name=dataset_name,
+                    Nchannel = self.nchannels
                     )
                 print(f"The method h5save_data(queue) will save data from the queue in the file {H5file.filename}")
             else:
