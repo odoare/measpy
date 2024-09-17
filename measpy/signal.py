@@ -2023,6 +2023,7 @@ class Signal:
             if self._rawvalues.size>0:
                 dataset = H5file.create_dataset(dataset_name, data = self._rawvalues)
                 dataset.attrs["data_type"] = self._rawvalues.dtype.__str__()
+                self.h5save_data = None
             elif data_type is not None:
                 print(f"There is no data, creating empty dataset {dataset_name} wity type = {data_type}")
                 #Chunck memory size should be between 10KiB and 1MiB, (bytes power of two 14 to 19 )
