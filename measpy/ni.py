@@ -8,15 +8,15 @@
 # (c) OD - 2021 - 2023
 # https://github.com/odoare/measpy
 
-import nidaqmx
-import nidaqmx.constants as niconst
-
-from ._tools import siglist_to_array, t_min
-
-import numpy as np
-
 from datetime import datetime
 from time import sleep
+
+import nidaqmx
+import nidaqmx.constants as niconst
+import numpy as np
+
+from ._tools import siglist_to_array, t_min
+from .signal import Signal
 
 def _n_to_ain(n):
     return 'ai'+str(n-1)
@@ -48,6 +48,16 @@ def ni_run_measurement(M):
     system = nidaqmx.system.System.local()
     nsamps = int(round(M.dur*M.fs))
 
+    if isinstance(M.in_sig,list) and len(M.in_sig) != len(M.in_map):
+        raise ValueError(f"in_sig property of measurement must be a multichannel signal or a list of {len(M.in_map)} single channel signals")
+
+    in_multichannel = isinstance(M.in_sig,Signal)
+
+    if isinstance(M.out_sig,list) and len(M.out_sig) != len(M.out_map):
+        raise ValueError(f"out_sig property of measurement must be a multichannel signal or a list of {len(M.out_map)} single channel signals")
+
+    out_multichannel = isinstance(M.out_sig,Signal)
+
     if M.device_type!='ni':
         print("Warning: deviceType != 'ni'. Changing to 'ni'.")
         M.device_type='ni'
@@ -56,10 +66,7 @@ def ni_run_measurement(M):
         M.in_device=system.devices[0].name
 
     if hasattr(M, 'in_range'):
-        if M.in_range == None:
-            inr = False
-        else :
-            inr = True
+        inr = M.in_range is not None
     else:
         inr = False
     if not(inr):
@@ -67,23 +74,27 @@ def ni_run_measurement(M):
         print("Warning: no input range specified, changing to the max value of "+M.in_device+" -> "+str(val))
         M.in_range = list(val for b in M.in_map)
 
-    if hasattr(M, 'out_sig') and M.out_sig!=None:
-        outx = siglist_to_array(M.out_sig)
-        tmin = t_min(M.out_sig)
-        if M.out_device=='':
-            print("Warning: no output device specified, changing to "+system.devices[0].name)
-            M.out_device=system.devices[0].name
-        if hasattr(M, 'out_range'):
-            if M.out_range == None:
+    if hasattr(M, 'out_sig'):
+        if M.out_sig is not None:
+            if out_multichannel:
+                outx = siglist_to_array(M.out_sig.unpack())
+            else:
+                outx = siglist_to_array(M.out_sig)
+            tmin = t_min(M.out_sig)
+            if M.out_device=='':
+                print("Warning: no output device specified, changing to "+system.devices[0].name)
+                M.out_device=system.devices[0].name
+            if hasattr(M, 'out_range'):
+                if M.out_range is None:
+                    outr = False
+                else :
+                    outr = True
+            else:
                 outr = False
-            else :
-                outr = True
-        else:
-            outr = False
-        if not(outr):
-            val = nidaqmx.system.device.Device(M.out_device).ao_voltage_rngs[-1]
-            print("Warning: no output range specified, changing to the max value of "+M.out_device+" -> "+str(val))
-            M.out_range = list(val for b in M.out_map)
+            if not(outr):
+                val = nidaqmx.system.device.Device(M.out_device).ao_voltage_rngs[-1]
+                print("Warning: no output range specified, changing to the max value of "+M.out_device+" -> "+str(val))
+                M.out_range = list(val for b in M.out_map)
     else:
         tmin = 0
 
@@ -92,7 +103,7 @@ def ni_run_measurement(M):
     M.time = now.strftime("%H:%M:%S")
 
     # Set up the read tasks
-    if M.in_sig!=None:
+    if M.in_sig is not None:
         intask = nidaqmx.Task(new_task_name="in") # read task
         for i,n in enumerate(M.in_map):
             print(_n_to_ain(n))
@@ -113,7 +124,7 @@ def ni_run_measurement(M):
                 intask.ai_channels[i].ai_coupling = niconst.Coupling.AC
 
     # Set up the write tasks
-    if M.out_sig!=None:
+    if M.out_sig is not None:
         outtask = nidaqmx.Task(new_task_name="out") # write task
 
         # Set up the write tasks, use the sample clock of the Analog input if possible
@@ -147,7 +158,7 @@ def ni_run_measurement(M):
                 # Then the in/out are not synchronized
                 # There is hence the possibility to use one analog input
                 # to do the in/out sync (io_sync=input channel number)
-                print("Error when choosing \""+"/" + M.in_device + "/ai/SampleClock\" as clock source, let's try \"OnboardClock\" ")
+                print("Choosing \""+"/" + M.in_device + "/ai/SampleClock\" as clock source causes trouble, let's try \"OnboardClock\" ")
                 outtask.timing.cfg_samp_clk_timing(
                     rate=M.fs,
                     sample_mode=niconst.AcquisitionType.CONTINUOUS,
@@ -156,30 +167,39 @@ def ni_run_measurement(M):
         if len(M.out_map)==1:
             outtask.write(outx[:,0], auto_start=False)
         else:
-            outtask.write(outx.T, auto_start=False)
+            # If there are more than one output channel,
+            # the outx.T array argument produces an error.
+            # Temporary dirty fix consists of converting
+            # the array to a list.
+            # TODO: Find better solution
+            outtask.write((outx.T).tolist(), auto_start=False)
 
         outtask.start() # Start the write task first, waiting for the analog input sample clock
 
-    if M.in_sig!=None:
+    if M.in_sig is not None:
         y = intask.read(nsamps,timeout=M.dur+10) # Start the read task
         intask.close()
     else:
         sleep(M.dur+10)
 
-    if M.out_sig!=None:
+    if M.out_sig is not None:
         outtask.close()
 
-    if M.in_sig!=None:
+    if M.in_sig is not None:
         y=np.array(y).T
-        if len(M.in_map)==1:
-            M.in_sig[0].raw = y
-            M.in_sig[0].t0 = tmin
+        if in_multichannel:
+            M.in_sig.raw = y
+            M.in_sig.t0=tmin
         else:
-            for i,s in enumerate(M.in_sig):
-                s.raw = y[:,i]
-                s.t0 = tmin
+            if len(M.in_sig)==1:
+                M.in_sig[0].raw = y
+                M.in_sig[0].t0 = tmin
+            else:
+                for i,s in enumerate(M.in_sig):
+                    s.raw = y[:,i]
+                    s.t0 = tmin
 
-def ni_run_synced_measurement(M,in_chan=0,out_chan=0,added_time=1):
+def ni_run_synced_measurement(M,in_chan=0,out_chan=0):
     """
     Before running a measurement, added_time second of silence
     is added at the begining and end of the selected output channel.
@@ -199,9 +219,9 @@ def ni_run_synced_measurement(M,in_chan=0,out_chan=0,added_time=1):
     :return: Measured delay between i/o sync channels
     :rtype: float
     """
-    M.sync_prepare(out_chan=out_chan,added_time=added_time)
+    M.sync_prepare(out_chan=out_chan)
     ni_run_measurement(M)
-    d = M.sync_render(in_chan=in_chan,out_chan=out_chan,added_time=added_time)
+    d = M.sync_render(in_chan=in_chan,out_chan=out_chan)
     return d
 
 def ni_get_devices():

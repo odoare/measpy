@@ -1095,14 +1095,13 @@ class Signal:
         with open(filename+'.csv', 'r', encoding="utf-8") as file:
             reader = csv.reader(file)
             for row in reader:
-                print(row[0])
                 if row[0] == '_unit' or row[0] == 'unit':
                     if len(row)<3:
                         out._unit = Unit(row[1])
                     else:
                         out._unit = list(Unit(e) for e in row[1:])
                 elif row[0] == '_cal':
-                    print(row[1:])
+                    # print(row[1:])
                     if len(row)<3:
                         try:
                             out._cal = float(row[1])
@@ -1114,7 +1113,7 @@ class Signal:
                         except:
                             try:
                                 out._cal = [None if x=='' else float(x) for x in row[1:]]
-                                print(out._cal)
+                                # print(out._cal)
                             except:
                                 out._cal = row[1:]
                 elif row[0] == '_dbfs':
@@ -1135,10 +1134,12 @@ class Signal:
                     except:
                         out.__dict__[row[0]] = row[1]
                 else:
-                    try:
-                        out.__dict__[row[0]] = np.array(list(float(e) for e in row[1:]))
-                    except:
-                        out.__dict__[row[0]] = row[1:]
+                    out.__dict__[row[0]] = []
+                    for i,e in enumerate(row[1:]):
+                        try:
+                            out.__dict__[row[0]] += [None if e=='' else float(e)]
+                        except:
+                            out.__dict__[row[0]] += [None if e=='' else e]
         _, y = wav.read(filename+'.wav')
         if (convert_to_fp and np.issubdtype(y.dtype, np.integer)):
             minval = float(np.iinfo(y.dtype).max)
@@ -1148,7 +1149,6 @@ class Signal:
             out._rawvalues = (y.astype(dtype=float)-middle)/amp
         else:
             out._rawvalues = y
-        print(out._cal)
         return out
 
     @classmethod
@@ -1262,13 +1262,15 @@ class Signal:
         Unpack a multichannel signal and returns a list of signals
         """
         outl = []
-        nc = self.nchannels            
+        nc = self.nchannels
+        if nc==1:
+            return [self]            
         for i in range(nc):
             if nc>1 and isinstance(self.desc,str) and add_chan_in_desc:
                 added_str=f' chan {i}'
             else:
                 added_str=''
-            outelt = Signal(values=self.values[:,i],
+            outelt = Signal(raw=self.raw[:,i],
                 desc=to_list(self.desc,nc)[i]+added_str)
             for k,v in self.__dict__.items():
                 a = to_list(v,nc)[i]
@@ -1583,8 +1585,11 @@ class Signal:
             raise ValueError(f'Signal has {self.nchannels} channels, channel index parameter is too large.')
         if i<0:
             raise ValueError('Negative index value not allowed.')
-        else:
-            return self.unpack()[i]
+        
+        if self.nchannels == 1:
+            return self
+        
+        return self.unpack()[i]
         
     def __iter__(self):
         self._index = 0
@@ -1597,6 +1602,9 @@ class Signal:
         else:
             del self._index
             raise StopIteration
+        
+    def __len__(self):
+        return self.nchannels
 
     # #################################################################
     # Operators
@@ -1975,7 +1983,7 @@ class Signal:
             for arg,val in self.__dict__.items():
                 if arg != '_rawvalues':
                     if isinstance(val,(list,np.ndarray)):
-                        print("array")
+                        # print("array")
                         writer.writerow([arg]+list(val))
                     else:
                         writer.writerow([arg]+[val])
@@ -1983,7 +1991,7 @@ class Signal:
                 writer.writerow(['First column is time in seconds'])
             writer.writerow([f'Below are data in the {datatype} format'])    
             for r in outdata:
-                print(r.tolist()[0])
+                # print(r.tolist()[0])
                 writer.writerow(r.tolist()[0])
 
 
@@ -2015,6 +2023,7 @@ class Signal:
             if self._rawvalues.size>0:
                 dataset = H5file.create_dataset(dataset_name, data = self._rawvalues)
                 dataset.attrs["data_type"] = self._rawvalues.dtype.__str__()
+                self.h5save_data = None
             elif data_type is not None:
                 print(f"There is no data, creating empty dataset {dataset_name} wity type = {data_type}")
                 #Chunck memory size should be between 10KiB and 1MiB, (bytes power of two 14 to 19 )
@@ -2037,6 +2046,7 @@ class Signal:
                     h5file_write_from_queue,
                     filename=H5file.filename,
                     dataset_name=dataset_name,
+                    Nchannel = self.nchannels
                     )
                 print(f"The method h5save_data(queue) will save data from the queue in the file {H5file.filename}")
             else:

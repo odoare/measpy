@@ -8,16 +8,14 @@
 # (c) OD - 2021 - 2023
 # https://github.com/odoare/measpy
 
+from datetime import datetime
+import numpy as np
 
 import sounddevice as sd
 
 from ._tools import siglist_to_array, t_min
+from .signal import Signal
 
-import numpy as np
-from numpy.matlib import repmat
-
-from datetime import datetime
-from time import time, sleep
 
 def audio_run_measurement(M):
     """
@@ -37,15 +35,25 @@ def audio_run_measurement(M):
 
     """
 
-    if M.device_type!='audio':
+    if isinstance(M.in_sig,list) and len(M.in_sig) != len(M.in_map):
+        raise ValueError(f"in_sig property of measurement must be a multichannel signal or a list of {len(M.in_map)} single channel signals")
+
+    in_multichannel = isinstance(M.in_sig,Signal)
+
+    if isinstance(M.out_sig,list) and len(M.out_sig) != len(M.out_map):
+        raise ValueError(f"out_sig property of measurement must be a multichannel signal or a list of {len(M.out_map)} single channel signals")
+
+    out_multichannel = isinstance(M.out_sig,Signal)
+
+    if M.device_type != 'audio':
         print("Warning: deviceType != 'audio'. Changing to 'audio'.")
         M.device_type='audio'
-    if M.in_device=='':
-        print("Warning: no device specified, changing to None")
+    if M.in_device == '':
+        print("Warning: no input device specified, changing to None")
         M.in_device=None
-    if M.out_sig!=None:
+    if M.out_sig is not None:
         if M.out_device=='':
-            print("Warning: no device specified, changing to None")
+            print("Warning: no output device specified, changing to None")
             M.out_device=None
 
     now = datetime.now()
@@ -54,28 +62,31 @@ def audio_run_measurement(M):
 
     # Set the audio devices to use
     # And prepare the output arrays
-    if M.out_sig!=None:
-        outx = siglist_to_array(M.out_sig)
+    if M.out_sig is not None:
+        if out_multichannel:
+            outx = siglist_to_array(M.out_sig.unpack())
+        else:
+            outx = siglist_to_array(M.out_sig)
         tmin = t_min(M.out_sig)
-        if M.in_sig!=None:
+        if M.in_sig is not None:
             sd.default.device=(M.in_device,M.out_device)
         else:
             sd.default.device=(M.out_device)
     else:
         tmin = 0
-        if M.in_sig!=None:
+        if M.in_sig is not None:
             sd.default.device=(M.in_device)
         else:
-            raise Exception('No input nor output defined.')
+            raise ValueError('No input nor output defined.')
 
-    if M.out_sig==None:
+    if M.out_sig is None:
         y = sd.rec(int(M.dur * M.fs),
                 samplerate=M.fs,
                 mapping=M.in_map,
                 blocking=False)
     else:
-        if M.in_sig==None:
-            y = sd.play(outx,
+        if M.in_sig is None:
+            sd.play(outx,
                     samplerate=M.fs,
                     mapping=M.out_map,
                     blocking=False)
@@ -88,11 +99,14 @@ def audio_run_measurement(M):
             
     sd.wait()
 
-    if M.in_sig!=None:
-        print(M.in_sig)
-        for i,s in enumerate(M.in_sig):
-            s.raw = np.array(y[:,i])
-            s.t0 = tmin
+    if M.in_sig is not None:
+        if in_multichannel:
+            M.in_sig[0].raw = np.array(y)
+            M.in_sig.t0 = tmin
+        else:
+            for i,s in enumerate(M.in_sig):
+                s.raw = np.array(y[:,i])
+                s.t0 = tmin
 
 def audio_run_synced_measurement(M,in_chan=0,out_chan=0):
     """

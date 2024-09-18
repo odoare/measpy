@@ -8,8 +8,16 @@
 # (c) OD - 2021 - 2023
 # https://github.com/odoare/measpy
 
-from .signal import Signal
+from os.path import isfile
+from copy import copy,deepcopy
+import csv
+import os
+
 from functools import partial
+import numpy as np
+import h5py
+
+from .signal import Signal
 
 from ._tools import (csv_to_dict, 
                      convl, 
@@ -17,65 +25,70 @@ from ._tools import (csv_to_dict,
                      calc_dur_siglist,
                      h5file_write_from_queue)
 
-import numpy as np
-import matplotlib.pyplot as plt
-
-from copy import copy
-
 from ._version import get_versions
 __version__ = get_versions()['version']
 del get_versions
 
-from copy import copy,deepcopy
-import csv
-import os
-import h5py
 
 class Measurement:
     # ---------------------------
     def __init__(self, **params):
         # Check out_sig contents
         if 'out_sig' in params:
-            non=params['out_sig']!=None
-            sig=type(params['out_sig'])!=list
-            if non&sig:
-                raise Exception("out_sig must but be a list of measpy.signal.Signal or None")
-            else:
+
+            non=params['out_sig'] is not None
+
+            # print(type(params['in_sig']))
+
+            if non & (not isinstance(params['in_sig'],(Signal,list))):
+                raise TypeError("out_sig must but be a Signal, a list of measpy.signal.Signal or None")
+
+            if isinstance(params['out_sig'],Signal):
+                self.out_sig = params['out_sig']
+            elif isinstance(params['out_sig'],list):
+                if len(params['out_sig']) != len(params['out_map']):
+                    raise ValueError('Measurement out_map has not the same number of values than the number of signals in out_sig list')
                 #print(list((type(s)==Signal for s in params['out_sig'])))
-                if all((type(s)==Signal for s in params['out_sig'])):
+                if all((isinstance(s,Signal) for s in params['out_sig'])):
                     # print('These are all signals')
                     if all(s.fs==params['out_sig'][0].fs for s in params['out_sig']):
                         # print('Same fs for all signals')
                         self.out_sig = params['out_sig']
                     else:
-                        raise Exception("Signals in out_sig list have different sampling frequencies")                     
-                else:
-                    raise Exception("Some elements of out_sig list are not Signals")
+                        raise ValueError("Signals in out_sig list have different sampling frequencies")                     
+            else:
+                raise TypeError("Some elements of out_sig list are not Signals")
         else:
             self.out_sig = None
 
         # Check in_sig contents
         if 'in_sig' in params:
-            non=params['in_sig']!=None
-            sig=type(params['in_sig'])!=list
-            if non&sig:
-                raise Exception("in_sig must but be a list of measpy.signal.Signal or None")
-            else:
-                if all((type(s)==Signal for s in params['in_sig'])):
+
+            non=params['in_sig'] is not None
+            
+            if non & (not isinstance(params['in_sig'],(Signal,list))):
+                raise TypeError("in_sig must but be a Signal or a list of measpy.signal.Signal or None")
+            
+            if isinstance(params['in_sig'],Signal):
+                self.in_sig = params['in_sig']
+            elif isinstance(params['in_sig'],list):
+                if len(params['in_sig']) != len(params['in_sig']):
+                    raise ValueError('Measurement in_map has not the same number of values than the number of signals in in_sig list')
+                if all((isinstance(s,Signal) for s in params['in_sig'])):
                     # print('These are all signals')
                     if all(s.fs==params['in_sig'][0].fs for s in params['in_sig']):
                         # print('Same fs for all signals')
                         self.in_sig = params['in_sig']
                     else:
-                        raise Exception("Signals in in_sig list have different sampling frequencies")                     
+                        raise ValueError("Signals in in_sig list have different sampling frequencies")                     
                 else:
-                    raise Exception("Some elements of in_sig list are not Signals")
+                    raise TypeError("Some elements of in_sig list are not Signals")
         else:
             self.in_sig = None
 
         #Check sampling frequencies
-        if type(self.out_sig)==type(None):
-            if type(self.in_sig)==type(None):
+        if isinstance(self.out_sig,type(None)):
+            if isinstance(self.in_sig,type(None)):
                 #raise Exception("This is a task with no input nor output ?")
                 print("This is a task with no input nor output ?")
             else:
@@ -111,7 +124,10 @@ class Measurement:
         if type(self.out_sig)!=type(None):
             if 'out_map' in params:
                 if len(params['out_map'])!=len(self.out_sig):
-                    raise Exception('Lengths of out_map and out_sig do not correspond.')
+                    if len(self.out_sig)!=1:
+                        raise Exception('Lengths of out_map and out_sig do not correspond.')
+                    else:
+                        print(f"out_sig contains one signal whereas len(out_map)={len(params['out_map'])}, the signal will be multichannel")
                 self.out_map = params['out_map']
             else:
                 self.out_map = list(range(1,len(self.out_sig)+1))
@@ -119,15 +135,17 @@ class Measurement:
         if type(self.in_sig)!=type(None):
             if 'in_map' in params:
                 if len(params['in_map'])!=len(self.in_sig):
-                    raise Exception('Lengths of in_map and in_sig do not correspond.')
+                    if len(self.in_sig)!=1:
+                        raise Exception('Lengths of in_map and in_sig do not correspond.')
+                    else:
+                        print(f"in_sig contains one signal whereas len(in_map)={len(params['in_map'])}, the signal will be multichannel")    
                 self.in_map = params['in_map']
             else:
                 self.in_map = list(range(1,len(self.in_sig)+1))
                 print("in_map not given, it is set to default value of: "+str(self.in_map))
-                print(self.in_map)
             if 'in_threshold' in params:
-                if len(params['in_threshold'])!=len(self.in_sig):
-                    raise Exception('Lengths of in_threshold and in_sig do not correspond.')
+                if len(params['in_threshold'])!=len(self.in_map):
+                    raise Exception('Lengths of in_threshold and in_map do not correspond.')
                 self.in_threshold = params['in_threshold']
 
         self.in_device = params.setdefault("in_device",'')
@@ -163,7 +181,7 @@ class Measurement:
             self.upsampling_factor = params.setdefault("upsampling_factor",1)
             self.in_coupling = params.setdefault("in_coupling",list('dc' for b in self.in_map))
             self.sig_gen = params.setdefault("sig_gen",False)
-            if self.sig_gen != None:
+            if self.sig_gen is not None:
                 self.offset = params.setdefault("offset",0.0)
                 self.wave = params.setdefault("wave",0)
                 self.amp = params.setdefault("amp",1.0)
@@ -198,9 +216,12 @@ class Measurement:
         except:
             pass
         if self.out_sig!=None:
-            out += ",\n out_device='"+str(self.out_device)+"'"
+            out += ",\n out_device="+str(self.out_device)
             out += ',\n out_map='+str(self.out_map)
-            out += ',\n out_sig=list of '+str(len(self.out_sig))+' measpy.signal.Signal'
+            if isinstance(self.out_sig,list):
+                out += ',\n out_sig=list of '+str(len(self.out_sig))+' measpy.signal.Signal'
+            else:
+                out += ',\n out_sig=multichannel measpy.signal.Signal'
             out += ",\n io_sync="+str(self.io_sync)
         if self.device_type=='pico':
             out += ",\n in_range="+str(self.in_range)
@@ -210,7 +231,10 @@ class Measurement:
             out += ",\n in_range="+str(self.in_range)
             out += ",\n out_range="+str(self.out_range)
             out += ",\n in_iepe="+str(self.in_iepe)            
-        out += ',\n in_sig=list of '+str(len(self.in_sig))+' measpy.signal.Signal'
+        if isinstance(self.in_sig,list):
+            out += ',\n in_sig=list of '+str(len(self.in_sig))+' measpy.signal.Signal'
+        else:
+            out += ',\n in_sig=multichannel measpy.signal.Signal'
         out +=")"
         
         return out
@@ -245,15 +269,19 @@ class Measurement:
             dirname = dirname+'('+str(i)+')'
         os.mkdir(dirname)
         self._params_to_csv(dirname+"/params.csv")
-        if type(self.in_sig)!=type(None):
+        if isinstance(self.in_sig,list):
             for i,s in enumerate(self.in_sig):
                 s.to_csvwav(dirname+"/in_sig_"+str(i))
-        if type(self.out_sig)!=type(None):
+        elif isinstance(self.in_sig,Signal):
+            self.in_sig.to_csvwav(dirname+"/in_sig")
+        if isinstance(self.out_sig,list):
             for i,s in enumerate(self.out_sig):
                 s.to_csvwav(dirname+"/out_sig_"+str(i))
+        elif isinstance(self.out_sig,Signal):
+            self.out_sig.to_csvwav(dirname+"/out_sig")
         self._write_readme(dirname+"/README")
         return dirname
-    
+
     def to_hdf5(self, filename):
         """
         Save Measurement in hdf5 file
@@ -265,51 +293,21 @@ class Measurement:
         mesu = self._to_dict()
         in_sig = mesu.pop("in_sig",None)
         out_sig = mesu.pop("out_sig",None)
-        datatype = mesu.pop("datatype",None)
-        multichannel = mesu.pop("multichannel",False)
+        data_type = mesu.pop("data_type",None)
         with h5py.File(filename, "x") as H5file:
             for name, value in mesu.items():
                 if value is not None:
                     H5file.attrs[name] = value
-            if type(in_sig)!=type(None):
-                if multichannel:
-                    raise NotImplementedError
-                    in_sig.to_hdf5(H5file, "in_sigs", datatype)
-                elif (Nchannel := len(mesu["in_map"])) > 1 and in_sig[0].dur == 0:
-                    itemsize = Nchannel*np.dtype(datatype).itemsize
-                    #Chunck memory size should be between 10KiB and 1MiB, (bytes power of two 14 to 19 )
-                    power_two_chunck_size = 17
-                    chunksize = 2**(power_two_chunck_size-(itemsize-1).bit_length())
-                    dataset = H5file.create_dataset(
-                        "in_sigs", (0,Nchannel), maxshape=(None,Nchannel), dtype=datatype, chunks=(chunksize,Nchannel)
-                    )
-                    temp_dic = {}
-                    for index,s in zip(mesu["in_map"],in_sig):
-                        temp_dic.setdefault("channel",[]).append(index)
-                        for key, value in s.__dict__.items():
-                            if key not in ['_rawvalues',"h5save_data"]:
-                                try:
-                                    Val = value.__str__()
-                                except AttributeError:
-                                    Val = value
-                                temp_dic.setdefault(key,[]).append(Val)
-                        for key, value in temp_dic.items():
-                            dataset.attrs[key] = value
-                    self.h5save_data = partial(
-                        h5file_write_from_queue,
-                        filename=H5file.filename,
-                        dataset_name="in_sigs",
-                        )
-                else:
-                    for index,s in zip(mesu["in_map"],in_sig):
-                        s.to_hdf5(H5file, f"in_sig_{index}", datatype)
-            if type(out_sig)!=type(None):
-                if multichannel:
-                    raise NotImplementedError
-                    out_sig.to_hdf5(H5file, "out_sigs", datatype)
-                else:
-                    for index,s in zip(mesu["out_map"],out_sig):
-                        s.to_hdf5(H5file, f"out_sig_{index}", datatype)
+            if isinstance(in_sig,list):
+                in_sig = Signal.pack(in_sig)
+            if isinstance(in_sig,Signal):
+                in_sig.to_hdf5(H5file, "in_sig", data_type)
+                self.h5save_data = in_sig.h5save_data
+            if isinstance(out_sig,list):
+                out_sig = Signal.pack(out_sig)
+            if isinstance(out_sig,Signal):
+                out_sig.to_hdf5(H5file, "out_sig", data_type)
+        self.filename = filename
 
     # ------------------------
     @classmethod
@@ -322,10 +320,22 @@ class Measurement:
 
         task_dict = csv_to_dict(dirname+'/params.csv')
         self = cls._from_dict(task_dict)
+
         if 'in_map' in task_dict:
-            self.in_sig = list(Signal.from_csvwav(dirname+'/in_sig_'+str(i)) for i in range(len(task_dict['in_map'])) )
+            if isfile(f'{dirname}/in_sig.wav'):
+                print('in_sig is a multichannel signal')
+                self.in_sig = Signal.from_csvwav(f'{dirname}/in_sig')
+            else:
+                print('in_sig is a list of signals')
+                self.in_sig = list(Signal.from_csvwav(dirname+'/in_sig_'+str(i)) for i in range(len(task_dict['in_map'])) )
         if 'out_map' in task_dict:
-            self.out_sig = list(Signal.from_csvwav(dirname+'/out_sig_'+str(i)) for i in range(len(task_dict['out_map'])) )
+            if isfile(f'{dirname}/out_sig.wav'):
+                print('out_sig is a multichannel signal')
+                self.out_sig = Signal.from_csvwav(f'{dirname}/out_sig')
+            else:
+                print('out_sig is a list of signals')
+                self.out_sig = list(Signal.from_csvwav(dirname+'/out_sig_'+str(i)) for i in range(len(task_dict['out_map'])) )
+
         return self
 
     @classmethod
@@ -336,20 +346,11 @@ class Measurement:
                 task_dict[key] = val
             self = cls._from_dict(task_dict)
             if 'in_map' in task_dict:
-                index = task_dict["in_map"]
-                in_sig = [None]*len(index)
-                try:
-                    in_sig = [Signal.from_hdf5(H5file["in_sigs"],chan) for chan in index]
-                except KeyError:
-                    for i, ind in enumerate(index):
-                        in_sig[i] = Signal.from_hdf5(H5file[f"in_sig_{ind}"])
+                in_sig = Signal.from_hdf5(H5file["in_sig"])
             else:
                 in_sig = None
             if 'out_map' in task_dict:
-                index = task_dict["out_map"]
-                out_sig = [None]*len(index)
-                for i, ind in enumerate(index):
-                    out_sig[i] = Signal.from_hdf5(H5file[f"out_sig_{ind}"])
+                out_sig = Signal.from_hdf5(H5file["out_sig"])
             else:
                 out_sig = None
             self.in_sig = in_sig
@@ -370,14 +371,20 @@ class Measurement:
 
         if 'in_map' in task_dict:
             self.in_map = convl(int,task_dict['in_map'])
-            self.in_device = convl1(str,task_dict['in_device'])
-
+            if 'in_device' in task_dict:
+                self.in_device = convl1(str,task_dict['in_device'])
+            else:
+                self.in_device = None
         else:
             self.in_sig = None
         if 'out_map' in task_dict:
             self.out_map = convl(int,task_dict['out_map'])
-            self.out_device = convl1(str,task_dict['out_device'])
-            self.io_sync = convl1(int,task_dict['io_sync'])
+            if 'out_device' in task_dict:
+                self.out_device = convl1(str,task_dict['out_device'])
+            else:
+                self.out_device = None
+            if 'io_sync' in task_dict:
+                self.io_sync = convl1(int,task_dict['io_sync'])
         else:
             self.out_sig = None
 
@@ -484,10 +491,14 @@ class Measurement:
         elif type(added_samples)==int:
             asp = added_samples
         else:
-            raise Exception("added_samples: Wrong type")
-        osig = self.out_sig[out_chan].add_silence(extras=(asp,asp)).delay(-asp/self.fs)
-        self.dur = osig.dur
-        self.out_sig[out_chan]=osig
+            raise TypeError("added_samples should an integer value")
+        if isinstance(self.out_sig,Signal):
+            self.out_sig = self.out_sig.add_silence(extras=(asp,asp)).delay(-asp/self.fs)
+            self.dur = self.out_sig.dur
+        else:
+            osig = self.out_sig[out_chan].add_silence(extras=(asp,asp)).delay(-asp/self.fs)
+            self.dur = osig.dur
+            self.out_sig[out_chan]=osig
 
     def sync_render(self,out_chan=0,in_chan=0,added_samples=None):
         if type(added_samples)==type(None):
@@ -495,16 +506,21 @@ class Measurement:
         elif type(added_samples)==int:
             asp = added_samples
         else:
-            raise Exception("added_samples: Wrong type")
+            raise TypeError("added_samples: Wrong type")
         d = self.in_sig[in_chan].timelag(self.out_sig[out_chan])
         ds = round(d*self.fs)
         # dt = 1/self.fs
         # print("delay: "+str(d)+"s")
         self.dur = self.dur-2*asp/self.fs
-        self.out_sig[out_chan] = self.out_sig[out_chan].cut(pos=(asp,asp+round(self.dur*self.fs))).delay(asp/self.fs)
-        for i,s in enumerate(self.in_sig):
-            self.in_sig[i] = s.cut(pos=(asp+ds+1,asp+ds+1+self.out_sig[out_chan].length))
-            self.in_sig[i].t0 = self.out_sig[out_chan].t0
+        if isinstance(self.out_sig,Signal):
+            self.out_sig = self.out_sig.cut(pos=(asp,asp+round(self.dur*self.fs))).delay(asp/self.fs)
+            self.in_sig = self.in_sig.cut(pos=(asp+ds+1,asp+ds+1+self.out_sig[out_chan].length))
+            self.in_sig.t0 = self.out_sig.t0
+        else:
+            self.out_sig[out_chan] = self.out_sig[out_chan].cut(pos=(asp,asp+round(self.dur*self.fs))).delay(asp/self.fs)
+            for i,s in enumerate(self.in_sig):
+                self.in_sig[i] = s.cut(pos=(asp+ds+1,asp+ds+1+self.out_sig[out_chan].length))
+                self.in_sig[i].t0 = self.out_sig[out_chan].t0
         return d
 
 # def peak_sync_prepare(M,out_chan=0,in_chan=0):

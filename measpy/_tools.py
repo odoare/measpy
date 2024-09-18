@@ -31,14 +31,14 @@ def convl(fun,xx):
     if type(xx) in [np.ndarray ,list]:
         yy=list(map(fun,xx))
     else:
-        yy=fun(xx) 
+        yy=fun(xx)
     return yy
 
 def convl1(fun,xx):
     if type(xx) in [np.ndarray ,list]:
-        yy=fun(xx[0])
+        yy=None if xx[0]=='None' else fun(xx[0])
     else:
-        yy=fun(xx) 
+        yy=None if xx=='None' else fun(xx)
     return yy
 
 def add_step(a,b):
@@ -169,40 +169,40 @@ def decodeH5str(h5str):
         except:
             return h5str.strip("\'")
 
-def h5file_write_from_queue(queue, filename, dataset_name):
+def h5file_write_from_queue(queue, filename, dataset_name, Nchannel):
     """
-    Write data received from a queue in HDF5 dataset
-
-    Parameters
-    ----------
-    queue : queue.Queue
-        A Queue which contains lists of data.
-    filename : str,Path
-        Path of the hdf5 file, it should already exist with an empty extensible dataset.
-    dataset_name : str
-        Name of the hdf5 dataset where data will be written.
-
-    Returns
-    -------
-    None.
+    Data writer in hdf5 file from a Queue
+    :param queue: A Queue which contains data, the shape is [lenght,Nchannel].
+    :type queue: queue.Queue
+    :param filename: Path of the hdf5 file, it should already exist with an empty extensible dataset.
+    :type filename: str,Pat
+    :param dataset_name: Name of the hdf5 dataset where data will be written.
+    :type dataset_name: str
+    :param Nchannel: Number of expected channel,
+    :type Nchannel: int
+    :return: None
+    :rtype: None
 
     """
+
     print(f"Starting saving data in {filename}/{dataset_name}")
     with h5py.File(filename, "r+") as H5file:
-        item = np.asarray(queue.get())
+        item = np.array(queue.get()).transpose()
         #Get dimension of item for multichannel case
-        Nchannel, getsize = getdimension(item)
+        dims = item.shape
+        if Nchannel>1:
+            assert dims[1] == Nchannel, f"Wrong format, queue item shape = {dims}, for a {Nchannel}-channel signal"
+        Npoints = dims[0]
         dataset = H5file[dataset_name]
         #Get the chunksize and datatype of the dataset
         chunksize = dataset.chunks[0]
         datatype = dataset.dtype
         #Define a buffer with chuncksize and datatype
         writebuffer = np.empty((chunksize, Nchannel),dtype=datatype).squeeze()
-        Npoints = getsize(item)
         buffer_position = _add_item(writebuffer, 0, item, Npoints, dataset, chunksize)
         while (item := queue.get(timeout=5)) is not None:
-            item = np.asarray(item)
-            Npoints = getsize(item)
+            item = np.array(item).transpose()
+            Npoints = item.shape[0]
             buffer_position = _add_item(
                 writebuffer, buffer_position, item, Npoints, dataset, chunksize
             )
@@ -241,19 +241,16 @@ def _add_item(writebuffer, buffer_position, item, Npoints, dataset, chunksize):
     for i in range(Nchuncktowrite):
         #Write item data into buffer until it is full
         writebuffer[buffer_position:] = item[
-            ...,
             i * chunksize
             - np.sign(i) * old_buffer_position : (i + 1) * chunksize
             - old_buffer_position,
-        ].transpose()
+        ]
         #Write the whole buffer into dataset
         _add_N_data(dataset, writebuffer, chunksize)
         buffer_position = 0
     if Nrest:
         #Write Nrest data into the buffer
-        writebuffer[buffer_position:Nrest] = item[
-            ..., (buffer_position - Nrest) :
-        ].transpose()
+        writebuffer[buffer_position:Nrest] = item[(buffer_position - Nrest):]
     return Nrest
 
 
@@ -263,12 +260,6 @@ def _add_N_data(dataset, data, N):
     dataset.resize(chunk_start + N, axis=0)
     dataset[chunk_start:] = data[:N]
 
-
-def getdimension(item):
-    if item.ndim < 2:
-        return 1, np.size
-    else:
-        return item.shape[0], lambda item: item.shape[1]
 
 def all_equal(iterator):
     iterator = iter(iterator)
