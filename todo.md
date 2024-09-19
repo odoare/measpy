@@ -15,8 +15,18 @@
 
 - [x] neperseg defaults ?
 
+# v0.2
+
+- [x] HDF5
+
+- [x] Multichannel signals
+
+- [x] Continuous integration sphinx doc compilation
+
+- [x] Continuous integration : pip publication
+      
 # Long term todo
-- [] HDF5
+
 - [] Pandas
 - [] Units everywhere ?
 - [] Continuous integration : tests
