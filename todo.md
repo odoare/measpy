@@ -30,4 +30,3 @@
 - [] Pandas
 - [] Units everywhere ?
 - [] Continuous integration : tests
-- [] Continuous integration : pip publication
