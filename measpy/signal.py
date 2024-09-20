@@ -1273,9 +1273,8 @@ class Signal:
             outelt = Signal(raw=self.raw[:,i],
                 desc=to_list(self.desc,nc)[i]+added_str)
             for k,v in self.__dict__.items():
-                a = to_list(v,nc)[i]
                 # We ignore _index property as it is reverved for iterations
-                if (not k in('_rawvalues','desc','_index')) and (a is not None):
+                if (not k in('_rawvalues','desc','_index')) and ((a:=to_list(v,nc)[i]) is not None):
                     outelt.__dict__[k]=a
             outl.append(outelt)
         return outl
