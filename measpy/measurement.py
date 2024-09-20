@@ -372,14 +372,20 @@ class Measurement:
 
         if 'in_map' in task_dict:
             self.in_map = convl(int,task_dict['in_map'])
-            self.in_device = convl1(str,task_dict['in_device'])
-
+            if 'in_device' in task_dict:
+                self.in_device = convl1(str,task_dict['in_device'])
+            else:
+                self.in_device = None
         else:
             self.in_sig = None
         if 'out_map' in task_dict:
             self.out_map = convl(int,task_dict['out_map'])
-            self.out_device = convl1(str,task_dict['out_device'])
-            self.io_sync = convl1(int,task_dict['io_sync'])
+            if 'out_device' in task_dict:
+                self.out_device = convl1(str,task_dict['out_device'])
+            else:
+                self.out_device = None
+            if 'io_sync' in task_dict:
+                self.io_sync = convl1(int,task_dict['io_sync'])
         else:
             self.out_sig = None
 
