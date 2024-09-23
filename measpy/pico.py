@@ -638,7 +638,7 @@ def _ps2000_run_measurement_threaded(
             sig.dbfs = adc_to_mv([1],pico_range)[0] * 0.001
 
         #Picoscope2000 return 16bits signed integer
-        M.datatype = "i2"
+        M.data_type = "i2"
         M.to_hdf5(filename)
         if not multichannel:
             if enabledA:

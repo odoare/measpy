@@ -355,6 +355,7 @@ class Measurement:
                 out_sig = None
             self.in_sig = in_sig
             self.out_sig = out_sig
+            self.filename = filename
         return self
 
     @classmethod
@@ -444,11 +445,11 @@ class Measurement:
             try:
                 self.in_range = convl1(float,task_dict['in_range'])
             except:
-                pass
+                self.in_range = None
             try:
                 self.out_range = convl1(float,task_dict['out_range'])
             except:
-                pass
+                self.out_range = None
             try:
                 self.in_iepe = convl(bool,task_dict['in_iepe'])
             except:
