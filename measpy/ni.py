@@ -12,10 +12,12 @@ from datetime import datetime
 from time import sleep
 
 import nidaqmx
+from nidaqmx import stream_readers
 import nidaqmx.constants as niconst
 import numpy as np
+import h5py
 
-from ._tools import siglist_to_array, t_min
+from ._tools import siglist_to_array, t_min, _add_N_data, H5file_valid
 from .signal import Signal
 
 def _n_to_ain(n):
@@ -29,7 +31,7 @@ def _callback(task_handle, every_n_samples_event_type,
 
     return 0
 
-def ni_run_measurement(M):
+def ni_run_measurement(M, filename = None):
     """
     Runs a measurement defined in the object of
     the class measpy.measurement.Measurement given
@@ -74,27 +76,26 @@ def ni_run_measurement(M):
         print("Warning: no input range specified, changing to the max value of "+M.in_device+" -> "+str(val))
         M.in_range = list(val for b in M.in_map)
 
-    if hasattr(M, 'out_sig'):
-        if M.out_sig is not None:
-            if out_multichannel:
-                outx = siglist_to_array(M.out_sig.unpack())
-            else:
-                outx = siglist_to_array(M.out_sig)
-            tmin = t_min(M.out_sig)
-            if M.out_device=='':
-                print("Warning: no output device specified, changing to "+system.devices[0].name)
-                M.out_device=system.devices[0].name
-            if hasattr(M, 'out_range'):
-                if M.out_range is None:
-                    outr = False
-                else :
-                    outr = True
-            else:
+    if hasattr(M, 'out_sig') and M.out_sig is not None:
+        if out_multichannel:
+            outx = siglist_to_array(M.out_sig.unpack())
+        else:
+            outx = siglist_to_array(M.out_sig)
+        tmin = t_min(M.out_sig)
+        if M.out_device=='':
+            print("Warning: no output device specified, changing to "+system.devices[0].name)
+            M.out_device=system.devices[0].name
+        if hasattr(M, 'out_range'):
+            if M.out_range is None:
                 outr = False
-            if not(outr):
-                val = nidaqmx.system.device.Device(M.out_device).ao_voltage_rngs[-1]
-                print("Warning: no output range specified, changing to the max value of "+M.out_device+" -> "+str(val))
-                M.out_range = list(val for b in M.out_map)
+            else :
+                outr = True
+        else:
+            outr = False
+        if not(outr):
+            val = nidaqmx.system.device.Device(M.out_device).ao_voltage_rngs[-1]
+            print("Warning: no output range specified, changing to the max value of "+M.out_device+" -> "+str(val))
+            M.out_range = list(val for b in M.out_map)
     else:
         tmin = 0
 
@@ -176,28 +177,74 @@ def ni_run_measurement(M):
 
         outtask.start() # Start the write task first, waiting for the analog input sample clock
 
-    if M.in_sig is not None:
-        y = intask.read(nsamps,timeout=M.dur+10) # Start the read task
-        intask.close()
+    if filename is not None and H5file_valid(filename):
+        M.to_hdf5(filename)
+        reader = stream_readers.AnalogMultiChannelReader(intask.in_stream)
+        with h5py.File(filename, "r+") as H5file:
+            try:
+                n_values, Nchannel = H5file["in_sig"].chunks
+                buffer_in = np.zeros((Nchannel, n_values), dtype="f8")
+                def callback(task_handle, event_type, n_values, callback_data):
+                    nonlocal buffer_captured
+                    reader.read_many_sample(
+                        buffer_in, n_values, timeout=niconst.WAIT_INFINITELY
+                    )
+                    _add_N_data(H5file["in_sig"], buffer_in.T, n_values)
+                    buffer_captured += 1
+                    return 0
+            except ValueError:
+                n_values = H5file["in_sig"].chunks[0]
+                Nchannel = 1
+                buffer_in = np.zeros((Nchannel, n_values), dtype="f8")
+                def callback(task_handle, event_type, n_values, callback_data):
+                    nonlocal buffer_captured
+                    reader.read_many_sample(
+                        buffer_in, n_values, timeout=niconst.WAIT_INFINITELY
+                    )
+                    _add_N_data(H5file["in_sig"], buffer_in[0,:], n_values)
+                    buffer_captured += 1
+                    return 0
+
+            time_to_fill_half_buffer = 0.5 * n_values / M.fs
+            numdesiredsamples = int(round(M.fs * M.dur))
+            numBuffersToCapture = int(np.ceil(numdesiredsamples / n_values))
+            buffer_captured = 0
+            intask.register_every_n_samples_acquired_into_buffer_event(
+                n_values, callback
+            )
+            intask.in_stream.input_buf_size = int(10 * n_values)
+            # print("start reading")
+            intask.start()
+            sleep(M.dur)
+            while buffer_captured < numBuffersToCapture:
+                sleep(time_to_fill_half_buffer)
+
+            intask.close()
+            if M.out_sig != None:
+                outtask.close()
     else:
-        sleep(M.dur+10)
-
-    if M.out_sig is not None:
-        outtask.close()
-
-    if M.in_sig is not None:
-        y=np.array(y).T
-        if in_multichannel:
-            M.in_sig.raw = y
-            M.in_sig.t0=tmin
+        if M.in_sig is not None:
+            y = intask.read(nsamps,timeout=M.dur+10) # Start the read task
+            intask.close()
         else:
-            if len(M.in_sig)==1:
-                M.in_sig[0].raw = y
-                M.in_sig[0].t0 = tmin
+            sleep(M.dur+10)
+
+        if M.out_sig is not None:
+            outtask.close()
+
+        if M.in_sig is not None:
+            y=np.array(y).T
+            if in_multichannel:
+                M.in_sig.raw = y
+                M.in_sig.t0=tmin
             else:
-                for i,s in enumerate(M.in_sig):
-                    s.raw = y[:,i]
-                    s.t0 = tmin
+                if len(M.in_sig)==1:
+                    M.in_sig[0].raw = y
+                    M.in_sig[0].t0 = tmin
+                else:
+                    for i,s in enumerate(M.in_sig):
+                        s.raw = y[:,i]
+                        s.t0 = tmin
 
 def ni_run_synced_measurement(M,in_chan=0,out_chan=0):
     """

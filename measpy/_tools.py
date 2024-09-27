@@ -13,6 +13,7 @@ import numpy as np
 import h5py
 import numbers
 from unyt import Unit
+from pathlib import Path
 
 def csv_to_dict(filename):
     """ Conversion from a CSV (produced by the class Measurement) to a dict
@@ -294,7 +295,21 @@ def mix_dicts(a,b,na,nb):
         out[k] = to_list(va,na)+to_list(v,nb)
     return out
 
-
+def H5file_valid(filename):
+    if filename:
+        path = Path(filename)
+        if path.suffix == ".h5":
+            if path.exists():
+                print(f"file {filename} already exist")
+                return False
+            if not path.parent.exists():
+                print(f"Warning : creating directory for {filename}")
+                path.parent.mkdir(parents=True)
+        else:
+            print(f"Invalid filename : {filename}")
+            return False
+        return True
+    return False
 # def _tfe_farina(y, fs, freqs):
 #     """ Transfer function estimate
 #         Farina's method """
