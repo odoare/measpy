@@ -309,6 +309,24 @@ class Measurement:
                 out_sig.to_hdf5(H5file, "out_sig", data_type)
         self.filename = filename
 
+    def load_h5data(self):
+        if hasattr(self, "filename"):
+            print(f"Loading data from {self.filename}")
+            with h5py.File(self.filename, "r") as H5file:
+                self._load_h5signal(H5file)
+        else:
+            print("There is not H5file")
+
+    def _load_h5signal(self, H5file):
+        try:
+            self.in_sig = Signal.from_hdf5(H5file["in_sig"])
+        except KeyError:
+            self.in_sig = None
+        try:
+            self.out_sig = Signal.from_hdf5(H5file["out_sig"])
+        except KeyError:
+            self.out_sig = None
+
     # ------------------------
     @classmethod
     def from_dir(cls,dirname):
@@ -345,17 +363,8 @@ class Measurement:
             for key,val in H5file.attrs.items():
                 task_dict[key] = val
             self = cls._from_dict(task_dict)
-            if 'in_map' in task_dict:
-                in_sig = Signal.from_hdf5(H5file["in_sig"])
-            else:
-                in_sig = None
-            if 'out_map' in task_dict:
-                out_sig = Signal.from_hdf5(H5file["out_sig"])
-            else:
-                out_sig = None
-            self.in_sig = in_sig
-            self.out_sig = out_sig
-            self.filename = filename
+            self._load_h5signal(H5file)
+        self.filename = filename
         return self
 
     @classmethod
