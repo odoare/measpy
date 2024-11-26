@@ -70,7 +70,7 @@ class direct_plot(tk.Tk):
         # Copy the buffer
         data = buffer.copy()
         # Plot new data
-        self.plotbuffer = np.roll(self.plotbuffer, int(-n_values), axis=0)
+        self.plotbuffer[:-n_values] = self.plotbuffer[n_values:]
         self.plotbuffer[-n_values:] = data
         self.linet[0].set_ydata(self.plotbuffer)
         # Draw figure

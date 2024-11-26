@@ -61,7 +61,7 @@ def ni_run_measurement(M, filename=None, duration="default"):
             with ni_callback_measurement(M) as NI:
                 NI.set_callback(callback, n_values)
                 NI.run(duration=duration)
-        M = M.from_hdf5(filename)
+        M.load_h5data()
     else:
         samples = []
 
@@ -98,6 +98,10 @@ def ni_run_measurement(M, filename=None, duration="default"):
 
 
 class ni_callback_measurement:
+    """
+    Measurment using a callback function called when specified number of sample is written from the device to the buffer.
+    Using nidaqmx.Task.register_every_n_samples_acquired_into_buffer_event
+    """
 
     def __init__(self, M):
         #Parameters setup
@@ -292,9 +296,9 @@ class ni_callback_measurement:
     def run(self, stop=Event(), duration="default"):
         """
         Run the measurment
-        :param stop: For threading, stop measurment when stop is set, defaults to Event()
+        :param stop: Trigger to stop the measurment, defaults to Event()
         :type stop: threading.Event, optional
-        :param duration: duration of measurment in second if default use the duration in M, defaults to "default"
+        :param duration: Duration of measurment in seconds if default it use the duration in M, defaults to "default"
         :type duration: float, optional
         :return: Nothing
 
@@ -344,7 +348,8 @@ class ni_callback_measurement:
 
     def set_callback(self, callback_method, n_values):
         """
-        Create the buffer containing n_values and set the callback that read and use the data and is called every n_values.
+        Create the buffer containing n_values and set the callback that read and use the data using
+        the custom 'callback_method', it is called every 'n_values' written into buffer.
         :param callback_method: Method with 2 arguments, the buffer and buffer lenght
         :type callback_method: callable
         :param n_values: Number of datapoint read each call
