@@ -1,4 +1,6 @@
- <!DOCTYPE html>
+ 
+
+<!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="./">
 <head>
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -6,18 +8,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>measpy package &mdash; measpy  documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
-  <!--[if lt IE 9]>
-    <script src="_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="_static/jquery.js?v=5d32c60e"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="_static/documentation_options.js?v=5929fcd5"></script>
-        <script src="_static/doctools.js?v=9a2dae69"></script>
-        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -62,6 +60,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#measpy.measurement.Measurement"><code class="docutils literal notranslate"><span class="pre">Measurement</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.measurement.Measurement.from_dir"><code class="docutils literal notranslate"><span class="pre">Measurement.from_dir()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.measurement.Measurement.from_hdf5"><code class="docutils literal notranslate"><span class="pre">Measurement.from_hdf5()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#measpy.measurement.Measurement.load_h5data"><code class="docutils literal notranslate"><span class="pre">Measurement.load_h5data()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.measurement.Measurement.sync_prepare"><code class="docutils literal notranslate"><span class="pre">Measurement.sync_prepare()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.measurement.Measurement.sync_render"><code class="docutils literal notranslate"><span class="pre">Measurement.sync_render()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.measurement.Measurement.to_dir"><code class="docutils literal notranslate"><span class="pre">Measurement.to_dir()</span></code></a></li>
@@ -71,6 +70,13 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#module-measpy.ni">measpy.ni module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#measpy.ni.ni_callback_measurement"><code class="docutils literal notranslate"><span class="pre">ni_callback_measurement</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#measpy.ni.ni_callback_measurement.reset_callback"><code class="docutils literal notranslate"><span class="pre">ni_callback_measurement.reset_callback()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#measpy.ni.ni_callback_measurement.run"><code class="docutils literal notranslate"><span class="pre">ni_callback_measurement.run()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#measpy.ni.ni_callback_measurement.set_callback"><code class="docutils literal notranslate"><span class="pre">ni_callback_measurement.set_callback()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#measpy.ni.ni_callback_measurement.stop"><code class="docutils literal notranslate"><span class="pre">ni_callback_measurement.stop()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="#measpy.ni.ni_get_devices"><code class="docutils literal notranslate"><span class="pre">ni_get_devices()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#measpy.ni.ni_run_measurement"><code class="docutils literal notranslate"><span class="pre">ni_run_measurement()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#measpy.ni.ni_run_synced_measurement"><code class="docutils literal notranslate"><span class="pre">ni_run_synced_measurement()</span></code></a></li>
@@ -323,6 +329,11 @@ All the acquired signals are then re-synced from the time lag value.</p>
 <dd></dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="measpy.measurement.Measurement.load_h5data">
+<span class="sig-name descname"><span class="pre">load_h5data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#measpy.measurement.Measurement.load_h5data" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="measpy.measurement.Measurement.sync_prepare">
 <span class="sig-name descname"><span class="pre">sync_prepare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">out_chan</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">added_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.measurement.Measurement.sync_prepare" title="Link to this definition"></a></dt>
 <dd><p>Prepare measurement for synchronization</p>
@@ -375,6 +386,47 @@ All the acquired signals are then re-synced from the time lag value.</p>
 </section>
 <section id="module-measpy.ni">
 <span id="measpy-ni-module"></span><h2>measpy.ni module<a class="headerlink" href="#module-measpy.ni" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="measpy.ni.ni_callback_measurement">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">measpy.ni.</span></span><span class="sig-name descname"><span class="pre">ni_callback_measurement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.ni.ni_callback_measurement" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Measurment using a callback function called when specified number of sample is written from the device to the buffer.
+Using nidaqmx.Task.register_every_n_samples_acquired_into_buffer_event</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="measpy.ni.ni_callback_measurement.reset_callback">
+<span class="sig-name descname"><span class="pre">reset_callback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">callback_method</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_values</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.ni.ni_callback_measurement.reset_callback" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="measpy.ni.ni_callback_measurement.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stop=&lt;threading.Event</span> <span class="pre">at</span> <span class="pre">0x7f51f136e710:</span> <span class="pre">unset&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">duration='default'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.ni.ni_callback_measurement.run" title="Link to this definition"></a></dt>
+<dd><p>Run the measurment
+:param stop: Trigger to stop the measurment, defaults to Event()
+:type stop: threading.Event, optional
+:param duration: Duration of measurment in seconds if default it use the duration in M, defaults to “default”
+:type duration: float, optional
+:return: Nothing</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="measpy.ni.ni_callback_measurement.set_callback">
+<span class="sig-name descname"><span class="pre">set_callback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">callback_method</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_values</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.ni.ni_callback_measurement.set_callback" title="Link to this definition"></a></dt>
+<dd><p>Create the buffer containing n_values and set the callback that read and use the data using
+the custom ‘callback_method’, it is called every ‘n_values’ written into buffer.
+:param callback_method: Method with 2 arguments, the buffer and buffer lenght
+:type callback_method: callable
+:param n_values: Number of datapoint read each call
+:type n_values: int
+:return: Nothing</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="measpy.ni.ni_callback_measurement.stop">
+<span class="sig-name descname"><span class="pre">stop</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#measpy.ni.ni_callback_measurement.stop" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="measpy.ni.ni_get_devices">
 <span class="sig-prename descclassname"><span class="pre">measpy.ni.</span></span><span class="sig-name descname"><span class="pre">ni_get_devices</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#measpy.ni.ni_get_devices" title="Link to this definition"></a></dt>
@@ -388,16 +440,21 @@ All the acquired signals are then re-synced from the time lag value.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="measpy.ni.ni_run_measurement">
-<span class="sig-prename descclassname"><span class="pre">measpy.ni.</span></span><span class="sig-name descname"><span class="pre">ni_run_measurement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.ni.ni_run_measurement" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">measpy.ni.</span></span><span class="sig-name descname"><span class="pre">ni_run_measurement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">duration</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.ni.ni_run_measurement" title="Link to this definition"></a></dt>
 <dd><p>Runs a measurement defined in the object of
 the class measpy.measurement.Measurement given
 as argument.</p>
+<p>Run callback at refresh_rate with data acquired</p>
 <p>Once the data acquisition process is terminated,
 the measurement object given in argument contains
 a property in_sig consisting of a list of signals.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>M</strong> (<a class="reference internal" href="#measpy.measurement.Measurement" title="measpy.measurement.Measurement"><em>measpy.measurement.Measurement</em></a>) – The measurement object that defines the measurement properties</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>M</strong> (<a class="reference internal" href="#measpy.measurement.Measurement" title="measpy.measurement.Measurement"><em>measpy.measurement.Measurement</em></a>) – The measurement object that defines the measurement properties</p></li>
+<li><p><strong>filename</strong> (<em>str</em><em> or </em><em>Path</em><em>, </em><em>optional</em>) – .h5 filename to direct write on disk, defaults to None</p></li>
+<li><p><strong>duration</strong> (<em>float</em><em>, </em><em>optional</em>) – optional duration in second, take value in M is default, defaults to “default”</p></li>
+</ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Nothing, the measurement passed as argument is modified in place.</p>
