@@ -27,6 +27,26 @@ def _n_to_aon(n):
     return 'ao'+str(n-1)
 
 def ni_run_measurement(M, filename=None, duration="default"):
+    """
+    Runs a measurement defined in the object of
+    the class measpy.measurement.Measurement given
+    as argument.
+
+    Run callback at refresh_rate with data acquired
+
+    Once the data acquisition process is terminated,
+    the measurement object given in argument contains
+    a property in_sig consisting of a list of signals.
+
+    :param M: The measurement object that defines the measurement properties
+    :type M: measpy.measurement.Measurement
+    :param filename: .h5 filename to direct write on disk, defaults to None
+    :type filename: str or Path, optional
+    :param duration: optional duration in second, take value in M is default, defaults to "default"
+    :type duration: float, optional
+    :return: Nothing, the measurement passed as argument is modified in place.
+
+    """
     if filename is not None and H5file_valid(filename):
         M.to_hdf5(filename)
 
@@ -41,6 +61,7 @@ def ni_run_measurement(M, filename=None, duration="default"):
             with ni_callback_measurement(M) as NI:
                 NI.set_callback(callback, n_values)
                 NI.run(duration=duration)
+        M.load_h5data()
     else:
         samples = []
 
@@ -78,31 +99,14 @@ def ni_run_measurement(M, filename=None, duration="default"):
 
 class ni_callback_measurement:
     """
-    Runs a measurement defined in the object of
-    the class measpy.measurement.Measurement given
-    as argument.
-
-    Run callback at refresh_rate with data acquired
-
-    Once the data acquisition process is terminated,
-    the measurement object given in argument contains
-    a property in_sig consisting of a list of signals.
-
-    :param M: The measurement object that defines the measurement properties
-    :type M: measpy.measurement.Measurement
-
-    :param callback: Method to be run at refresh rate to save or/and display data
-    :type callback: method
-
-    :param refresh_delay: Time between callback call
-    :type refresh_delay: float
-
-    :return: Nothing, the measurement passed as argument is modified in place.
-
+    Measurment using a callback function called when specified number of sample is written from the device to the buffer.
+    Using nidaqmx.Task.register_every_n_samples_acquired_into_buffer_event
     """
 
     def __init__(self, M):
+        #Parameters setup
         system = nidaqmx.system.System.local()
+        self.callback_set = False
         self.Nchannel = len(M.in_map)
 
         if isinstance(M.in_sig, list) and len(M.in_sig) != self.Nchannel:
@@ -178,6 +182,7 @@ class ni_callback_measurement:
         self.M = M
 
     def __enter__(self):
+        #Open and set up NI Tasks
         try:
             # Set up the read tasks
             if self.M.in_sig is not None:
@@ -281,6 +286,7 @@ class ni_callback_measurement:
         return self
 
     def __exit__(self, exc_type, exc_value, tb):
+        #Close all tasks
         if self.M.in_sig != None:
             self.intask.close()
         if self.M.out_sig != None:
@@ -288,6 +294,18 @@ class ni_callback_measurement:
         print("ni tasks closed")
 
     def run(self, stop=Event(), duration="default"):
+        """
+        Run the measurment
+        :param stop: Trigger to stop the measurment, defaults to Event()
+        :type stop: threading.Event, optional
+        :param duration: Duration of measurment in seconds if default it use the duration in M, defaults to "default"
+        :type duration: float, optional
+        :return: Nothing
+
+        """
+        if not self.callback_set:
+            print("Cancelled: there is no callback set")
+            return
         self.now = datetime.now()
         self.M.date = self.now.strftime("%Y-%m-%d")
         self.M.time = self.now.strftime("%H:%M:%S")
@@ -321,6 +339,7 @@ class ni_callback_measurement:
         self.stop()
 
     def stop(self):
+        #stop all task
         if self.M.in_sig != None:
             self.intask.stop()
         if self.M.out_sig != None:
@@ -328,6 +347,16 @@ class ni_callback_measurement:
         print("ni tasks stopped")
 
     def set_callback(self, callback_method, n_values):
+        """
+        Create the buffer containing n_values and set the callback that read and use the data using
+        the custom 'callback_method', it is called every 'n_values' written into buffer.
+        :param callback_method: Method with 2 arguments, the buffer and buffer lenght
+        :type callback_method: callable
+        :param n_values: Number of datapoint read each call
+        :type n_values: int
+        :return: Nothing
+
+        """
         self.n_values = n_values
         self.buffer_captured = 0
         if self.Nchannel > 1:
@@ -356,6 +385,7 @@ class ni_callback_measurement:
             self.n_values, callback
         )
         self.intask.in_stream.input_buf_size = int(10 * self.n_values)
+        self.callback_set = True
         print("callback set")
 
     def reset_callback(self, callback_method, n_values):
