@@ -62,6 +62,8 @@ class direct_plot(tk.Tk):
         else:  # Stop measurment
             # Send stop signal in the thread
             self.stop_event.set()
+            #wait for the thread to finish
+            self.T.join()
             # Button change to "Start"
             self.textstatus.set("Start")
 
@@ -80,8 +82,8 @@ class direct_plot(tk.Tk):
         # Run measurment in thread
         work = self.NI.run
         # Argument : stop signal, no duration
-        T = Thread(target=work, args=(self.stop_event, None))
-        T.start()
+        self.T = Thread(target=work, args=(self.stop_event, None))
+        self.T.start()
 
 
 if __name__ == "__main__":
