@@ -129,7 +129,7 @@ class inline_plotting(plot_data_from_queue):
             self.freq_moins = False
 
     def data_process(self):
-        #Modifie x_data and plotbuffer, using data_buffer that is updated by the queue
+        #Modifie x_data and plotbuffer, before each plot, using data_buffer that is updated by the queue
         self.x_data[0] += self.timesincelastupdate * self.timeinterval
         self.plotbuffer[0][: -self.timesincelastupdate] = self.plotbuffer[0][
             self.timesincelastupdate :

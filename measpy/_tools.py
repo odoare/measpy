@@ -119,6 +119,7 @@ class plot_data_from_queue(ABC):
         updatetime = self.updatetime if updatetime is None else updatetime
         try:
             if (item := self.dataqueue.get(timeout=self.timeout)) is not None:
+                item = np.asarray(item).squeeze()
                 self._update_data_buffer(item)
                 if self.timesincelastupdate * self.timeinterval > updatetime:
                     self._plotting_buffer()
@@ -128,6 +129,7 @@ class plot_data_from_queue(ABC):
     def update_plot_until_empty(self):
         try:
             while (item := self.dataqueue.get(timeout=10)) is not None:
+                item = np.asarray(item).squeeze()
                 self._update_data_buffer(item)
                 if self.timesincelastupdate * self.timeinterval > self.updatetime:
                     self._plotting_buffer()
@@ -150,14 +152,16 @@ class plot_data_from_queue(ABC):
     @dataqueue.setter
     def dataqueue(self, dataqueue):
         if (
-            item := dataqueue.get(timeout=10 * self.timeout)
-        ) is not None and item[0].size == self.data_buffer[0].size:
-            self._update_data_buffer(item)
-            if self.timesincelastupdate * self.timeinterval > self.updatetime:
-                self._plotting_buffer()
-            self._dataqueue = dataqueue
-        else:
-            raise ValueError("Invalid queue")
+            item := dataqueue.get(timeout=100 * self.timeout)
+        ) is not None:
+            item = np.asarray(item).squeeze()
+            if item[0].size == self.data_buffer[0].size:
+                self._update_data_buffer(item)
+                if self.timesincelastupdate * self.timeinterval > self.updatetime:
+                    self._plotting_buffer()
+                self._dataqueue = dataqueue
+            else:
+                raise ValueError("Invalid queue")
 
 def csv_to_dict(filename):
     """ Conversion from a CSV (produced by the class Measurement) to a dict
