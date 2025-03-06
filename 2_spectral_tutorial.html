@@ -7,7 +7,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Tutorial 2: Spectral class &mdash; measpy  documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
@@ -94,12 +94,12 @@
 <li><p><code class="docutils literal notranslate"><span class="pre">full</span></code> : a boolean value indicating if the spectrum values are given up to the sampling frequency <code class="docutils literal notranslate"><span class="pre">fs</span></code> or the Nyquist frequency <code class="docutils literal notranslate"><span class="pre">fs/2</span></code></p></li>
 </ul>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1">#This is here in case we want to use the local measy directory</span>
-<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">)</span>
 
-<span class="kn">import</span> <span class="nn">measpy</span> <span class="k">as</span> <span class="nn">mp</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">measpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 </pre></div>
 </div>
 <p>Let us create a white noise signal of duration 5 seconds, with the sampling frequency <code class="docutils literal notranslate"><span class="pre">fs</span></code>=44100 Hz</p>
@@ -172,7 +172,7 @@
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sp</span> <span class="o">=</span> <span class="n">noisef</span><span class="o">.</span><span class="n">tfe_welch</span><span class="p">(</span><span class="n">noise</span><span class="p">,</span><span class="n">nperseg</span><span class="o">=</span><span class="mi">2</span><span class="o">**</span><span class="mi">14</span><span class="p">)</span>
 <span class="n">ax</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;Welch&#39;</span><span class="p">)</span>
 
-<span class="kn">from</span> <span class="nn">scipy.signal</span> <span class="kn">import</span> <span class="n">iirfilter</span><span class="p">,</span> <span class="n">sosfreqz</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.signal</span><span class="w"> </span><span class="kn">import</span> <span class="n">iirfilter</span><span class="p">,</span> <span class="n">sosfreqz</span>
 
 <span class="n">sos</span> <span class="o">=</span> <span class="n">iirfilter</span><span class="p">(</span><span class="n">N</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span><span class="n">Wn</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span><span class="n">btype</span><span class="o">=</span><span class="s1">&#39;lowpass&#39;</span><span class="p">,</span><span class="n">fs</span><span class="o">=</span><span class="n">noise</span><span class="o">.</span><span class="n">fs</span><span class="p">,</span><span class="n">output</span><span class="o">=</span><span class="s1">&#39;sos&#39;</span><span class="p">,</span><span class="n">ftype</span><span class="o">=</span><span class="s1">&#39;butter&#39;</span><span class="p">)</span>
 <span class="n">f</span><span class="p">,</span><span class="n">h</span> <span class="o">=</span> <span class="n">sosfreqz</span><span class="p">(</span><span class="n">sos</span><span class="p">,</span><span class="n">fs</span><span class="o">=</span><span class="n">noise</span><span class="o">.</span><span class="n">fs</span><span class="p">)</span>

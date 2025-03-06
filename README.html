@@ -7,7 +7,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>measpy (MEASurements with PYthon) &mdash; measpy  documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
@@ -114,28 +114,28 @@ Contact: olivier.doare&#64;ensta-paris.fr</p>
 <li><p>Picoscope scopes, via the <code class="docutils literal notranslate"><span class="pre">picosdk-python-wrappers</span></code> package.</p></li>
 </ul>
 <p>To import the package and perform data acquisition with sound cards:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">measpy</span> <span class="k">as</span> <span class="nn">mp</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">measpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mp</span>
 </pre></div>
 </div>
 <p>This will import the classes <code class="docutils literal notranslate"><span class="pre">mp.Measurement</span></code>, <code class="docutils literal notranslate"><span class="pre">mp.Signal</span></code>, <code class="docutils literal notranslate"><span class="pre">mp.Spectral</span></code> and <code class="docutils literal notranslate"><span class="pre">mp.Weighting</span></code>.</p>
 <p>To do data acquisition one has to select the module that corresponds to the target device. If it is a soundcard:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">measpy.audio</span> <span class="kn">import</span> <span class="n">audio_run_measurement</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">measpy.audio</span><span class="w"> </span><span class="kn">import</span> <span class="n">audio_run_measurement</span>
 </pre></div>
 </div>
 <p>If it is a NI daq card:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">measpy.ni</span> <span class="kn">import</span> <span class="n">ni_run_measurement</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">measpy.ni</span><span class="w"> </span><span class="kn">import</span> <span class="n">ni_run_measurement</span>
 </pre></div>
 </div>
 <p>If it is a Picoscope of the ps2000 series:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">measpy.ps2000</span> <span class="kn">import</span> <span class="n">ps2000_run_measurement</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">measpy.ps2000</span><span class="w"> </span><span class="kn">import</span> <span class="n">ps2000_run_measurement</span>
 </pre></div>
 </div>
 <p>If it is a Picoscope of the ps4000 series:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">measpy.ps4000</span> <span class="kn">import</span> <span class="n">ps4000_run_measurement</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">measpy.ps4000</span><span class="w"> </span><span class="kn">import</span> <span class="n">ps4000_run_measurement</span>
 </pre></div>
 </div>
 <p>In theses modules, there’s also the <code class="docutils literal notranslate"><span class="pre">audio_get_devices</span></code> and <code class="docutils literal notranslate"><span class="pre">ni_get_devices</span></code> functions to get a list of devices present in the system. To get the list of devices, do for example:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">measpy.audio</span> <span class="kn">import</span> <span class="n">audio_get_devices</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">measpy.audio</span><span class="w"> </span><span class="kn">import</span> <span class="n">audio_get_devices</span>
 <span class="n">l</span> <span class="o">=</span> <span class="n">audio_get_devices</span><span class="p">()</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">l</span><span class="p">)</span>
 </pre></div>
@@ -154,8 +154,8 @@ Contact: olivier.doare&#64;ensta-paris.fr</p>
 <li><p>the soundcard name is ‘My card’, as given by measpy.audio.audio_get_devices()</p></li>
 </ul>
 <p>First step is to import the modules and prepare the signals. We create a five seconds noise signal for output, and two empty signals with the correct properties for the inputs.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">measpy</span> <span class="k">as</span> <span class="nn">mp</span>
-<span class="kn">from</span> <span class="nn">measpy.audio</span> <span class="kn">import</span> <span class="n">audio_run_measurement</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">measpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">measpy.audio</span><span class="w"> </span><span class="kn">import</span> <span class="n">audio_run_measurement</span>
 <span class="n">sout</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="o">.</span><span class="n">noise</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="mi">44100</span><span class="p">,</span> <span class="n">freq_min</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">freq_max</span><span class="o">=</span><span class="mi">20000</span><span class="p">,</span> <span class="n">dur</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
 <span class="n">sin1</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="n">desc</span> <span class="o">=</span> <span class="s1">&#39;Pressure&#39;</span><span class="p">,</span> <span class="n">dbfs</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span> <span class="n">cal</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;Pa&#39;</span> <span class="p">)</span>
 <span class="n">sin2</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="n">desc</span> <span class="o">=</span> <span class="s1">&#39;Acceleration&#39;</span><span class="p">,</span> <span class="n">dbfs</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span> <span class="n">cal</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;m*s**(-2)&#39;</span> <span class="p">)</span>
