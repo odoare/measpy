@@ -112,8 +112,11 @@ class plot_data_from_queue(ABC):
         n_values = len(item)
         # item = np.asarray(item) * 0.001  #mv to V
         self.timesincelastupdate += n_values
-        self.data_buffer[:-n_values] = self.data_buffer[n_values:]
-        self.data_buffer[-n_values:] = item
+        if n_values<=self.databuffersize:
+            self.data_buffer[:-n_values] = self.data_buffer[n_values:]
+            self.data_buffer[-n_values:] = item
+        else:
+            self.data_buffer[:] = item[-self.databuffersize:]
 
     def update_plot(self, updatetime=None):
         updatetime = self.updatetime if updatetime is None else updatetime

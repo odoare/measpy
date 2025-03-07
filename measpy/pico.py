@@ -41,17 +41,9 @@ from measpy._tools import H5file_valid
 maxtimeout = 10
 
 Channel_state = {key: None for key in ["enabled", "coupling", "range", "buffer"]}
-# PS2000_channel = {"A":Channel_state.copy(),"B":Channel_state.copy()}
-# PS2000_channel["A"]["number"]=1
-# PS2000_channel["B"]["number"]=2
 
 PS2000_channel = {"A": 1, "B": 2, 1: "A", 2: "B"}
 PS4000_channel = {"A": 1, "B": 2, "C": 3, "D": 4, 1: "A", 2: "B", 3: "C", 4: "D"}
-
-
-# res = [[],[]]
-# while not None in (item := [q.get(timeout=1) for q in queues]): bug
-#     _=[r.extend(it) for r,it in zip(res,item)]
 
 
 def dispatch(q_in, qs_out):
@@ -101,7 +93,7 @@ def Queue2prealocated_array(q_in, array):
             nextSample = lastsample
         except ValueError:
             N = datasize - nextSample
-            if N>0:
+            if N > 0:
                 array[nextSample:] = item[:N]
             break
     return array
@@ -153,43 +145,24 @@ def detect_rising_pulses_threshold_ind(
     return rising + id0
 
 
-def rising_pulse_to_raw(M, channel, values):
-    for i in range(len(M.in_map)):
-        if M.in_map[i] == channel:
-            M.in_sig[i].fs = None
-            M.in_sig[i].raw = np.double([v / M.fs for v in values])
-            M.in_sig[i].desc = "Timming of rising edge pulse"
-            M.in_sig[i].unit = "s"
-
-
-def mv_to_raw(M, channel, values):
-    for i in range(len(M.in_map)):
-        if M.in_map[i] == channel:
-            M.in_sig[i].fs = M.fs
-            if M.upsampling_factor > 1:
-                M.in_sig[i].raw = decimate(
-                    np.double(values) * 0.001, M.upsampling_factor, ftype="fir"
-                )[0 : int(round(M.dur * M.fs))]
-            else:
-                M.in_sig[i].raw = (np.double(values) * 0.001)[
-                    0 : int(round(M.dur * M.fs))
-                ]
-
-
-def ps2000_run_measurement(M, serial=None, filename=None, *args, **kwargs):
+def ps2000_run_measurement(M, serial=None, filename=None, **kwargs):
     with _ps2000_run_measurement_threaded(
-        M, filename=filename, serial=serial, *args, **kwargs
+        M, filename=filename, serial=serial, **kwargs
     ) as device:
         device.start()
         device.join()
 
 
 def ps2000_plot(
-    M, plotting_class, plotbuffersize=20000, updatetime=0.1, serial=None,**kwargs
+    M, plotting_class, plotbuffersize=20000, updatetime=0.1, serial=None, **kwargs
 ):
     queueplot = Queue()
+    nchannel = len(M.in_sig)
     plotting_instance = plotting_class(
-        M.fs, updatetime=updatetime, plotbuffersize=plotbuffersize
+        M.fs,
+        updatetime=updatetime,
+        plotbuffersize=plotbuffersize,
+        nchannel=nchannel,
     )
     with _ps2000_run_measurement_threaded(
         M,
@@ -204,9 +177,11 @@ def ps2000_plot(
         device.join()
 
 
-def ps2000_pulse_detection(M, serial=None,min_chunksize_processed=10000):
+def ps2000_pulse_detection(
+    M, serial=None, min_chunksize_processed=10000, **kwargs
+):
     """
-    To use threshold detection (more efficient), this function needs M to contain the property
+    This function needs M to contain the property
      in_threshold : a list of threshold for pulse height (in Volt) for each channel
     """
     if hasattr(M, "in_threshold") and M.in_threshold is not None:
@@ -218,30 +193,31 @@ def ps2000_pulse_detection(M, serial=None,min_chunksize_processed=10000):
             output_queue=Q,
             min_chunksize_processed=min_chunksize_processed,
             serial=serial,
+            **kwargs,
         )
-        return np.double(Queue2array(Q))/ M.fs
+        return np.double(Queue2array(Q)) / M.fs
     else:
         raise ValueError("There is no threshold defined")
 
 
-# def ps2000_hdf5(M, filename, serial=None):
-#     return ps2000_run_measurement(M, filename=filename, serial=serial)
-
-
-def ps4000_run_measurement(M, serial=None, filename=None, *args, **kwargs):
+def ps4000_run_measurement(M, serial=None, filename=None, **kwargs):
     with _ps4000_run_measurement_threaded(
-        M, filename=filename, serial=serial, *args, **kwargs
+        M, filename=filename, serial=serial, **kwargs
     ) as device:
         device.start()
         device.join()
 
 
 def ps4000_plot(
-    M, plotting_class, plotbuffersize=20000, updatetime=0.1, serial=None,**kwargs
+    M, plotting_class, plotbuffersize=20000, updatetime=0.1, serial=None, **kwargs
 ):
     queueplot = Queue()
+    nchannel = len(M.in_sig)
     plotting_instance = plotting_class(
-        M.fs, updatetime=updatetime, plotbuffersize=plotbuffersize
+        M.fs,
+        updatetime=updatetime,
+        plotbuffersize=plotbuffersize,
+        nchannel=nchannel,
     )
     with _ps4000_run_measurement_threaded(
         M,
@@ -256,9 +232,11 @@ def ps4000_plot(
         device.join()
 
 
-def ps4000_pulse_detection(M, serial=None,min_chunksize_processed=10000):
+def ps4000_pulse_detection(
+    M, serial=None, min_chunksize_processed=10000, **kwargs
+):
     """
-    To use threshold detection (more efficient), this function needs M to contain the property
+    This function needs M to contain the property
      in_threshold : a list of threshold for pulse height (in Volt) for each channel
     """
     if hasattr(M, "in_threshold") and M.in_threshold is not None:
@@ -270,14 +248,11 @@ def ps4000_pulse_detection(M, serial=None,min_chunksize_processed=10000):
             output_queue=Q,
             min_chunksize_processed=min_chunksize_processed,
             serial=serial,
+            **kwargs,
         )
-        return np.double(Queue2array(Q))/ M.fs
+        return np.double(Queue2array(Q)) / M.fs
     else:
         raise ValueError("There is no threshold defined")
-
-
-# def ps4000_hdf5(M, filename, serial=None):
-#     return ps4000_run_measurement(M, filename=filename, serial=serial)
 
 
 class Pico_thread(ABC, Thread):
@@ -312,14 +287,15 @@ class Pico_thread(ABC, Thread):
         """
         :param M: Parameter container
         :type M: measpy.measurement.
-        :param output_queue: Send data int queues, defaults to None
-        :type output_queue: queue or list of queues, optional
+        :param output_queue: Send data into this queue, defaults to None
+        :type output_queue: queue.Queue
         :param pre_process: Method to process raw data, defaults to adc2mV
+        :type pre_process: callable
         :param save_into_Signal: Saving the data into the signal, defaults to True
         :type save_into_Signal: bool, optional
         :param min_chunksize_processed: Minimum size of data to process at once, defaults to 0
         :type min_chunksize_processed: int, optional
-        :param filename: Hdf5 file path to direct save to disk, defaults to None
+        :param filename: Hdf5 file path to direct save into disk, defaults to None
         :type filename: str or pathlib.Path, optional
         :param buffersize: Size of picoscope buffer, defaults to 20_000
         :type buffersize: int, optional
@@ -327,8 +303,12 @@ class Pico_thread(ABC, Thread):
         :type max_samples: int, optional
         :param serial: Serial number of the scope, defaults to None
         :type serial: str, optional
+        :param stop_event: Event that stop measurment when set, can be defined or used
+        :type stop_event: threading.Event()
         """
+        # init threading, deamon = True to keyboard interupt when threading
         super().__init__(daemon=True)
+        # easier to use only multichannel signal
         if isinstance(M.in_sig, list):
             M.in_sig = convert_to_mutichannel(M.in_sig)
         self.M = M
@@ -337,23 +317,22 @@ class Pico_thread(ABC, Thread):
 
         if type(M.out_sig) != type(None):
             print("Warning: out_sig property ignored with picoscopes")
+
         ## parameters
         self.stop_measurement = stop_event
         self.min_chunksize_processed = min_chunksize_processed
         self.pre_process = pre_process
+
         # serial number of the scope
         if serial is None:
             print("No picoscope given, searching for connected picoscope")
-            
         self.serial = serial
+
         # Number of sample stored by picoscope driver that can be retrieved after
         # streaming stopped (by ps2000_get_streaming_values or ps4000GetValuesAsyn)
         self.max_samples = max_samples
         # Size of the temporary buffers used for storing the data
         self.overview_buffer_size = buffersize
-        # # container for multithreading
-        # self.queues = []
-        # self.process = []
         self.save_into_Signal = save_into_Signal
         self.output_queue = output_queue
 
@@ -404,15 +383,9 @@ class Pico_thread(ABC, Thread):
         self.time_to_fill_half_buffer = (
             0.5 * self.overview_buffer_size / self.M.fs
         )
-        # plotting setup
-        # self.chan_to_plot = chan_to_plot
-        # if plotting is not None:
-        #     self.plot = self.setup_plot(plotting)
-        #     if self.plot is None:
-        #         if input("Cancel measurment? y/n : ") == "y":
-        #             raise Exception("Canceled")
 
     def __enter__(self):
+        # open comunication with picoscope and set up channel and preprocesing tasks
         self.open_unit()
         try:
             self.channels_setup()
@@ -423,9 +396,11 @@ class Pico_thread(ABC, Thread):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        # Close cominucation
         self.close_unit()
 
     def channels_setup(self):
+        # Use Measurment data to set up the channels
         for i, chan in enumerate(self.Channels.values()):
             self.setup_channel(i + 1)
             if (
@@ -441,6 +416,10 @@ class Pico_thread(ABC, Thread):
         self.nchannels = sum([chan["enabled"] for chan in self.Channels.values()])
 
     def run(self):
+        """
+        self.start() run this into a thread
+
+        """
         ##start preprocess threads
         for P in self.process:
             P.start()
@@ -451,14 +430,14 @@ class Pico_thread(ABC, Thread):
         print("Waiting for data processing...")
         for P in self.process:
             P.join()
-            
+
+        # Upsampling
         if self.save_into_Signal and self.M.upsampling_factor > 1:
             values = self.M.in_sig.raw
-            self.M.in_sig.raw = decimate(np.double(values), self.M.upsampling_factor, ftype="fir")
+            self.M.in_sig.raw = decimate(
+                np.double(values), self.M.upsampling_factor, ftype="fir"
+            )
         print("Preprocess data done")
-        # ## Plot last data
-        # if self.plot is not None:
-        #     self.plot.end_plot(self.queue_plot)
 
     def dbfs_save(self):
         """
@@ -475,10 +454,11 @@ class Pico_thread(ABC, Thread):
         self.M.to_hdf5(self.filename)
 
     def setup_threads(self):
+        # threads and outputs set up (preprocessing, put into queue, put into Signal)
         ret = []
         if self.savehdf5:
-            # In hdf5 ADC data are directly saved to file
-            # dbfs to convert ADC to Volt is saved in the parameters
+            # In hdf5 ADC data (integers) are directly saved to file
+            # dbfs convert ADC to mVolt and is saved in the parameters
             self.dbfs_save()
             queuesave = Queue()
             queueprocess = Queue()
@@ -497,7 +477,9 @@ class Pico_thread(ABC, Thread):
             if self.output_queue:
                 queueSignal = Queue()
                 ret.append(
-                    Thread(target=process_data, args=(queueprocess, processed_queue))
+                    Thread(
+                        target=process_data, args=(queueprocess, processed_queue)
+                    )
                 )
                 ret.append(
                     Thread(
@@ -509,18 +491,28 @@ class Pico_thread(ABC, Thread):
                     Thread(
                         target=Fill_Signal_Queue,
                         args=(self.M.in_sig, queueSignal),
-                        kwargs={"Ndata": int(self.M.dur*self.M.fs*self.M.upsampling_factor)},
+                        kwargs={
+                            "Ndata": int(
+                                self.M.dur * self.M.fs * self.M.upsampling_factor
+                            )
+                        },
                     )
                 )
             else:
                 ret.append(
-                    Thread(target=process_data, args=(queueprocess, processed_queue))
+                    Thread(
+                        target=process_data, args=(queueprocess, processed_queue)
+                    )
                 )
                 ret.append(
                     Thread(
                         target=Fill_Signal_Queue,
                         args=(self.M.in_sig, processed_queue),
-                        kwargs={"Ndata": int(self.M.dur*self.M.fs*self.M.upsampling_factor)},
+                        kwargs={
+                            "Ndata": int(
+                                self.M.dur * self.M.fs * self.M.upsampling_factor
+                            )
+                        },
                     )
                 )
         elif self.output_queue:
@@ -534,6 +526,7 @@ class Pico_thread(ABC, Thread):
         return ret
 
     def methods_setup(self):
+        # use data in measurment and from channel setup to "partial" the preprocessing method (convert to mV or other)
         if callable(self.pre_process):
             self.pre_process = [self.pre_process] * self.nchannels
         methods = []
@@ -556,6 +549,7 @@ class Pico_thread(ABC, Thread):
         return methods
 
     def setup_preprocess(self):
+        # define func that preprocess raw data
         methods = self.methods_setup()
 
         if self.min_chunksize_processed > 0:
@@ -624,7 +618,6 @@ class Pico_thread(ABC, Thread):
         """
         Open picoscope
 
-        If needed, this method should be overridden, and is called by __enter__ method
         """
         pass
 
@@ -633,7 +626,6 @@ class Pico_thread(ABC, Thread):
         """
         Close picoscope
 
-        If needed, this method should be overridden, and is called by __exit__ method
         """
         pass
 
@@ -641,18 +633,15 @@ class Pico_thread(ABC, Thread):
     def setup_channel(self, chan_index):
         """setup a channel.
 
-        return channel status (used or not), channel coupling(ac or dc),
-        channel range and data buffer for this channel.
-        This method should be overridden, and is called by __enter__ method
+        should define channel status (used or not), channel coupling(ac or dc),
+        channel range and channel data buffer.
         """
 
     @abstractmethod
     def setup_callback(self):
         """
         Setup the callback method to read data.
-        return the callback metod used to read data
-        This method should be overridden, and is called by __enter__ method
-        Create threads queues and callback metod
+        should return the callback metod used to read and put data into dataqueue
 
         """
         pass
@@ -661,7 +650,6 @@ class Pico_thread(ABC, Thread):
     def start_measurment(self):
         """
         Run the scope.
-        This method should be overridden, and is called by start method
         """
 
     @staticmethod
@@ -738,16 +726,6 @@ class _ps2000_run_measurement_threaded(Pico_thread):
         self.Channels[self.channel_name[chan_index]]["coupling"] = coupling
 
     def setup_callback(self):
-        """
-        Create threads queues and callback metod
-
-        :param chan_to_plot: Channel to plot
-        :type chan_to_plot: str
-        :raises NotImplementedError: save in hdf5 should be multichannel
-        :return: calback function used by picoscope
-        :rtype: method
-
-        """
         CALLBACK = C_CALLBACK_FUNCTION_FACTORY(
             None,
             ctypes.POINTER(ctypes.POINTER(ctypes.c_int16)),
@@ -757,7 +735,7 @@ class _ps2000_run_measurement_threaded(Pico_thread):
             ctypes.c_int16,
             ctypes.c_uint32,
         )
-        ##For each case setup process and define get_overview_buffers
+        ##Define get_overview_buffers for channel configuration
         if self.nchannels == 2:
 
             def get_overview_buffers(
@@ -841,7 +819,7 @@ class _ps2000_run_measurement_threaded(Pico_thread):
         print("Start measurement")
         start_time = time.time_ns()
 
-        # loop until wanted duration + maximum time of one loop without buffer overrun
+        # loop until wanted duration + maximum time of one loop without buffer overrun or until stop_measurement is set
         margin = min(int(self.max_loop_time * 1e9), self.duree_ns * 0.1)
         try:
             while (
@@ -865,9 +843,6 @@ class _ps2000_run_measurement_threaded(Pico_thread):
     @staticmethod
     def pico_range(prange):
         return ps2000.PS2000_VOLTAGE_RANGE["PS2000_" + prange]
-
-
-# PS4000_channel = {"A": 1, "B": 2, "C": 3, "D": 4, 1: "A", 2: "B", 3: "C", 4: "D"}
 
 
 class _ps4000_run_measurement_threaded(Pico_thread):
