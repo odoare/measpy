@@ -40,7 +40,7 @@ class Measurement:
 
             # print(type(params['in_sig']))
 
-            if non & (not isinstance(params['in_sig'],(Signal,list))):
+            if non & (not isinstance(params['out_sig'],(Signal,list))):
                 raise TypeError("out_sig must but be a Signal, a list of measpy.signal.Signal or None")
 
             if isinstance(params['out_sig'],Signal):
