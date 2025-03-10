@@ -1994,7 +1994,7 @@ class Signal:
                 writer.writerow(r.tolist()[0])
 
 
-    def to_hdf5(self, hdf5_object, dataset_name="in_sigs", data_type=None):
+    def to_hdf5(self, hdf5_object, dataset_name="in_sigs", data_type=None, Channel_map=None):
         """ Saves the signal in an hdf5 file
 
         Save Signal in hdf5 file
@@ -2005,6 +2005,8 @@ class Signal:
         :type dataset_name: str
         :param data_type: Data format (Numpy dtype)
         :type data_type: str
+        :param Channel_map: Map of channel inside the queue,
+        :type Channel_map: list of int
         
 
         If parameter hdf5_object is str or path, it is opened with statement,
@@ -2026,6 +2028,8 @@ class Signal:
             elif data_type is not None:
                 print(f"There is no data, creating empty dataset {dataset_name} wity type = {data_type}")
                 #Chunck memory size should be between 10KiB and 1MiB, (bytes power of two 14 to 19 )
+                if Channel_map is None:
+                    Channel_map = list(range(self.nchannels))
                 power_two_chunck_size = 17
                 itemsize = np.dtype(data_type).itemsize
                 if self.nchannels>1:
@@ -2045,7 +2049,7 @@ class Signal:
                     h5file_write_from_queue,
                     filename=H5file.filename,
                     dataset_name=dataset_name,
-                    Nchannel = self.nchannels
+                    Channel_map = Channel_map
                     )
                 print(f"The method h5save_data(queue) will save data from the queue in the file {H5file.filename}")
             else:

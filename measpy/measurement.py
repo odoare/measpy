@@ -301,7 +301,10 @@ class Measurement:
             if isinstance(in_sig,list):
                 in_sig = Signal.pack(in_sig)
             if isinstance(in_sig,Signal):
-                in_sig.to_hdf5(H5file, "in_sig", data_type)
+                if self.device_type=='pico':
+                    # picoscope read data in channel order, remaping to match in_map
+                    Channel_map = np.argsort(np.argsort(self.in_map))
+                in_sig.to_hdf5(H5file, "in_sig", data_type, Channel_map)
                 self.h5save_data = in_sig.h5save_data
             if isinstance(out_sig,list):
                 out_sig = Signal.pack(out_sig)

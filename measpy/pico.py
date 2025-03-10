@@ -46,6 +46,10 @@ PS2000_channel = {"A": 1, "B": 2, 1: "A", 2: "B"}
 PS4000_channel = {"A": 1, "B": 2, "C": 3, "D": 4, 1: "A", 2: "B", 3: "C", 4: "D"}
 
 
+def transposelist(L):
+    return [list(i) for i in zip(*L)]
+
+
 def dispatch(q_in, qs_out):
     while (item := q_in.get(timeout=maxtimeout)) is not None:
         for q_out in qs_out:
@@ -323,6 +327,9 @@ class Pico_thread(ABC, Thread):
         self.min_chunksize_processed = min_chunksize_processed
         self.pre_process = pre_process
 
+        ## Buffer are always read in the same order, remapping to match in_map
+        self.buffers_map = np.argsort(np.argsort(self.M.in_map))
+
         # serial number of the scope
         if serial is None:
             print("No picoscope given, searching for connected picoscope")
@@ -401,8 +408,9 @@ class Pico_thread(ABC, Thread):
 
     def channels_setup(self):
         # Use Measurment data to set up the channels
-        for i, chan in enumerate(self.Channels.values()):
-            self.setup_channel(i + 1)
+        for chan in self.Channels.values():
+            i = chan["number"]
+            self.setup_channel(i)
             if (
                 (Vthreshold := getattr(self.M, "in_threshold", None)) is not None
             ) and (ind := findindex(self.M.in_map, i)) != None:
@@ -559,36 +567,22 @@ class Pico_thread(ABC, Thread):
                 while (item := queue.get(timeout=maxtimeout)) is not None:
                     _ = [c.extend(it) for (c, it) in zip(chunk_data, item)]
                     if len(chunk_data[0]) > self.min_chunksize_processed:
-                        values = list(
-                            map(
-                                list,
-                                zip(
-                                    *[
-                                        method(chunk)
-                                        for (chunk, method) in zip(
-                                            chunk_data,
-                                            methods,
-                                        )
-                                    ]
-                                ),
-                            )
+                        values = transposelist(
+                            [
+                                method(chunk_data[ind])
+                                for (ind, method) in zip(
+                                    self.buffers_map, methods
+                                )
+                            ]
                         )
                         queueout.put(values)
                         chunk_data = [[] for _ in range(self.nchannels)]
-                if len(chunk_data) > 0:
-                    values = list(
-                        map(
-                            list,
-                            zip(
-                                *[
-                                    method(chunk)
-                                    for (chunk, method, previous) in zip(
-                                        chunk_data,
-                                        methods,
-                                    )
-                                ]
-                            ),
-                        )
+                if len(chunk_data[0]) > 0:
+                    values = transposelist(
+                        [
+                            method(chunk_data[ind])
+                            for (ind, method) in zip(self.buffers_map, methods)
+                        ]
                     )
                     queueout.put(values)
                 queueout.put(None)
@@ -597,16 +591,11 @@ class Pico_thread(ABC, Thread):
 
             def func(queue, queueout):
                 while (item := queue.get(timeout=maxtimeout)) is not None:
-                    values = list(
-                        map(
-                            list,
-                            zip(
-                                *[
-                                    method(it)
-                                    for (it, method) in zip(item, methods)
-                                ]
-                            ),
-                        )
+                    values = transposelist(
+                        [
+                            method(item[ind])
+                            for (ind, method) in zip(self.buffers_map, methods)
+                        ]
                     )
                     queueout.put(values)
                 queueout.put(None)
@@ -963,6 +952,22 @@ class _ps4000_run_measurement_threaded(Pico_thread):
         self.autoStopOuter = False
         self.wasCalledBack = False
         # listbuff = [chan["buffer"] for chan in self.Channels.values() if chan["enabled"]]
+        # def streaming_callback(
+        #     handle,
+        #     noOfSamples,
+        #     startIndex,
+        #     overflow,
+        #     triggerAt,
+        #     triggered,
+        #     autoStop,
+        #     param,
+        # ):
+        #     self.wasCalledBack = True
+        #     sourceEnd = startIndex + noOfSamples
+        #     self.dataqueue.put([buff[startIndex:sourceEnd].copy() for buff in listbuff])
+        #     if autoStop:
+        #         self.autoStopOuter = True
+
         if self.nchannels == 2:
 
             def streaming_callback(
