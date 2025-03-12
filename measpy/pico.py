@@ -80,7 +80,7 @@ def Fill_Signal_Queue(Sig, q_in, unit_in="mV", Ndata=None):
                 s.unit = "mV"
                 conversion = 1.0
     if Ndata:
-        array = np.zeros((Ndata, Sig.nchannels))
+        array = np.zeros((Ndata, Sig.nchannels)).squeeze()
         Sig.raw = conversion * Queue2prealocated_array(q_in, array)
     else:
         Sig.raw = conversion * Queue2array(q_in)
@@ -460,6 +460,8 @@ class Pico_thread(ABC, Thread):
         self.M.datatype = np.dtype(self.Data_type).name
         print("Creating the H5file with measurment parameters")
         self.M.to_hdf5(self.filename)
+        for sig in self.M.in_sig:
+            sig.dbfs = 1
 
     def setup_threads(self):
         # threads and outputs set up (preprocessing, put into queue, put into Signal)

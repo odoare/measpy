@@ -339,7 +339,7 @@ def h5file_write_from_queue(queue, filename, dataset_name, Channel_map):
 
     print(f"Starting saving data in {filename}/{dataset_name}")
     with h5py.File(filename, "r+") as H5file:
-        item = np.array(queue.get()).transpose()[:,Channel_map]
+        item = np.array(queue.get()).transpose()[:,Channel_map].squeeze()
         #Get dimension of item for multichannel case
         dims = item.shape
         Nchannel = len(Channel_map)
@@ -354,7 +354,7 @@ def h5file_write_from_queue(queue, filename, dataset_name, Channel_map):
         writebuffer = np.empty((chunksize, Nchannel),dtype=datatype).squeeze()
         buffer_position = _add_item(writebuffer, 0, item, Npoints, dataset, chunksize)
         while (item := queue.get(timeout=5)) is not None:
-            item = np.array(item).transpose()[:,Channel_map]
+            item = np.array(item).transpose()[:,Channel_map].squeeze()
             Npoints = item.shape[0]
             buffer_position = _add_item(
                 writebuffer, buffer_position, item, Npoints, dataset, chunksize
