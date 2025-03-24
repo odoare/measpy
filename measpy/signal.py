@@ -1240,7 +1240,7 @@ class Signal:
                         else:
                             sig.__dict__[key] = decodeH5str(val)
                     sig._rawvalues = data
-                    out.append(sig)
+                out.append(sig)
             if (Nsig := len(datasets))>1:
                 print(f"Warning there are {Nsig} signals in current file : {list(H5file.keys())}")
                 return out

@@ -5,9 +5,12 @@ Created on Tue Feb 25 16:15:18 2025
 @author: clement
 """
 
+import matplotlib
+matplotlib.use("TkAgg")
+
 import numpy as np
 import measpy as mp
-from measpy._tools import plot_data_from_queue
+from measpy._plot_tools import plot_data_from_queue
 from measpy.ni import ni_callback_measurement
 import time
 from threading import Thread, Event
@@ -42,6 +45,7 @@ class inline_plotting(plot_data_from_queue):
             self.x_data[1],
             self.plotbuffer[1] + 1,
         )
+
         #define lines : list of plt line updated with the buffer
         self.lines = [linet, linef]
         
@@ -107,30 +111,34 @@ class inline_plotting(plot_data_from_queue):
         if self.tamp_plus:
             self.axes[0].set_ylim(np.array(self.axes[0].get_ylim()) / 2)
             self.tamp_plus = False
+            self.bm.change_axe = True
 
         if self.tamp_moins:
             self.axes[0].set_ylim(np.array(self.axes[0].get_ylim()) * 2)
             self.tamp_moins = False
+            self.bm.change_axe = True
 
         if self.famp_plus:
             self.axes[1].set_ylim(np.array(self.axes[1].get_ylim()) / 2)
             self.famp_plus = False
+            self.bm.change_axe = True
 
         if self.famp_moins:
             self.axes[1].set_ylim(np.array(self.axes[1].get_ylim()) * 2)
             self.famp_moins = False
+            self.bm.change_axe = True
             
         if self.freq_plus:
             self.axes[1].set_xlim([0, np.array(self.axes[1].get_xlim())[1] / 2])
             self.freq_plus = False
+            self.bm.change_axe = True
         
         if self.freq_moins:
             self.axes[1].set_xlim([0, np.array(self.axes[1].get_xlim())[1] * 2])
             self.freq_moins = False
+            self.bm.change_axe = True
 
     def data_process(self):
-        #Modifie x_data and plotbuffer, using data_buffer that is updated by the queue
-        self.x_data[0] += self.timesincelastupdate * self.timeinterval
         self.plotbuffer[0][: -self.timesincelastupdate] = self.plotbuffer[0][
             self.timesincelastupdate :
         ]
@@ -141,46 +149,54 @@ class inline_plotting(plot_data_from_queue):
             np.abs(np.fft.rfft(self.plotbuffer[0], norm="ortho")) ** 2
         )
 
-#define a measurment
-fs = 1000
-M = mp.Measurement(device_type="ni", in_sig=[mp.Signal(fs=fs)], dur=15)
+if __name__ =="__main__":
+    # def stop_after(event,T):
+    #     time.sleep(T)
+    #     event.set()
 
-#define plot parameter
-plot_time = 5
-refresh_delay = 0.2
-plotbuffersize = plot_time * fs
-A = inline_plotting(
-    fs, updatetime=refresh_delay, plotbuffersize=plotbuffersize
-)
 
-#create a queue
-Q = Queue()
+    #define a measurment
+    fs = 10000
+    M = mp.Measurement(device_type="ni", in_sig=[mp.Signal(fs=fs)], dur=15)
 
-#define the callback that fill up the queue
-n_values = min(int(fs * refresh_delay / 2), plotbuffersize)
-def callback(buffer_in, n_values):
-    Q.put(buffer_in.copy())
-
-#use ni_callback_measurement to set up measrument 
-
-with ni_callback_measurement(M) as NI:
-    NI.set_callback(callback, n_values)
-
-    #put the measurment into a thread
-    def work(*args):
-        NI.run(*args)
-        print("measurment done")
-        Q.put(None)
-    T = Thread(target=work, args=(A.stop_event, None))
-    T.start()
+    #define plot parameter
+    plot_time = 5
+    refresh_delay = 0.2
+    plotbuffersize = plot_time * fs
+    A = inline_plotting(
+        fs, updatetime=refresh_delay, plotbuffersize=plotbuffersize
+    )
     
-    try:
-        #wait for first data to update before update the plot
-        time.sleep(1.5 * n_values / fs)
-        A.dataqueue = Q
-        A.update_plot_until_empty()
-        T.join()
-    except Exception as e:
-        #stop measurment in case of exeption
-        A.stop_event.set()
-        raise e
+    #create a queue
+    Q = Queue()
+    
+    #define the callback that fill up the queue
+    n_values = min(int(fs * refresh_delay / 2), plotbuffersize)
+    def callback(buffer_in, n_values):
+        Q.put(buffer_in.copy())
+    
+    #use ni_callback_measurement to set up measrument 
+    
+    with ni_callback_measurement(M) as NI:
+        NI.set_callback(callback, n_values)
+    
+        #put the measurment into a thread
+        def work(*args):
+            NI.run(*args)
+            print("measurment done")
+            Q.put(None)
+        T = Thread(target=work, args=(A.stop_event, None))
+        # tstop = Thread(target=stop_after, args=(A.stop_event, 3))
+        T.start()
+        # tstop.start()
+        
+        try:
+            #wait for first data to update before update the plot
+            time.sleep(1.5 * n_values / fs)
+            A.dataqueue = Q
+            A.update_plot_until_empty()
+            T.join()
+        except Exception as e:
+            #stop measurment in case of exeption
+            A.stop_event.set()
+            raise e
