@@ -10,47 +10,54 @@ from queue import Empty
 
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-mpl.rcParams['path.simplify'] = True
-mpl.rcParams['path.simplify_threshold'] = 1.0
-mpl.rcParams['agg.path.chunksize'] = 10000
+
+mpl.rcParams["path.simplify"] = True
+mpl.rcParams["path.simplify_threshold"] = 1.0
+mpl.rcParams["agg.path.chunksize"] = 10000
 
 import time
+
+
 def timing(f):
     def wrap(*args, **kwargs):
         time1 = time.time()
         ret = f(*args, **kwargs)
         time2 = time.time()
-        print('{:s} function took {:.3f} ms'.format(f.__name__, (time2-time1)*1000.0))
+        print(
+            "{:s} function took {:.3f} ms".format(
+                f.__name__, (time2 - time1) * 1000.0
+            )
+        )
 
         return ret
+
     return wrap
 
-def justify(a, axis=0, side='left'):    
+
+def justify(a, axis=0, side="left"):
     """
     Justifies a 2D array
-
-    Parameters
-    ----------
-    A : ndarray
-        Input array to be justified
-    axis : int
-        Axis along which justification is to be made
-    side : str
-        Direction of justification. It could be 'left', 'right', 'up', 'down'
-        It should be 'left' or 'right' for axis=1 and 'up' or 'down' for axis=0.
+    :param a: Input array to be justified
+    :type a: ndarray
+    :param axis: Axis along which justification is to be made, defaults to 0
+    :type axis: int, optional
+    :param side: Direction of justification. It could be 'left', 'right', 'up', 'down'
+    It should be 'left' or 'right' for axis=1 and 'up' or 'down' for axis=0., defaults to 'left'
+    :type side: str, optional
 
     """
 
     mask = ~np.isnan(a)
-    justified_mask = np.sort(mask,axis=axis)
-    if (side=='up') | (side=='left'):
-        justified_mask = np.flip(justified_mask,axis=axis)
-    out = np.full(a.shape, np.nan) 
-    if axis==1:
+    justified_mask = np.sort(mask, axis=axis)
+    if (side == "up") | (side == "left"):
+        justified_mask = np.flip(justified_mask, axis=axis)
+    out = np.full(a.shape, np.nan)
+    if axis == 1:
         out[justified_mask] = a[mask]
     else:
         out.T[justified_mask.T] = a.T[mask.T]
     return out
+
 
 class BlitManager:
     def __init__(self, canvas, animated_artists=()):
@@ -134,6 +141,7 @@ class plot_data_from_queue(ABC):
     """
     Abstract class used to analyse and plot data that are feed into a queue (by a measurment callback)
     """
+
     plot_attribute = [
         "plotbuffer",
         "x_data",
@@ -142,7 +150,10 @@ class plot_data_from_queue(ABC):
         "lines",
         "autoscale",
     ]
-    def __init__(self, fs, updatetime=0.1, plotbuffersize=2000, nchannel = 1,show_time0 = True):
+
+    def __init__(
+        self, fs, updatetime=0.1, plotbuffersize=2000, nchannel=1, show_time0=True
+    ):
         """
         :param fs: Sampling frequency
         :type fs: float
@@ -160,9 +171,9 @@ class plot_data_from_queue(ABC):
         self.timeout = 0.1 * updatetime
         self.fs = fs
         self.timeinterval = 1 / self.fs
-        self.plot_duration = plotbuffersize*self.timeinterval
-        self.databuffersize = max(int(updatetime * self.fs),plotbuffersize)
-        if nchannel>1:
+        self.plot_duration = plotbuffersize * self.timeinterval
+        self.databuffersize = max(int(updatetime * self.fs), plotbuffersize)
+        if nchannel > 1:
             self.data_buffer = np.zeros((self.databuffersize, nchannel))
         else:
             self.data_buffer = np.zeros((self.databuffersize))
@@ -176,13 +187,16 @@ class plot_data_from_queue(ABC):
         self.tend = 0
         if show_time0:
             self.time0 = self.axes[0].text(
-                0.05, 
-                0.05, 
-                "$t_0 = 0$", 
-                transform=self.axes[0].transAxes, 
-                va='bottom',
-                ha='left')
-            animated_artists+=[self.time0]
+                0.05,
+                0.05,
+                "$t_0 = 0$",
+                transform=self.axes[0].transAxes,
+                va="bottom",
+                ha="left",
+            )
+            animated_artists += [self.time0]
+        else:
+            self.time0 = None
         self.bm = BlitManager(self.fig.canvas, animated_artists)
 
     @abstractmethod
@@ -211,7 +225,6 @@ class plot_data_from_queue(ABC):
 
     def _plotting_buffer(self):
         self.data_process()
-        self.tend +=self.timesincelastupdate * self.timeinterval
         for ax, line, x, y, autoscale in zip(
             self.axes, self.lines, self.x_data, self.plotbuffer, self.autoscale
         ):
@@ -221,7 +234,11 @@ class plot_data_from_queue(ABC):
                 ax.relim()
                 ax.autoscale_view()
         self.rescaling()
-        self.time0.set_text(f"$t_0 = {max(0,self.tend-self.plot_duration):.2f}$")
+        if self.time0 is not None:
+            self.tend += self.timesincelastupdate * self.timeinterval
+            self.time0.set_text(
+                f"$t_0 = {max(0,self.tend-self.plot_duration):.2f}$"
+            )
         self.bm.update()
         plt.pause(0.0001)
         self.timesincelastupdate = 0
@@ -238,11 +255,11 @@ class plot_data_from_queue(ABC):
         n_values = len(item)
         # item = np.asarray(item) * 0.001  #mv to V
         self.timesincelastupdate += n_values
-        if n_values<=self.databuffersize:
+        if n_values <= self.databuffersize:
             self.data_buffer[:-n_values] = self.data_buffer[n_values:]
             self.data_buffer[-n_values:] = item
         else:
-            self.data_buffer[:] = item[-self.databuffersize:]
+            self.data_buffer[:] = item[-self.databuffersize :]
 
     def update_plot(self, updatetime=None):
         updatetime = self.updatetime if updatetime is None else updatetime
@@ -280,9 +297,7 @@ class plot_data_from_queue(ABC):
 
     @dataqueue.setter
     def dataqueue(self, dataqueue):
-        if (
-            item := dataqueue.get(timeout=100 * self.timeout)
-        ) is not None:
+        if (item := dataqueue.get(timeout=100 * self.timeout)) is not None:
             item = np.asarray(item).squeeze()
             if item[0].size == self.data_buffer[0].size:
                 self._update_data_buffer(item)
