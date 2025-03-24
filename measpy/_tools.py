@@ -112,13 +112,17 @@ class plot_data_from_queue(ABC):
         n_values = len(item)
         # item = np.asarray(item) * 0.001  #mv to V
         self.timesincelastupdate += n_values
-        self.data_buffer[:-n_values] = self.data_buffer[n_values:]
-        self.data_buffer[-n_values:] = item
+        if n_values<=self.databuffersize:
+            self.data_buffer[:-n_values] = self.data_buffer[n_values:]
+            self.data_buffer[-n_values:] = item
+        else:
+            self.data_buffer[:] = item[-self.databuffersize:]
 
     def update_plot(self, updatetime=None):
         updatetime = self.updatetime if updatetime is None else updatetime
         try:
             if (item := self.dataqueue.get(timeout=self.timeout)) is not None:
+                item = np.asarray(item).squeeze()
                 self._update_data_buffer(item)
                 if self.timesincelastupdate * self.timeinterval > updatetime:
                     self._plotting_buffer()
@@ -128,6 +132,7 @@ class plot_data_from_queue(ABC):
     def update_plot_until_empty(self):
         try:
             while (item := self.dataqueue.get(timeout=10)) is not None:
+                item = np.asarray(item).squeeze()
                 self._update_data_buffer(item)
                 if self.timesincelastupdate * self.timeinterval > self.updatetime:
                     self._plotting_buffer()
@@ -150,14 +155,16 @@ class plot_data_from_queue(ABC):
     @dataqueue.setter
     def dataqueue(self, dataqueue):
         if (
-            item := dataqueue.get(timeout=10 * self.timeout)
-        ) is not None and item[0].size == self.data_buffer[0].size:
-            self._update_data_buffer(item)
-            if self.timesincelastupdate * self.timeinterval > self.updatetime:
-                self._plotting_buffer()
-            self._dataqueue = dataqueue
-        else:
-            raise ValueError("Invalid queue")
+            item := dataqueue.get(timeout=100 * self.timeout)
+        ) is not None:
+            item = np.asarray(item).squeeze()
+            if item[0].size == self.data_buffer[0].size:
+                self._update_data_buffer(item)
+                if self.timesincelastupdate * self.timeinterval > self.updatetime:
+                    self._plotting_buffer()
+                self._dataqueue = dataqueue
+            else:
+                raise ValueError("Invalid queue")
 
 def csv_to_dict(filename):
     """ Conversion from a CSV (produced by the class Measurement) to a dict
@@ -314,7 +321,7 @@ def decodeH5str(h5str):
         except:
             return h5str.strip("\'")
 
-def h5file_write_from_queue(queue, filename, dataset_name, Nchannel):
+def h5file_write_from_queue(queue, filename, dataset_name, Channel_map):
     """
     Data writer in hdf5 file from a Queue
     :param queue: A Queue which contains data, the shape is [lenght,Nchannel].
@@ -323,8 +330,8 @@ def h5file_write_from_queue(queue, filename, dataset_name, Nchannel):
     :type filename: str,Pat
     :param dataset_name: Name of the hdf5 dataset where data will be written.
     :type dataset_name: str
-    :param Nchannel: Number of expected channel,
-    :type Nchannel: int
+    :param Channel_map: Map of channel inside the queue,
+    :type Channel_map: list of int
     :return: None
     :rtype: None
 
@@ -332,9 +339,10 @@ def h5file_write_from_queue(queue, filename, dataset_name, Nchannel):
 
     print(f"Starting saving data in {filename}/{dataset_name}")
     with h5py.File(filename, "r+") as H5file:
-        item = np.array(queue.get()).transpose()
+        item = np.array(queue.get()).transpose()[:,Channel_map].squeeze()
         #Get dimension of item for multichannel case
         dims = item.shape
+        Nchannel = len(Channel_map)
         if Nchannel>1:
             assert dims[1] == Nchannel, f"Wrong format, queue item shape = {dims}, for a {Nchannel}-channel signal"
         Npoints = dims[0]
@@ -346,7 +354,7 @@ def h5file_write_from_queue(queue, filename, dataset_name, Nchannel):
         writebuffer = np.empty((chunksize, Nchannel),dtype=datatype).squeeze()
         buffer_position = _add_item(writebuffer, 0, item, Npoints, dataset, chunksize)
         while (item := queue.get(timeout=5)) is not None:
-            item = np.array(item).transpose()
+            item = np.array(item).transpose()[:,Channel_map].squeeze()
             Npoints = item.shape[0]
             buffer_position = _add_item(
                 writebuffer, buffer_position, item, Npoints, dataset, chunksize
