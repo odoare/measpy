@@ -120,6 +120,7 @@ class BlitManager:
         if self.changed_axe:
             self.canvas.draw()
             self.changed_axe = False
+            plt.pause(0.0001)
         else:
             cv = self.canvas
             fig = cv.figure
@@ -142,14 +143,7 @@ class plot_data_from_queue(ABC):
     Abstract class used to analyse and plot data that are feed into a queue (by a measurment callback)
     """
 
-    plot_attribute = [
-        "plotbuffer",
-        "x_data",
-        "fig",
-        "axes",
-        "lines",
-        "autoscale",
-    ]
+    plot_attribute = ["plotbuffer", "x_data", "fig", "axes", "lines", "timedata"]
 
     def __init__(
         self, fs, updatetime=0.1, plotbuffersize=2000, nchannel=1, show_time0=True
@@ -193,6 +187,7 @@ class plot_data_from_queue(ABC):
                 transform=self.axes[0].transAxes,
                 va="bottom",
                 ha="left",
+                animated=True,
             )
             animated_artists += [self.time0]
         else:
@@ -209,7 +204,8 @@ class plot_data_from_queue(ABC):
             fig : matplotlib figure
             axes : list of matplotlib axes
             lines : list of  matplotlib lines
-            autoscale = list of boolean, if true the corresponding axis is autoscaled after each plot
+            timedata : list of boolean, if true the nan for the considered axis are displaced
+            to the right (better display at begining)
 
         """
         pass
@@ -225,14 +221,13 @@ class plot_data_from_queue(ABC):
 
     def _plotting_buffer(self):
         self.data_process()
-        for ax, line, x, y, autoscale in zip(
-            self.axes, self.lines, self.x_data, self.plotbuffer, self.autoscale
+        for ax, line, x, y, timedata in zip(
+            self.axes, self.lines, self.x_data, self.plotbuffer, self.timedata
         ):
+            if timedata:
+                y = justify(y)
             line.set_xdata(x)
-            line.set_ydata(justify(y))
-            if autoscale:
-                ax.relim()
-                ax.autoscale_view()
+            line.set_ydata(y)
         self.rescaling()
         if self.time0 is not None:
             self.tend += self.timesincelastupdate * self.timeinterval
@@ -240,13 +235,13 @@ class plot_data_from_queue(ABC):
                 f"$t_0 = {max(0,self.tend-self.plot_duration):.2f}$"
             )
         self.bm.update()
-        plt.pause(0.0001)
         self.timesincelastupdate = 0
 
     def rescaling(self):
         """
         This method is called automatically to rescale the data after each plot
         By default, it does nothing.
+        It need to set self.bm.change_axe to True when axes are changed
 
         """
         pass

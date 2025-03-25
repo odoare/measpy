@@ -19,6 +19,10 @@ from queue import Queue
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
 
+"""
+Plot data in Volt and PSD at the same time as measurment with ni card, with axis rescaling options.
+"""
+
 
 # Define class with custom plot configuration.
 class inline_plotting(plot_data_from_queue):
@@ -40,20 +44,25 @@ class inline_plotting(plot_data_from_queue):
         self.axes[0].set_ylabel("Tension [V]", fontsize=15)
         self.axes[1].set_xlabel("Fréquence [Hz]", fontsize=15)
         self.axes[1].set_ylabel("Tension [V]", fontsize=15)
+        self.axes[0].set_xlim([self.x_data[0][0], self.x_data[0][-1]])
+        self.axes[0].set_ylim([-1, 1])
         self.axes[1].set_xlim([0.01, self.fs / 2])
-        self.axes[1].set_ylim([0, 10])
+        self.axes[1].set_ylim([10**-3, 10])
         # Plot the buffer
-        (linet,) = self.axes[0].plot(self.x_data[0], self.plotbuffer[0])
-        (linef,) = self.axes[1].plot(
+        (linet,) = self.axes[0].plot(
+            self.x_data[0], self.plotbuffer[0], animated=True
+        )
+        (linef,) = self.axes[1].semilogy(
             self.x_data[1],
-            self.plotbuffer[1] + 1,
+            np.ones_like(self.x_data[1]),
+            animated=True,
         )
 
         # define lines : list of plt line updated with the buffer
         self.lines = [linet, linef]
 
-        # No autoscale
-        self.autoscale = [False, False]
+        # show t0 on first plot
+        self.timedata = [True, False]
 
         # Stop button
         self.stop_event = Event()
@@ -84,23 +93,41 @@ class inline_plotting(plot_data_from_queue):
         self.btmoins = Button(atxm, "-")
         self.btmoins.on_clicked(tamp_moins)
 
-        self.famp_plus = False
+        self.fMamp_plus = False
 
-        def famp_plus(event):
-            self.famp_plus = True
+        def fMamp_plus(event):
+            self.fMamp_plus = True
 
-        afxp = self.fig.add_axes([0.92, 0.6, 0.04, 0.05])
-        self.bfplus = Button(afxp, "+")
-        self.bfplus.on_clicked(famp_plus)
+        afMxp = self.fig.add_axes([0.92, 0.9, 0.04, 0.05])
+        self.bfMplus = Button(afMxp, "+")
+        self.bfMplus.on_clicked(fMamp_plus)
 
-        self.famp_moins = False
+        self.fMamp_moins = False
 
-        def famp_moins(event):
-            self.famp_moins = True
+        def fMamp_moins(event):
+            self.fMamp_moins = True
 
-        afxm = self.fig.add_axes([0.92, 0.4, 0.04, 0.05])
-        self.bfmoins = Button(afxm, "-")
-        self.bfmoins.on_clicked(famp_moins)
+        afMxm = self.fig.add_axes([0.92, 0.8, 0.04, 0.05])
+        self.bfMmoins = Button(afMxm, "-")
+        self.bfMmoins.on_clicked(fMamp_moins)
+
+        self.fmamp_plus = False
+
+        def fmamp_plus(event):
+            self.fmamp_plus = True
+
+        afmxp = self.fig.add_axes([0.92, 0.3, 0.04, 0.05])
+        self.bfmplus = Button(afmxp, "+")
+        self.bfmplus.on_clicked(fmamp_plus)
+
+        self.fmamp_moins = False
+
+        def fmamp_moins(event):
+            self.fmamp_moins = True
+
+        afmxm = self.fig.add_axes([0.92, 0.2, 0.04, 0.05])
+        self.bfmmoins = Button(afmxm, "-")
+        self.bfmmoins.on_clicked(fmamp_moins)
 
         self.freq_plus = False
 
@@ -127,36 +154,45 @@ class inline_plotting(plot_data_from_queue):
         # 'self.bm.change_axe = True' needed because changing axis impossible with fast plot
         # using slow plot method when axis are changed
 
-        self.axes[0].set_xlim([self.x_data[0][0], self.x_data[0][-1]])
         if self.tamp_plus:
-            self.axes[0].set_ylim(np.array(self.axes[0].get_ylim()) / 2)
+            self.axes[0].set_ylim(np.array(self.axes[0].get_ylim()) * 0.5)
             self.tamp_plus = False
-            self.bm.change_axe = True
+            self.bm.changed_axe = True
 
         if self.tamp_moins:
             self.axes[0].set_ylim(np.array(self.axes[0].get_ylim()) * 2)
             self.tamp_moins = False
-            self.bm.change_axe = True
+            self.bm.changed_axe = True
 
-        if self.famp_plus:
-            self.axes[1].set_ylim(np.array(self.axes[1].get_ylim()) / 2)
-            self.famp_plus = False
-            self.bm.change_axe = True
+        if self.fMamp_plus:
+            self.axes[1].set_ylim(np.array(self.axes[1].get_ylim()) * [1, 0.1])
+            self.fMamp_plus = False
+            self.bm.changed_axe = True
 
-        if self.famp_moins:
-            self.axes[1].set_ylim(np.array(self.axes[1].get_ylim()) * 2)
-            self.famp_moins = False
-            self.bm.change_axe = True
+        if self.fMamp_moins:
+            self.axes[1].set_ylim(np.array(self.axes[1].get_ylim()) * [1, 10])
+            self.fMamp_moins = False
+            self.bm.changed_axe = True
+
+        if self.fmamp_plus:
+            self.axes[1].set_ylim(np.array(self.axes[1].get_ylim()) * [0.1, 1])
+            self.fmamp_plus = False
+            self.bm.changed_axe = True
+
+        if self.fmamp_moins:
+            self.axes[1].set_ylim(np.array(self.axes[1].get_ylim()) * [10, 1])
+            self.fmamp_moins = False
+            self.bm.changed_axe = True
 
         if self.freq_plus:
-            self.axes[1].set_xlim([0, np.array(self.axes[1].get_xlim())[1] / 2])
+            self.axes[1].set_xlim([0, np.array(self.axes[1].get_xlim())[1] * 0.5])
             self.freq_plus = False
-            self.bm.change_axe = True
+            self.bm.changed_axe = True
 
         if self.freq_moins:
             self.axes[1].set_xlim([0, np.array(self.axes[1].get_xlim())[1] * 2])
             self.freq_moins = False
-            self.bm.change_axe = True
+            self.bm.changed_axe = True
 
     def data_process(self):
         # Transfer and process data in data_buffer to plotbuffer
@@ -166,9 +202,10 @@ class inline_plotting(plot_data_from_queue):
         self.plotbuffer[0][-self.timesincelastupdate :] = self.data_buffer[
             -self.timesincelastupdate :
         ].copy()
-        self.plotbuffer[1][:] = (
-            np.abs(np.fft.rfft(self.plotbuffer[0], norm="ortho")) ** 2
-        )
+        if not any(np.isnan(self.plotbuffer[0])):
+            self.plotbuffer[1][:] = np.abs(
+                np.fft.rfft(self.plotbuffer[0], norm="ortho")
+            )
 
 
 if __name__ == "__main__":
@@ -182,13 +219,13 @@ if __name__ == "__main__":
 
     # define plot parameter
     plot_time = 5
-    refresh_delay = 0.2
+    refresh_delay = 0.1
     plotbuffersize = plot_time * fs
     A = inline_plotting(
         fs,
         updatetime=refresh_delay,
         plotbuffersize=plotbuffersize,
-        show_time0=False,
+        show_time0=True,
     )
 
     # create a queue
