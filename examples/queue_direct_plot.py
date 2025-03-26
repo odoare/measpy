@@ -195,7 +195,6 @@ class inline_plotting(plot_data_from_queue):
             self.bm.changed_axe = True
 
     def data_process(self):
-        # Transfer and process data in data_buffer to plotbuffer
         self.plotbuffer[0][: -self.timesincelastupdate] = self.plotbuffer[0][
             self.timesincelastupdate :
         ]
