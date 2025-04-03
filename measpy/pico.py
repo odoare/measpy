@@ -17,164 +17,99 @@ from scipy.signal import decimate
 
 import ctypes
 from picosdk.ps4000 import ps4000
-from picosdk.functions import adc2mV, assert_pico_ok
+from picosdk.functions import assert_pico_ok, adc2mV, mV2adc
 
-from threading import Thread
-from queue import Queue, Empty
+from threading import Thread, Event
+from queue import Queue
 import time
-from scipy.signal import find_peaks
 from functools import partial
+from unyt import Unit
+from unyt.exceptions import UnitConversionError
 
 from picosdk.ps2000 import ps2000
 from picosdk.functions import assert_pico2000_ok
 from picosdk.ctypes_wrapper import C_CALLBACK_FUNCTION_FACTORY
 from picosdk.PicoDeviceEnums import picoEnum
 
-import matplotlib.pyplot as plt
-from matplotlib.widgets import Button
+
+from abc import ABC, abstractmethod
+
+from measpy._tools import H5file_valid
 
 # plt.style.use('seaborn-v0_8')
 
 maxtimeout = 10
 
+Channel_state = {key: None for key in ["enabled", "coupling", "range", "buffer"]}
+
 PS2000_channel = {"A": 1, "B": 2, 1: "A", 2: "B"}
+PS4000_channel = {"A": 1, "B": 2, "C": 3, "D": 4, 1: "A", 2: "B", 3: "C", 4: "D"}
 
-class inline_plotting:
-    # """
-    # Plot data from a Queue.queue
-    # init create the plot
-    # update_plot update the plot buffer from new data in dataqueues and update the plot if enough data has been received
-    # end_plot call update plot until dataqueues contain None
-    # ploting_duration estimate time of update_plot execution to check for buffer overflow risk
-    # """
 
-    def __init__(self, fs, timeout, updatetime=0.1, plotbuffersize=2000):
-        self.timesincelastupdate = 0.0
-        self.plotbuffersize = plotbuffersize
-        self.updatetime = updatetime
-        self.fs = fs
-        self.timeinterval = 1/fs
-        self.timeout = min(timeout,0.1 * updatetime)
-        self.stop = False
+def transposelist(L):
+    return [list(i) for i in zip(*L)]
 
-        def fstop(event):
-            global stop
-            self.stop = True
 
-        def tamp_plus(event):
-            self.ax[0].set_ylim(np.array(self.ax[0].get_ylim()) / 2)
-            plt.pause(0.0001)
+def dispatch(q_in, qs_out):
+    while (item := q_in.get(timeout=maxtimeout)) is not None:
+        for q_out in qs_out:
+            q_out.put(item)
+    for q_out in qs_out:
+        q_out.put(None)
 
-        def tamp_moins(event):
-            self.ax[0].set_ylim(np.array(self.ax[0].get_ylim()) * 2)
-            plt.pause(0.0001)
 
-        def famp_plus(event):
-            self.ax[1].set_ylim(np.array(self.ax[1].get_ylim()) / 2)
-            plt.pause(0.0001)
+def convert_to_mutichannel(listSig):
+    ret = listSig[0]
+    for i in range(len(listSig) - 1):
+        ret = ret.pack_with(listSig[i + 1])
+    return ret
 
-        def famp_moins(event):
-            self.ax[1].set_ylim(np.array(self.ax[1].get_ylim()) * 2)
-            plt.pause(0.0001)
 
-        def on_close(event):
-            global stop
-            stop = True
-
-        self.x = 1.0 * np.arange(-self.plotbuffersize, 0) * self.timeinterval
-        self.plotbuffer = np.zeros_like(self.x)
-        self.fig, self.ax = plt.subplots(1, 2, figsize=(15, 5))
-        self.fig.subplots_adjust(bottom=0.2)
-        self.ax[0].set_xlabel("Temps [s]", fontsize=15)
-        self.ax[0].set_ylabel("Tension [V]", fontsize=15)
-        self.ax[1].set_xlabel("Fréquence [Hz]", fontsize=15)
-        self.ax[1].set_ylabel("Tension [V]", fontsize=15)
-        self.ax[1].set_xlim([0.01, self.fs / 2])
-        self.ax[1].set_ylim([0, 10])
-        (self.linet,) = self.ax[0].plot(self.x, self.plotbuffer)
-        (self.linef,) = self.ax[1].plot(
-            np.fft.fftfreq(n=self.plotbuffersize, d= self.timeinterval),
-            np.fft.fft(self.plotbuffer, norm="ortho"),
-        )
-        axs = self.fig.add_axes([0.4, 0.01, 0.2, 0.075])
-        self.bstop = Button(axs, "Stop")
-        self.bstop.on_clicked(fstop)
-        atxp = self.fig.add_axes([0.02, 0.6, 0.04, 0.05])
-        self.btplus = Button(atxp, "+")
-        self.btplus.on_clicked(tamp_plus)
-        atxm = self.fig.add_axes([0.02, 0.4, 0.04, 0.05])
-        self.btmoins = Button(atxm, "-")
-        self.btmoins.on_clicked(tamp_moins)
-        afxp = self.fig.add_axes([0.92, 0.6, 0.04, 0.05])
-        self.bfplus = Button(afxp, "+")
-        self.bfplus.on_clicked(famp_plus)
-        afxm = self.fig.add_axes([0.92, 0.4, 0.04, 0.05])
-        self.bfmoins = Button(afxm, "-")
-        self.bfmoins.on_clicked(famp_moins)
-        self.fig.canvas.mpl_connect("close_event", on_close)
-        plt.pause(0.0001)
-
-    def _plotting_buffer(self):
-        self.x += self.timesincelastupdate
-        self.linet.set_ydata(self.plotbuffer)
-        self.linet.set_xdata(self.x)
-        self.ax[0].relim()
-        self.ax[0].autoscale_view()
-        self.linef.set_ydata(
-            np.abs(
-                np.fft.fft(
-                    self.plotbuffer * np.hanning(self.plotbuffersize),
-                    norm="ortho",
+def Fill_Signal_Queue(Sig, q_in, unit_in="mV", Ndata=None):
+    for s in Sig:
+        if s.unit == Unit("1"):
+            s.unit = "mV"
+            conversion = 1.0
+        else:
+            try:
+                conversion = (1.0 * Unit("mV")).to_value(s.unit)
+            except UnitConversionError:
+                print(
+                    f"Signal unit ({s.unit}) incompatible with mV, unit set to mV"
                 )
-            )
-        )
-        plt.pause(0.01)
-        self.timesincelastupdate = 0.0
+                s.unit = "mV"
+                conversion = 1.0
+    if Ndata:
+        array = np.zeros((Ndata, Sig.nchannels)).squeeze()
+        Sig.raw = conversion * Queue2prealocated_array(q_in, array)
+    else:
+        Sig.raw = conversion * Queue2array(q_in)
 
-    def _update_buffer(self, item):
-        n_values = len(item)
-        item = np.asarray(item)*0.001
-        self.timesincelastupdate += n_values * self.timeinterval
-        self.plotbuffer = np.roll(self.plotbuffer, int(-n_values), axis=0)
-        self.plotbuffer[-n_values:] = item[-self.plotbuffersize :]
 
-    def update_plot(self, dataqueue, updatetime=None):
-        updatetime = self.updatetime if updatetime is None else updatetime
+def Queue2prealocated_array(q_in, array):
+    datasize = array.shape[0]
+    nextSample = 0
+    while (item := q_in.get(timeout=maxtimeout)) is not None:
+        noOfSamples = len(item)
+        lastsample = nextSample + noOfSamples
         try:
-            if (item := dataqueue.get(timeout=self.timeout)) is not None:
-                self._update_buffer(item)
-                if self.timesincelastupdate > updatetime:
-                    self._plotting_buffer()
-        except Empty:
-            pass
+            array[nextSample:lastsample] = item
+            nextSample = lastsample
+        except ValueError:
+            N = datasize - nextSample
+            if N > 0:
+                array[nextSample:] = item[:N]
+            break
+    return array
 
-    def end_plot(self, dataqueue):
-        try:
-            while (item := dataqueue.get(timeout=maxtimeout)) is not None:
-                self._update_buffer(item)
-                if self.timesincelastupdate > self.updatetime:
-                    self._plotting_buffer()
-            self._plotting_buffer()
-        except Empty:
-            pass
-        print("End of datastream")
 
-    @property
-    def ploting_duration(self):
-        try:
-            return self._ploting_duration
-        except AttributeError:
-            queuetest = Queue()
-            queuetest.put(np.random.normal(0, 3, self.plotbuffersize))
-            queuetest.put(None)
-            start = time.time()
-            self.update_plot(queuetest, updatetime=0)
-            self._ploting_duration = time.time() - start
-            print(f"Plotting duration = {self._ploting_duration}")
-            self.x = 1.0 * np.arange(-self.plotbuffersize, 0) * self.timeinterval
-            self.timesincelastupdate = 0
-            self._plotting_buffer()
-            return self._ploting_duration
+def Queue2array(q_in):
+    data = []
+    while (item := q_in.get(timeout=maxtimeout)) is not None:
+        data.extend(item)
+    return np.fromiter(
+        data, np.dtype((float, (len(data[0]),))), count=len(data)
+    ).squeeze()
 
 
 def findindex(l, e):
@@ -185,514 +120,614 @@ def findindex(l, e):
     return a
 
 
-def detect_rising_pulses_grad_ind(values, ind0, previous_data_points, **kwargs):
-    # """
-    # Detect rising pulse with signal.find_peaks on gradient of the signal
-
-    # Parameters
-    # ----------
-    # values : List
-    #     Data.
-    # ind0 : int
-    #     indice of the first data point.
-    # previous_data_points : number
-    #     Value of the last data point (indice = ind0-1).
-    #     useful to not lose peak if it is at ind0 (work not very well)
-    # range_ : int
-    #     picoscope range.
-
-    # Returns
-    # -------
-    # List
-    #     List of indices where a rising pulse is detected.
-
-    # """
-    try:
-        N = len(previous_data_points)
-        previous_data_points.extend(values)
-        grad = np.diff(previous_data_points)
-        lefts, _ = find_peaks(grad, height=np.mean(grad) + np.std(grad))
-        # rights, _ = find_peaks(-grad, height=2000)
-        return lefts + ind0 - N + 1
-    except TypeError:
-        grad = np.diff(values)
-        lefts, _ = find_peaks(grad, height=np.mean(grad) + np.std(grad))
-        # rights, _ = find_peaks(-grad, height=2000)
-        return lefts + ind0 + 1
-    except AttributeError:
-        grad = np.diff([previous_data_points] + values)
-        lefts, _ = find_peaks(grad, height=np.mean(grad) + np.std(grad))
-        # rights, _ = find_peaks(-grad, height=2000)
-        return lefts + ind0
-
-
 def detect_rising_pulses_threshold_ind(
-    values, ind0, previous_data_point, threshold, **kwargs
+    values,
+    threshold,
+    ind0,
+    previous_data_point,
 ):
-    # """
-    # Detect rising pulse using a threshold
-    # Parameters
-    # ----------
-    # values : List
-    #     Data.
-    # ind0 : int
-    #     indice of the first data point.
-    # previous_data_points : number
-    #     Value of the last data point (indice = ind0-1).
-    #     useful to not lose peak if it is at ind0
-    # range_ : int
-    #     picoscope range.
-    # threshold : int
-    #     threshold (in adc values).
+    """
+    Detect rising pulse using a threshold
 
-    # Returns
-    # -------
-    # List
-    #     List of indices where a rising pulse is detected.
-
-    # """
-    try:
-        V = np.asarray([previous_data_point] + values)
-        rising = np.flatnonzero((V[:-1] <= threshold) & (V[1:] > threshold))
-    except TypeError:
-        V = np.asarray(values)
-        rising = np.flatnonzero((V[:-1] <= threshold) & (V[1:] > threshold)) + 1
-    return rising + ind0
+    :param values: Data.
+    :type values: List
+    :param ind0: indice of the first data point.
+    :type ind0: int
+    :param previous_data_point: Value of the last data point (indice = ind0-1).
+        useful to not lose the peak at ind0
+    :type previous_data_point: number
+    :param threshold: threshold (in adc values).
+    :type threshold: int
+    :return: List of indices where a rising pulse is detected.
+    :rtype: List
+    """
+    V = np.asarray(previous_data_point + values)
+    rising = np.flatnonzero((V[:-1] <= threshold) & (V[1:] > threshold))
+    previous_data_point = [values[-1]]
+    id0 = ind0[0]
+    ind0[0] += len(values)
+    return rising + id0
 
 
-def rising_pulse_to_raw(M, channel, values):
-    for i in range(len(M.in_map)):
-        if M.in_map[i] == channel:
-            M.in_sig[i].fs = None
-            M.in_sig[i].raw = np.double([v / M.fs for v in values])
-            M.in_sig[i].desc = "Timming of rising edge pulse"
-            M.in_sig[i].unit = "s"
+def ps2000_run_measurement(M, serial=None, filename=None, **kwargs):
+    with _ps2000_run_measurement_threaded(
+        M, filename=filename, serial=serial, **kwargs
+    ) as device:
+        device.start()
+        device.join()
 
 
-def adc_to_mv(values, range_, bitness=16, **kwargs):
-    v_ranges = [10, 20, 50, 100, 200, 500, 1_000, 2_000, 5_000, 10_000, 20_000, 50_000, 100_000]
-    return [(x * v_ranges[range_]) / (2 ** (bitness - 1) - 1) for x in values]
-
-
-def mv_to_adc(values, range_, bitness=16):
-    v_ranges = [10, 20, 50, 100, 200, 500, 1_000, 2_000, 5_000, 10_000, 20_000, 50_000, 100_000]
-    return [
-        int((x * (2 ** (bitness - 1) - 1)) / v_ranges[range_]) for x in values
-    ]
-
-
-def mv_to_raw(M, channel, values):
-    for i in range(len(M.in_map)):
-        if M.in_map[i] == channel:
-            M.in_sig[i].fs = M.fs
-            if M.upsampling_factor > 1:
-                M.in_sig[i].raw = decimate(
-                    np.double(values) * 0.001, M.upsampling_factor, ftype="fir"
-                )[0 : int(round(M.dur * M.fs))]
-            else:
-                M.in_sig[i].raw = (np.double(values) * 0.001)[
-                    0 : int(round(M.dur * M.fs))
-                ]
-
-
-def ps2000_run_measurement(M):
-    return _ps2000_run_measurement_threaded(M, adc_to_mv, mv_to_raw, None)
-
-
-def ps2000_plot(M, plotbuffersize=2000, updatetime=0.1, chan_to_plot="A"):
-    plotting = partial(inline_plotting, plotbuffersize=plotbuffersize, updatetime=updatetime)
-    return _ps2000_run_measurement_threaded(
-        M,
-        adc_to_mv,
-        mv_to_raw,
-        plotting,
-        chan_to_plot=chan_to_plot,
+def ps2000_plot(
+    M, plotting_class, plotbuffersize=20000, updatetime=0.1, serial=None, **kwargs
+):
+    queueplot = Queue()
+    nchannel = len(M.in_sig)
+    plotting_instance = plotting_class(
+        M.fs,
+        updatetime=updatetime,
+        plotbuffersize=plotbuffersize,
+        nchannel=nchannel,
     )
+    with _ps2000_run_measurement_threaded(
+        M,
+        output_queue=queueplot,
+        serial=serial,
+        stop_event=plotting_instance.stop_event,
+        **kwargs,
+    ) as device:
+        device.start()
+        plotting_instance.dataqueue = queueplot
+        plotting_instance.update_plot_until_empty()
+        device.join()
 
 
-def ps2000_pulse_detection(M):
-    # """
-    # To use threshold detection (more efficient), this function needs M to contain the property
-    #  in_threshold : a list of threshold for pulse height (in Volt) for each channel
-    # """
+def ps2000_pulse_detection(
+    M, serial=None, min_chunksize_processed=10000, **kwargs
+):
+    """
+    This function needs M to contain the property
+     in_threshold : a list of threshold for pulse height (in Volt) for each channel
+    """
     if hasattr(M, "in_threshold") and M.in_threshold is not None:
-        detect_rising_pulses = detect_rising_pulses_threshold_ind
-        info = ", ".join([f"Threshold = {th} V for chan {PS2000_channel[chan]}" for chan,th in zip(M.in_map,M.in_threshold)])
-        print(
-            f"Detect pulse with threshold method ({info})"
+        Q = Queue()
+        ps2000_run_measurement(
+            M,
+            pre_process=detect_rising_pulses_threshold_ind,
+            save_into_Signal=False,
+            output_queue=Q,
+            min_chunksize_processed=min_chunksize_processed,
+            serial=serial,
+            **kwargs,
         )
+        return np.double(Queue2array(Q)) / M.fs
     else:
-        detect_rising_pulses = detect_rising_pulses_grad_ind
-        print("Detect pulse with gradient method")
-    return _ps2000_run_measurement_threaded(
-        M,
-        detect_rising_pulses,
-        rising_pulse_to_raw,
-        None,
-        min_chunksize_processed=10000,
-    )
+        raise ValueError("There is no threshold defined")
 
-def ps2000_hdf5(M,filename):
-    return _ps2000_run_measurement_threaded(M,None,None,None,filename=filename)
 
-def _ps2000_run_measurement_threaded(
-    M,
-    pre_process,
-    save,
-    plotting,
-    chan_to_plot=None,
-    min_chunksize_processed=0,
-    filename = None
+def ps4000_run_measurement(M, serial=None, filename=None, **kwargs):
+    with _ps4000_run_measurement_threaded(
+        M, filename=filename, serial=serial, **kwargs
+    ) as device:
+        device.start()
+        device.join()
+
+
+def ps4000_plot(
+    M, plotting_class, plotbuffersize=20000, updatetime=0.1, serial=None, **kwargs
 ):
-    # """
-    # This function needs M to contain the following properties:
-    #     - in_range : a list of strings specifying the voltage range.
-    #         Possible voltage ranges are "10MV", "20MV", "50MV", "100MV",
-    #         "200MV", "500MV", "1V", "2V", "5V", "10V", "20V", "50V", "100V"
-    #     - upsampling_factor : upsampling factor
-    #     - in_coupling : Coupling configuration of the channels.
-    #         Can be "ac" or "dc"
-    # """
-
-    savehdf5 = False
-    if filename is not None:
-        print(f"Measurment will be save in {filename}, plotting disabled, preprocess and save method ignored")
-        savehdf5 = True
-
-    multichannel = False
-    max_samples = 100_000
-    overview_buffer_size = 20_000
-
-    CALLBACK = C_CALLBACK_FUNCTION_FACTORY(
-        None,
-        ctypes.POINTER(ctypes.POINTER(ctypes.c_int16)),
-        ctypes.c_int16,
-        ctypes.c_uint32,
-        ctypes.c_int16,
-        ctypes.c_int16,
-        ctypes.c_uint32,
+    queueplot = Queue()
+    nchannel = len(M.in_sig)
+    plotting_instance = plotting_class(
+        M.fs,
+        updatetime=updatetime,
+        plotbuffersize=plotbuffersize,
+        nchannel=nchannel,
     )
+    with _ps4000_run_measurement_threaded(
+        M,
+        output_queue=queueplot,
+        serial=serial,
+        stop_event=plotting_instance.stop_event,
+        **kwargs,
+    ) as device:
+        device.start()
+        plotting_instance.dataqueue = queueplot
+        plotting_instance.update_plot_until_empty()
+        device.join()
 
-    if M.device_type != "pico":
-        raise Exception("Error: device_type must be 'pico'.")
 
-    if type(M.out_sig) != type(None):
-        print("Warning: out_sig property ignored with picoscopes")
-
-    # Effective sampling frequency
-    # If upsampling_factor is > 1, the actual data acquisition is
-    # performed at fs*upsampling_factor, and then decimated to
-    # the desired frequency
-
-    effective_fs = M.fs * M.upsampling_factor
-    duree_ns = M.dur * 1e9
-
-    # Sample interval is the duration between two consecutive samples
-    # As it is the sampling frequency that is specified,
-    # and the sampling interval can only take integer increments
-    # of 1 nanoseconds, the actual sampling frequency might
-    # necessitate adjustments
-
-    si = round(1e9 / effective_fs)
-    if effective_fs != (1e9 / si):
-        effective_fs = 1e9 / si
-        print(
-            "Warning : Effective sampling frequency fs changed to nearest possible value of "
-            + str(effective_fs)
-            + " Hz"
+def ps4000_pulse_detection(
+    M, serial=None, min_chunksize_processed=10000, **kwargs
+):
+    """
+    This function needs M to contain the property
+     in_threshold : a list of threshold for pulse height (in Volt) for each channel
+    """
+    if hasattr(M, "in_threshold") and M.in_threshold is not None:
+        Q = Queue()
+        ps4000_run_measurement(
+            M,
+            pre_process=detect_rising_pulses_threshold_ind,
+            save_into_Signal=False,
+            output_queue=Q,
+            min_chunksize_processed=min_chunksize_processed,
+            serial=serial,
+            **kwargs,
         )
+        return np.double(Queue2array(Q)) / M.fs
+    else:
+        raise ValueError("There is no threshold defined")
 
-    # print("Effective sampling frequency: " + str(effective_fs))
-    sampleInterval = int(si)
 
-    if M.fs != effective_fs / M.upsampling_factor:
-        M.fs = effective_fs / M.upsampling_factor
-        for s in M.in_sig:
-            s.fs = M.fs
-        print(
-            "Warning : Signal sampling frequency fs changed to nearest possible value of "
-            + str(M.fs)
-            + " Hz"
-        )
+class Pico_thread(ABC, Thread):
+    """
+    This needs M to contain the following properties:
+        - in_range : a list of strings specifying the voltage range.
+            Possible voltage ranges are "10MV", "20MV", "50MV", "100MV",
+            "200MV", "500MV", "1V", "2V", "5V", "10V", "20V", "50V", "100V"
+        - upsampling_factor : upsampling factor
+        - in_coupling : Coupling configuration of the channels.
+            Can be "ac" or "dc"
+    """
 
-    max_loop_time = overview_buffer_size / M.fs
-    if plotting is not None:
-        if (
-            chan_to_plot is not None
-            and findindex(M.in_map, PS2000_channel.get(chan_to_plot)) is None
-        ):
-            print(
-                f"The channel to plot {chan_to_plot} is not enabled in measurement setup, plotting canceled"
-            )
-            plotting = None
+    dataqueue = Queue()
+    Channels = {}
+    channel_name = {}
+    Data_type = {}
+
+    def __init__(
+        self,
+        M,
+        output_queue=None,
+        pre_process=adc2mV,
+        save_into_Signal=True,
+        min_chunksize_processed=0,
+        filename=None,
+        buffersize=20_000,
+        max_samples=100_000,
+        serial=None,
+        stop_event=Event(),
+    ):
+        """
+        :param M: Parameter container
+        :type M: measpy.measurement.
+        :param output_queue: Send data into this queue, defaults to None
+        :type output_queue: queue.Queue
+        :param pre_process: Method to process raw data, defaults to adc2mV
+        :type pre_process: callable
+        :param save_into_Signal: Saving the data into the signal, defaults to True
+        :type save_into_Signal: bool, optional
+        :param min_chunksize_processed: Minimum size of data to process at once, defaults to 0
+        :type min_chunksize_processed: int, optional
+        :param filename: Hdf5 file path to direct save into disk, defaults to None
+        :type filename: str or pathlib.Path, optional
+        :param buffersize: Size of picoscope buffer, defaults to 20_000
+        :type buffersize: int, optional
+        :param max_samples: Maximum number of sample that stay in memory, defaults to 100_000
+        :type max_samples: int, optional
+        :param serial: Serial number of the scope, defaults to None
+        :type serial: str, optional
+        :param stop_event: Event that stop measurment when set, can be defined or used
+        :type stop_event: threading.Event()
+        """
+        # init threading, deamon = True to keyboard interupt when threading
+        super().__init__(daemon=True)
+        # easier to use only multichannel signal
+        if isinstance(M.in_sig, list):
+            M.in_sig = convert_to_mutichannel(M.in_sig)
+        self.M = M
+        if M.device_type != "pico":
+            raise ValueError("Error: device_type must be 'pico'.")
+
+        if type(M.out_sig) != type(None):
+            print("Warning: out_sig property ignored with picoscopes")
+
+        ## parameters
+        self.stop_measurement = stop_event
+        self.min_chunksize_processed = min_chunksize_processed
+        self.pre_process = pre_process
+
+        ## Buffer are always read in the same order, remapping to match in_map
+        self.buffers_map = np.argsort(np.argsort(self.M.in_map))
+
+        # serial number of the scope
+        if serial is None:
+            print("No picoscope given, searching for connected picoscope")
+        self.serial = serial
+
+        # Number of sample stored by picoscope driver that can be retrieved after
+        # streaming stopped (by ps2000_get_streaming_values or ps4000GetValuesAsyn)
+        self.max_samples = max_samples
+        # Size of the temporary buffers used for storing the data
+        self.overview_buffer_size = buffersize
+        self.save_into_Signal = save_into_Signal
+        self.output_queue = output_queue
+
+        # If filename given, save data in hdf5 file
+        self.filename = filename
+        self.savehdf5 = False
+        if H5file_valid(self.filename):
+            print(f"Raw measurment will be save in {filename}")
+            self.savehdf5 = True
+
+        # Effective sampling frequency
+        # If upsampling_factor is > 1, the actual data acquisition is
+        # performed at fs*upsampling_factor, and then decimated to
+        # the desired frequency
+
+        self.effective_fs = M.fs * M.upsampling_factor
+        self.duree_ns = M.dur * 1e9
+
+        # Sample interval is the duration between two consecutive samples
+        # As it is the sampling frequency that is specified,
+        # and the sampling interval can only take integer increments
+        # of 1 nanoseconds, the actual sampling frequency might
+        # necessitate adjustments
+
+        if (si := (1e9 / self.effective_fs)).is_integer():
+            self.sampleInterval = ctypes.c_int32(int(si))
         else:
-            if callable(plotting):
-                plot = plotting(
-                    M.fs,
-                    timeout=0.1 * max_loop_time,
+            si = int(round(si))
+            self.sampleInterval = ctypes.c_int32(si)
+            self.effective_fs = 1e9 / si
+            print(
+                "Warning : Effective sampling frequency ",
+                f"changed to nearest possible value of {self.effective_fs} Hz",
+            )
+            M.fs = self.effective_fs / M.upsampling_factor
+            for s in M.in_sig:
+                s.fs = M.fs
+            print(
+                "Warning : Signal sampling frequency fs ",
+                f"changed to nearest possible value of {M.fs} Hz",
+            )
+
+        numdesiredsamples = int(round(self.effective_fs * self.M.dur))
+        numBuffersToCapture = int(
+            np.ceil(numdesiredsamples / self.overview_buffer_size)
+        )
+        self.totalSamples = self.overview_buffer_size * numBuffersToCapture
+        self.time_to_fill_half_buffer = (
+            0.5 * self.overview_buffer_size / self.M.fs
+        )
+
+    def __enter__(self):
+        # open comunication with picoscope and set up channel and preprocesing tasks
+        self.open_unit()
+        try:
+            self.channels_setup()
+            self.process = self.setup_threads()
+        except Exception as e:
+            self.__exit__(type(e), e.args, e)
+            raise e
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        # Close cominucation
+        self.close_unit()
+
+    def channels_setup(self):
+        # Use Measurment data to set up the channels
+        for chan in self.Channels.values():
+            i = chan["number"]
+            self.setup_channel(i)
+            if (
+                (Vthreshold := getattr(self.M, "in_threshold", None)) is not None
+            ) and (ind := findindex(self.M.in_map, i)) != None:
+                chan["adc_threshold"] = mV2adc(
+                    [Vthreshold[ind] * 0.001],
+                    chan["range"],
+                    self.Data_type["max"],
+                )[0]
+            else:
+                chan["adc_threshold"] = None
+        self.nchannels = sum([chan["enabled"] for chan in self.Channels.values()])
+
+    def run(self):
+        """
+        self.start() run this into a thread
+
+        """
+        ##start preprocess threads
+        for P in self.process:
+            P.start()
+        # run measurment
+        self.start_measurment()
+
+        # Wait for all threads to finish
+        print("Waiting for data processing...")
+        for P in self.process:
+            P.join()
+
+        # Upsampling
+        if self.save_into_Signal and self.M.upsampling_factor > 1:
+            values = self.M.in_sig.raw
+            self.M.in_sig.raw = decimate(
+                np.double(values), self.M.upsampling_factor, ftype="fir"
+            )
+        print("Preprocess data done")
+
+    def dbfs_save(self):
+        """
+        save h5file with dbfs according to channel parameter
+        :return: None
+        :rtype: None
+
+        """
+        for sig, prange in zip(self.M.in_sig, self.M.in_range):
+            sig.unit = "mV"
+            sig.dbfs = adc2mV([1], self.pico_range(prange), self.Data_type)[0]
+        self.M.datatype = np.dtype(self.Data_type).name
+        print("Creating the H5file with measurment parameters")
+        self.M.to_hdf5(self.filename)
+        for sig in self.M.in_sig:
+            sig.dbfs = 1
+
+    def setup_threads(self):
+        # threads and outputs set up (preprocessing, put into queue, put into Signal)
+        ret = []
+        if self.savehdf5:
+            # In hdf5 ADC data (integers) are directly saved to file
+            # dbfs convert ADC to mVolt and is saved in the parameters
+            self.dbfs_save()
+            queuesave = Queue()
+            queueprocess = Queue()
+            ret.append(
+                Thread(
+                    target=dispatch,
+                    args=(self.dataqueue, [queuesave, queueprocess]),
+                )
+            )
+            ret.append(Thread(target=self.M.h5save_data, args=(queuesave,)))
+        else:
+            queueprocess = self.dataqueue
+        process_data = self.setup_preprocess()
+        if self.save_into_Signal:
+            processed_queue = Queue()
+            if self.output_queue:
+                queueSignal = Queue()
+                ret.append(
+                    Thread(
+                        target=process_data, args=(queueprocess, processed_queue)
+                    )
+                )
+                ret.append(
+                    Thread(
+                        target=dispatch,
+                        args=(processed_queue, [self.output_queue, queueSignal]),
+                    )
+                )
+                ret.append(
+                    Thread(
+                        target=Fill_Signal_Queue,
+                        args=(self.M.in_sig, queueSignal),
+                        kwargs={
+                            "Ndata": int(
+                                self.M.dur * self.M.fs * self.M.upsampling_factor
+                            )
+                        },
+                    )
                 )
             else:
-                plot = inline_plotting(
-                    M.fs,
-                    timeout=0.1 * max_loop_time,
+                ret.append(
+                    Thread(
+                        target=process_data, args=(queueprocess, processed_queue)
+                    )
                 )
-            if plot.ploting_duration > 0.85 * max_loop_time:
-                print(
-                    "Update plot function is too long to execute : "
-                    f"{plot.ploting_duration} s, there is a high risk to"
-                    f" overflow the buffer (the buffer is full in {max_loop_time} s) "
+                ret.append(
+                    Thread(
+                        target=Fill_Signal_Queue,
+                        args=(self.M.in_sig, processed_queue),
+                        kwargs={
+                            "Ndata": int(
+                                self.M.dur * self.M.fs * self.M.upsampling_factor
+                            )
+                        },
+                    )
                 )
-                plt.close(plot.fig)
-                plotting = None
-                if input("Cancel measurment? y/n : ") == "y":
-                    return
+        elif self.output_queue:
+            ret.append(
+                Thread(
+                    target=process_data, args=(queueprocess, self.output_queue)
+                )
+            )
+        elif not self.savehdf5:
+            raise ValueError("There are not output for data")
+        return ret
 
-    ## Setup channels
-    def setup_channel(chan_index):
-        if (ind := findindex(M.in_map, chan_index)) != None:
+    def methods_setup(self):
+        # use data in measurment and from channel setup to "partial" the preprocessing method (convert to mV or other)
+        if callable(self.pre_process):
+            self.pre_process = [self.pre_process] * self.nchannels
+        methods = []
+        for method, ind in zip(self.pre_process, self.M.in_map):
+            chan = self.Channels[self.channel_name[ind]]
+            method_args = getfullargspec(method).args
+            # range, threshold and maxADC: optional argument not used by the func method
+            kwargs = {
+                "range": chan["range"],
+                "threshold": chan["adc_threshold"],
+                "maxADC": self.Data_type,
+                "ind0": [0],
+                "previous_data_point": [],
+            }
+            partial_kwargs = {a: b for a, b in kwargs.items() if a in method_args}
+            if partial_kwargs:
+                methods.append(partial(method, **partial_kwargs))
+            else:
+                methods.append(method)
+        return methods
+
+    def setup_preprocess(self):
+        # define func that preprocess raw data
+        methods = self.methods_setup()
+
+        if self.min_chunksize_processed > 0:
+
+            def func(queue, queueout):
+                chunk_data = [[] for _ in range(self.nchannels)]
+                while (item := queue.get(timeout=maxtimeout)) is not None:
+                    _ = [c.extend(it) for (c, it) in zip(chunk_data, item)]
+                    if len(chunk_data[0]) > self.min_chunksize_processed:
+                        values = transposelist(
+                            [
+                                method(chunk_data[ind])
+                                for (ind, method) in zip(
+                                    self.buffers_map, methods
+                                )
+                            ]
+                        )
+                        queueout.put(values)
+                        chunk_data = [[] for _ in range(self.nchannels)]
+                if len(chunk_data[0]) > 0:
+                    values = transposelist(
+                        [
+                            method(chunk_data[ind])
+                            for (ind, method) in zip(self.buffers_map, methods)
+                        ]
+                    )
+                    queueout.put(values)
+                queueout.put(None)
+
+        else:
+
+            def func(queue, queueout):
+                while (item := queue.get(timeout=maxtimeout)) is not None:
+                    values = transposelist(
+                        [
+                            method(item[ind])
+                            for (ind, method) in zip(self.buffers_map, methods)
+                        ]
+                    )
+                    queueout.put(values)
+                queueout.put(None)
+
+        return func
+
+    @abstractmethod
+    def open_unit(self):
+        """
+        Open picoscope
+
+        """
+        pass
+
+    @abstractmethod
+    def close_unit(self):
+        """
+        Close picoscope
+
+        """
+        pass
+
+    @abstractmethod
+    def setup_channel(self, chan_index):
+        """setup a channel.
+
+        should define channel status (used or not), channel coupling(ac or dc),
+        channel range and channel data buffer.
+        """
+
+    @abstractmethod
+    def setup_callback(self):
+        """
+        Setup the callback method to read data.
+        should return the callback metod used to read and put data into dataqueue
+
+        """
+        pass
+
+    @abstractmethod
+    def start_measurment(self):
+        """
+        Run the scope.
+        """
+
+    @staticmethod
+    @abstractmethod
+    def pico_range(prange):
+        """
+        Picoscope voltage range (mapped from picoscope lib)
+        This property should be overridden, used by dbfs_save
+        """
+        pass
+
+
+class _ps2000_run_measurement_threaded(Pico_thread):
+    Channels = {
+        "A": {"number": 1} | Channel_state.copy(),
+        "B": {"number": 2} | Channel_state.copy(),
+    }
+    channel_name = {1: "A", 2: "B"}
+    Data_type = ctypes.c_int16(32767)
+
+    def open_unit(self):
+        self.device = ps2000.open_unit(serial=self.serial)
+        print("Device info: {}".format(self.device.info))
+        self.closed = False
+
+    def close_unit(self):
+        if not self.closed:
+            # stop
+            ps2000.ps2000_stop(self.device.handle)
+            # disconect
+            self.device.close()
+            self.closed = True
+
+    def setup_channel(self, chan_index):
+        if (ind := findindex(self.M.in_map, chan_index)) != None:
             enabled = True
-            pico_range = ps2000.PS2000_VOLTAGE_RANGE["PS2000_" + M.in_range[ind]]
-            if M.in_coupling[ind].capitalize() == "Dc":
+            pico_range = self.pico_range(self.M.in_range[ind])
+            if self.M.in_coupling[ind].capitalize() == "Dc":
                 coupling = "PICO_DC"
-            elif M.in_coupling[ind].capitalize() == "Ac":
+            elif self.M.in_coupling[ind].capitalize() == "Ac":
                 coupling = "PICO_AC"
             else:
-                print(f"Input {PS2000_channel[chan_index]} coupling not recognized, set to 'dc'")
-                M.in_coupling[ind] = "dc"
+                print(
+                    f"Input {self.channel_name[chan_index]} coupling not recognized, set to 'dc'"
+                )
+                self.M.in_coupling[ind] = "dc"
                 coupling = "PICO_DC"
+            res = ps2000.ps2000_set_channel(
+                self.device.handle,
+                picoEnum.PICO_CHANNEL[
+                    f"PICO_CHANNEL_{self.channel_name[chan_index]}"
+                ],
+                enabled,
+                picoEnum.PICO_COUPLING[coupling],
+                pico_range,
+            )
+            assert_pico2000_ok(res)
             print(
-                f"Channel {PS2000_channel[chan_index]}: enabled with range "
+                f"Channel {self.channel_name[chan_index]}: enabled with range "
                 + "PS2000_"
-                + M.in_range[ind]
+                + self.M.in_range[ind]
                 + " ("
                 + str(pico_range)
                 + ")"
             )
         else:
             enabled = False
-            pico_range = ps2000.PS2000_VOLTAGE_RANGE["PS2000_10V"]
+            pico_range = self.pico_range("10V")
             coupling = "PICO_DC"
-            print(f"Channel {PS2000_channel[chan_index]}: disabled")
-        return enabled, coupling, pico_range
+            print(f"Channel {self.channel_name[chan_index]}: disabled")
 
-    enabledA, couplingA, rangeA = setup_channel(1)
-    enabledB, couplingB, rangeB = setup_channel(2)
+        self.Channels[self.channel_name[chan_index]]["enabled"] = enabled
+        self.Channels[self.channel_name[chan_index]]["range"] = pico_range
+        self.Channels[self.channel_name[chan_index]]["coupling"] = coupling
 
-    def setup_save_hdf5(chan_index):
-        # """
-        # Setup to save directly on hdf5 file
-
-        # Parameters
-        # ----------
-        # chan_index : int
-        #     Index of he channel (1or 2).
-
-        # Returns
-        # -------
-        # queue : queue.Queue
-        #     Queue where data are sent by get_overview_buffers.
-        # Process : method
-        #     Preprocessing method to be sent in thread.
-
-        # """
-        queue = Queue()
-        if isinstance(chan_index,list):
-            method = M.h5save_data
-            Process = Thread(target=method,args=(queue,))
-        elif (ind := findindex(M.in_map, chan_index)) != None:
-            Sig = M.in_sig[ind]
-            method = Sig.h5save_data
-            Process = Thread(target=method,args=(queue,))
-        return queue, Process
-
-    def setup_preprocess(chan_index, pico_range, chan_plot=False):
-        # """
-        # Define the method for preprocessing data in thread based on the method in arguments
-
-        # Parameters
-        # ----------
-        # chan_index : int
-        #     Index of the channel (1 or 2).
-        # pico_range : int
-        #     Picoscope voltage range (mapped from PS2000_VOLTAGE_RANGE).
-        # chan_plot : bool, optional
-        #     If True the data are send to another queue for plotting. The default is False.
-
-        # Returns
-        # -------
-        # queue : queue.Queue
-        #     Queue where data are sent by get_overview_buffers.
-        # queue_plot : queue.Queue
-        #     Queue for plotting.
-        # Process : method
-        #     Preprocessing method to be sent in thread.
-        # result : list
-        #     Data after preprocessing.
-
-        # """
-        if (ind := findindex(M.in_map, chan_index)) != None:
-            result = []
-            queue = Queue()
-
-            if chan_plot:
-                queue_plot = Queue()
-            else:
-                queue_plot = None
-
-            if (Vthreshold := getattr(M, "in_threshold", None)) is not None:
-                adc_threshold = mv_to_adc([Vthreshold[ind] * 0.001], pico_range)[0]
-            else:
-                adc_threshold = None
-
-            # list pre_process argument, to choose wich method to use
-            method_args = getfullargspec(pre_process).args
-
-            #range_ and threshold, optianla argument that do not influence the func method
-            kwargs = {"range_": pico_range, "threshold": adc_threshold}
-            partial_kwargs = {
-                a: b for a, b in kwargs.items() if a in method_args
-            }
-            if partial_kwargs:
-                method = partial(pre_process, **partial_kwargs)
-            else:
-                method = pre_process
-
-            if "ind0" and "previous_data_point" in method_args:
-            #pre_process need the index of the start of each chunk and 
-            #the value of the last datapoint (detect_rising_pulses_threshold_ind)
-                def func(queue, result):
-                    ind0 = 0
-                    chunk_data = []
-                    previous_data_point = None
-                    while (item := queue.get(timeout=maxtimeout)) is not None:
-                        chunk_data.extend(item)
-                        if (N := len(chunk_data)) > min_chunksize_processed:
-                            values = method(chunk_data, ind0, previous_data_point)
-                            previous_data_point = chunk_data[-1]
-                            result.extend(values)
-                            ind0 += N
-                            chunk_data = []
-                    if len(chunk_data) > 0:
-                        values = method(chunk_data, ind0, previous_data_point)
-                        previous_data_point = chunk_data[-1]
-                        result.extend(values)
-
-            elif not ("ind0" in method_args or "previous_data_point" in method_args):
-                if min_chunksize_processed > 0:
-                # if preprocessing has to be done in large chuncks
-                    if queue_plot is not None:
-
-                        def func(queue, result):
-                            chunk_data = []
-                            while (item := queue.get(timeout=maxtimeout)) is not None:
-                                chunk_data.extend(item)
-                                if len(chunk_data) > min_chunksize_processed:
-                                    values = method(chunk_data)
-                                    result.extend(values)
-                                    queue_plot.put(values)
-                                    chunk_data = []
-                            if len(chunk_data) > 0:
-                                values = method(chunk_data)
-                                result.extend(values)
-                                queue_plot.put(values)
-                            queue_plot.put(None)
-
-                    else:
-                        def func(queue, result):
-                            chunk_data = []
-                            while (item := queue.get(timeout=maxtimeout)) is not None:
-                                chunk_data.extend(item)
-                                if len(chunk_data) > min_chunksize_processed:
-                                    values = method(chunk_data)
-                                    result.extend(values)
-                                    chunk_data = []
-                            if len(chunk_data) > 0:
-                                values = method(chunk_data)
-                                result.extend(values)
-                else:
-                    if queue_plot is not None:
-                        def func(queue, result):
-                            while (item := queue.get(timeout=maxtimeout)) is not None:
-                                values = method(item)
-                                result.extend(values)
-                                queue_plot.put(values)
-                            queue_plot.put(None)
-
-                    else:
-                        def func(queue, result):
-                            while (item := queue.get(timeout=maxtimeout)) is not None:
-                                values = method(item)
-                                result.extend(values)
-
-            else:
-                raise NotImplementedError(f"Pre_process arguments ({method_args}) is not supported")
-
-            Process = Thread(target=func,args=(queue,result,))
-            return queue, queue_plot, Process, result
-
-
-    if savehdf5:
-        #update dbfs before saving parameters
-        for sig, prange in zip(M.in_sig,M.in_range):
-            pico_range = ps2000.PS2000_VOLTAGE_RANGE["PS2000_" + prange]
-            sig.dbfs = adc_to_mv([1],pico_range)[0] * 0.001
-
-        #Picoscope2000 return 16bits signed integer
-        M.data_type = "i2"
-        M.to_hdf5(filename)
-        if not multichannel:
-            if enabledA:
-                if enabledB:
-                    queueAB, ProcessAB = setup_save_hdf5([1,2])
-                    multichannel=True
-                else:
-                    queueA, ProcessA = setup_save_hdf5(1)
-            elif enabledB:
-                queueB, ProcessB = setup_save_hdf5(2)
-    elif not multichannel:
-        if enabledA:
-            if chan_to_plot == "A":
-                queueA, queue_plot, ProcessA, retA = setup_preprocess(
-                    1, rangeA, True
-                )
-            else:
-                queueA, _, ProcessA, retA = setup_preprocess(1, rangeA, False)
-
-        if enabledB:
-            if chan_to_plot == "B":
-                queueB, queue_plot, ProcessB, retB = setup_preprocess(
-                    2, rangeB, True
-                )
-            else:
-                queueB, _, ProcessB, retB = setup_preprocess(2, rangeB, False)
-    else:
-        raise NotImplementedError #Need change to allow preprocess with multichannel
-        # queueAB, queue_plot, ProcessAB, retAB = setup_preprocessAB(
-        #     [1,2], [rangeA,rangeB], chan
-        # )
-
-    ##get_overview_buffers_factory
-    if enabledA:
-        if enabledB:
-            if multichannel:
-                def get_overview_buffers(
-                    buffers, _overflow, _triggered_at, _triggered, _auto_stop, n_values
-                ):
-                    queueAB.put([buffers[0][0:n_values],buffers[2][0:n_values]])
-            else:
-
-                def get_overview_buffers(
-                    buffers,
-                    _overflow,
-                    _triggered_at,
-                    _triggered,
-                    _auto_stop,
-                    n_values,
-                ):
-                    queueA.put(buffers[0][0:n_values])
-                    queueB.put(buffers[2][0:n_values])
-
-        else:
+    def setup_callback(self):
+        CALLBACK = C_CALLBACK_FUNCTION_FACTORY(
+            None,
+            ctypes.POINTER(ctypes.POINTER(ctypes.c_int16)),
+            ctypes.c_int16,
+            ctypes.c_uint32,
+            ctypes.c_int16,
+            ctypes.c_int16,
+            ctypes.c_uint32,
+        )
+        ##Define get_overview_buffers for channel configuration
+        if self.nchannels == 2:
 
             def get_overview_buffers(
                 buffers,
@@ -702,702 +737,355 @@ def _ps2000_run_measurement_threaded(
                 _auto_stop,
                 n_values,
             ):
-                queueA.put(buffers[0][0:n_values])
+                self.dataqueue.put(
+                    [buffers[0][0:n_values].copy(), buffers[2][0:n_values].copy()]
+                )
 
-    elif enabledB:
+        elif self.Channels["A"]["enabled"]:
 
-        def get_overview_buffers(
-            buffers, _overflow, _triggered_at, _triggered, _auto_stop, n_values
-        ):
-            queueB.put(buffers[2][0:n_values])
+            def get_overview_buffers(
+                buffers,
+                _overflow,
+                _triggered_at,
+                _triggered,
+                _auto_stop,
+                n_values,
+            ):
+                self.dataqueue.put([buffers[0][0:n_values].copy()])
 
-    callback = CALLBACK(get_overview_buffers)
+        elif self.Channels["B"]["enabled"]:
 
-    with ps2000.open_unit() as device:
-        print("Device info: {}".format(device.info))
+            def get_overview_buffers(
+                buffers,
+                _overflow,
+                _triggered_at,
+                _triggered,
+                _auto_stop,
+                n_values,
+            ):
+                self.dataqueue.put([buffers[2][0:n_values].copy()])
 
-        res = ps2000.ps2000_set_channel(
-            device.handle,
-            picoEnum.PICO_CHANNEL["PICO_CHANNEL_A"],
-            enabledA,
-            picoEnum.PICO_COUPLING[couplingA],
-            rangeA,
-        )
-        assert_pico2000_ok(res)
-        res = ps2000.ps2000_set_channel(
-            device.handle,
-            picoEnum.PICO_CHANNEL["PICO_CHANNEL_B"],
-            enabledB,
-            picoEnum.PICO_COUPLING[couplingB],
-            rangeB,
-        )
-        assert_pico2000_ok(res)
+        return CALLBACK(get_overview_buffers)
 
+    def start_measurment(self):
+        callback = self.setup_callback()
         ########## Signal generator ##########
-        if M.sig_gen:
+        if self.M.sig_gen:
             res = ps2000.ps2000_set_sig_gen_built_in(
-                device.handle,
-                int(M.offset * 1e6),  # offset voltage in uV
-                int(M.amp / 2 * 1e6),  # peak-to-peak votage in uV
-                M.wave,  # type of waveform (0 = sine wave)
-                M.freq_start,  # start frequency in Hz
-                M.freq_stop,  # stop frequency in Hz
-                M.freq_change,  # frequency change per interval in Hz
-                M.freq_int,  # interval of frequency change in seconds
-                M.sweep_dir,  # sweep direction (0 = up)
-                M.sweep_number,  # number of times to sweep
+                self.device.handle,
+                int(self.M.offset * 1e6),  # offset voltage in uV
+                int(self.M.amp / 2 * 1e6),  # peak-to-peak votage in uV
+                self.M.wave,  # type of waveform (0 = sine wave)
+                self.M.freq_start,  # start frequency in Hz
+                self.M.freq_stop,  # stop frequency in Hz
+                self.M.freq_change,  # frequency change per interval in Hz
+                self.M.freq_int,  # interval of frequency change in seconds
+                self.M.sweep_dir,  # sweep direction (0 = up)
+                self.M.sweep_number,  # number of times to sweep
             )
             assert_pico2000_ok(res)
         #######################################
+        # Time unit = nanosecond
+        sampleUnits = 2
+        # no autostop
+        autoStopOn = False
+        # No downsampling:
+        downsampleRatio = 1
 
         res = ps2000.ps2000_run_streaming_ns(
-            device.handle,
-            sampleInterval,
-            2,
-            max_samples,
-            False,
-            1,
-            overview_buffer_size,
+            self.device.handle,
+            self.sampleInterval.value,
+            sampleUnits,
+            self.max_samples,
+            autoStopOn,
+            downsampleRatio,
+            self.overview_buffer_size,
         )
         assert_pico2000_ok(res)
 
         now = datetime.now()
-        M.date = now.strftime("%Y-%m-%d")
-        M.time = now.strftime("%H:%M:%S")
+        self.M.date = now.strftime("%Y-%m-%d")
+        self.M.time = now.strftime("%H:%M:%S")
 
-        ##start preprocess threads
-        if multichannel:
-            ProcessAB.start()
-            if not savehdf5:
-                ProcessA.start()
-                ProcessB.start()
-        else:
-            if enabledA:
-                ProcessA.start()
-
-            if enabledB:
-                ProcessB.start()
-
-        print("Start")
+        print("Start measurement")
         start_time = time.time_ns()
 
-        # loop until wanted duration + maximum time of one loop without buffer overrun
-        if plotting is not None:
-            margin = max(min(int(max_loop_time*1e9),duree_ns * 0.1), plot.ploting_duration*(1.1))
-            while time.time_ns() - start_time < duree_ns + margin and not plot.stop:
-                ps2000.ps2000_get_streaming_last_values(device.handle, callback)
-                plot.update_plot(queue_plot)
-
-        else:
-            margin = min(int(max_loop_time*1e9), duree_ns * 0.1)
-            while time.time_ns() - start_time < duree_ns  + margin:
-                ps2000.ps2000_get_streaming_last_values(device.handle, callback)
-
+        # loop until wanted duration + maximum time of one loop without buffer overrun or until stop_measurement is set
+        margin = min(int(self.max_loop_time * 1e9), self.duree_ns * 0.1)
+        try:
+            while (
+                time.time_ns() - start_time < self.duree_ns + margin
+                and not self.stop_measurement.is_set()
+            ):
+                ps2000.ps2000_get_streaming_last_values(
+                    self.device.handle, callback
+                )
+        except KeyboardInterrupt:
+            pass
+        self.dataqueue.put(None)
         print("Measurment done")
-        print("Waiting for data processing...")
         overrun = False
-        ps2000.ps2000_overview_buffer_status(device.handle, overrun)
+        ps2000.ps2000_overview_buffer_status(self.device.handle, overrun)
         if overrun:
             print("Buffer have overrun")
+        # Stop the scope
+        self.close_unit()
 
-        ##Put end flag in queues
-        if multichannel:
-            queueAB.put(None)
+    @staticmethod
+    def pico_range(prange):
+        return ps2000.PS2000_VOLTAGE_RANGE["PS2000_" + prange]
+
+
+class _ps4000_run_measurement_threaded(Pico_thread):
+    Channels = {
+        "A": {"number": 1} | Channel_state.copy(),
+        "B": {"number": 2} | Channel_state.copy(),
+    }
+    channel_name = {1: "A", 2: "B"}
+    Data_type = ctypes.c_int16(32767)
+
+    def open_unit(self):
+        # picoscope 4000 handle
+        self.chandle = ctypes.c_int16()
+        # picoscope 4000 status
+        self.status = {}
+        # Open PicoScope 4000 Series device
+        # Returns handle to chandle for use in future API functions
+        if self.serial is not None:
+            self.status["openunit"] = ps4000.ps4000OpenUnitEx(
+                ctypes.byref(self.chandle),
+                ctypes.c_char_p(bytes(self.serial, "ascii")),
+            )
         else:
-            if enabledA:
-                queueA.put(None)
-            if enabledB:
-                queueB.put(None)
+            self.status["openunit"] = ps4000.ps4000OpenUnit(
+                ctypes.byref(self.chandle),
+            )
+        assert_pico_ok(self.status["openunit"])
+        self.closed = False
 
-        ##Wait for all thread to finish and save data
-        if multichannel:
-            ProcessAB.join()
-            if not savehdf5:
-                ProcessA.join()
-                save(M, 1, retA)
-                ProcessB.join()
-                save(M, 2, retB)
+    def close_unit(self):
+        if not self.closed:
+            # Stop the scope
+            self.status["stop"] = ps4000.ps4000Stop(self.chandle)
+            assert_pico_ok(self.status["stop"])
+
+            # Disconnect the scope
+            # handle = chandle
+            self.status["close"] = ps4000.ps4000CloseUnit(self.chandle)
+            assert_pico_ok(self.status["close"])
+            self.closed = True
+
+    def setup_channel(self, chan_index):
+        if (ind := findindex(self.M.in_map, chan_index)) != None:
+            enabled = True
+            pico_range = self.pico_range(self.M.in_range[ind])
+            if self.M.in_coupling[ind].capitalize() == "Dc":
+                coupling = 1
+            elif self.M.in_coupling[ind].capitalize() == "Ac":
+                coupling = 0
+            else:
+                print(
+                    f"Input {self.channel_name[chan_index]} coupling not recognized, set to 'dc'"
+                )
+                self.M.in_coupling[ind] = "dc"
+                coupling = 1
+            # Configure picoscope channel
+            self.status[
+                f"setCh{self.channel_name[chan_index]}"
+            ] = ps4000.ps4000SetChannel(
+                self.chandle,
+                ps4000.PS4000_CHANNEL[
+                    f"PS4000_CHANNEL_{self.channel_name[chan_index]}"
+                ],
+                int(enabled),
+                coupling,
+                pico_range,
+            )
+            assert_pico_ok(self.status[f"setCh{self.channel_name[chan_index]}"])
+            print(
+                f"Channel {self.channel_name[chan_index]}: enabled with range "
+                + "PS4000_"
+                + self.M.in_range[ind]
+                + " ("
+                + str(pico_range)
+                + ")"
+            )
+            # Create buffer for data collection
+            buffer = np.zeros(shape=self.overview_buffer_size, dtype=np.int16)
+            # Assigning pointer's buffer
+            self.status[
+                f"setDataBuffers{self.channel_name[chan_index]}"
+            ] = ps4000.ps4000SetDataBuffers(
+                self.chandle,
+                ps4000.PS4000_CHANNEL[
+                    f"PS4000_CHANNEL_{self.channel_name[chan_index]}"
+                ],
+                buffer.ctypes.data_as(ctypes.POINTER(ctypes.c_int16)),
+                None,
+                self.overview_buffer_size,
+            )
+            assert_pico_ok(
+                self.status[f"setDataBuffers{self.channel_name[chan_index]}"]
+            )
         else:
-            if enabledA:
-                ProcessA.join()
-                if not savehdf5:
-                    save(M, 1, retA)
-
-            if enabledB:
-                ProcessB.join()
-                if not savehdf5:
-                    save(M, 2, retB)
-
-        print("Preprocess data done")
-
-        ## Continue plotting until last data
-        if plotting is not None:
-            plot.end_plot(queue_plot)
-
-
-def ps4000_plot(M,plotbuffersize=2000,updatetime=0.1):
-    # """
-    # This function needs M to contain the following properties:
-    #     - in_range : a list of strings specifying the voltage range.
-    #         Possible voltage ranges are "10MV", "20MV", "50MV", "100MV",
-    #         "200MV", "500MV", "1V", "2V", "5V", "10V", "20V", "50V", "100V"
-    #     - upsampling_factor : upsampling factor
-    #     - in_coupling : Coupling configuration of the channels.
-    #         Can be "ac" or "dc"
-    # """
-
-    import time
-
-
-    # Plotting part
-
-    global plotbuffer, ax, x, line, stop, timesincelastupdate, updtime
-
-    updtime = updatetime
-
-    timesincelastupdate = 0.0
-
-    stop = False
-
-    def fstop(event):
-        global stop
-        stop = True
-
-    def tamp_plus(event):
-        ax[0].set_ylim(np.array(ax[0].get_ylim())/2)
-    def tamp_moins(event):
-        ax[0].set_ylim(np.array(ax[0].get_ylim())*2)
-    def famp_plus(event):
-        ax[1].set_ylim(np.array(ax[1].get_ylim())/2)
-    def famp_moins(event):
-        ax[1].set_ylim(np.array(ax[1].get_ylim())*2)
-    def on_close(event):
-        global stop
-        stop = True
-
-    x = np.arange(plotbuffersize)
-    plotbuffer = np.sin(x)
-    fig, ax = plt.subplots(1,2,figsize=(15,5))
-    fig.subplots_adjust(bottom=0.2)
-    ax[0].set_xlabel('Temps [s]',fontsize=15)
-    ax[0].set_ylabel('Tension [V]',fontsize=15)
-    ax[1].set_xlabel('Fréquence [Hz]',fontsize=15)
-    ax[1].set_ylabel('Tension [V]',fontsize=15)
-    ax[1].set_xlim([0.01,M.fs/2])
-    ax[1].set_ylim([0,10])
-    linet, = ax[0].plot(x/M.fs,plotbuffer)
-    linef, = ax[1].plot(np.fft.fftfreq(n=plotbuffersize,d=1/M.fs),np.fft.fft(plotbuffer,norm='ortho'))
-    axs = fig.add_axes([0.4, 0.01, 0.2, 0.075])
-    bstop = Button(axs, 'Stop')
-    bstop.on_clicked(fstop)
-    atxp = fig.add_axes([0.02, 0.6, 0.04, 0.05])
-    btplus = Button(atxp, '+')
-    btplus.on_clicked(tamp_plus)
-    atxm = fig.add_axes([0.02, 0.4, 0.04, 0.05])
-    btmoins = Button(atxm, '-')
-    btmoins.on_clicked(tamp_moins)
-    afxp = fig.add_axes([0.92, 0.6, 0.04, 0.05])
-    bfplus = Button(afxp, '+')
-    bfplus.on_clicked(famp_plus)
-    afxm = fig.add_axes([0.92, 0.4, 0.04, 0.05])
-    bfmoins = Button(afxm, '-')
-    bfmoins.on_clicked(famp_moins)
-    fig.canvas.mpl_connect('close_event', on_close)
-    plt.pause(0.0001)
-
-    # End of plotting part
-
-    # Find maximum ADC count value
-    # handle = chandle
-    # pointer to value = ctypes.byref(maxADC)
-    maxADC = ctypes.c_int16(32767)
-
-    global nextSample, autoStopOuter, wasCalledBack
-
-    # Buffer size fixed to 20k samples
-    sizeOfOneBuffer = 20_000
-
-    # Effective sampling frequency
-    # If upsampling is > 1, the actual data acquisition is
-    # performed at fs*upsampling, and then decimated to
-    # the desired frequency
-    effective_fs = M.fs * M.upsampling_factor
-
-    # Sample interval is the duration between two consecutive samples
-    # As it is the sampling frequency that is specified,
-    # and the sampling interval can only take integer increments
-    # of 1 nanoseconds, the actual sampling frequency might
-    # necessitate adjustments
-    si = round(1e9/effective_fs)
-    if effective_fs != (1e9/si):
-        effective_fs = (1e9/si)
-        print("Warning : Sampling frequency fs changed to nearest possible value of "+str(effective_fs)+" Hz")
-    
-    print("Effective sampling frequency: "+str(effective_fs))
-
-    numdesiredsamples = int(round(effective_fs*M.dur))
-    numBuffersToCapture = int(np.ceil(numdesiredsamples/sizeOfOneBuffer))
-    sampleInterval = ctypes.c_int32(si)
-    totalSamples = sizeOfOneBuffer * numBuffersToCapture
-    chandle = ctypes.c_int16()
-    status = {}
-
-    # Open PicoScope 4000 Series device
-    # Returns handle to chandle for use in future API functions
-    status["openunit"] = ps4000.ps4000OpenUnit(ctypes.byref(chandle))
-    assert_pico_ok(status["openunit"])
-
-    # Setup channel A
-    indA = findindex(M.in_map,1)
-    if indA!=None:
-        enabledA = True
-        rangeA = ps4000.PS4000_RANGE['PS4000_'+M.in_range[indA]]
-        if M.in_coupling[indA].capitalize()=='Dc':
-           couplingA = 1
-        elif M.in_coupling[indA].capitalize()=='Ac':
-            couplingA = 0
-        else:
-            print("Input A coupling not recognized, set to 'dc'")
-            couplingA = 1
-            M.in_coupling[indA]='dc'
-        # Create buffers ready for assigning pointers for data collection
-        bufferAMax = np.zeros(shape=sizeOfOneBuffer, dtype=np.int16)
-        # Total buffer
-        bufferCompleteA = np.zeros(shape=totalSamples, dtype=np.int16)
-        print('Channel A: enabled with range '+'PS4000_'+M.in_range[indA]+' ('+str(rangeA)+')')
-    else:
-        enabledA = False
-        rangeA = ps4000.PS4000_RANGE['PS4000_10V']
-        print('Channel A: disabled')
-
-    # Set up channel A
-    channel_range = ps4000.PS4000_RANGE['PS4000_50MV']
-    status["setChA"] = ps4000.ps4000SetChannel(chandle,
-                                            ps4000.PS4000_CHANNEL['PS4000_CHANNEL_A'],
-                                            int(enabledA),
-                                            couplingA,
-                                            rangeA)
-    assert_pico_ok(status["setChA"])
-
-    # Setup channel B
-    indB = findindex(M.in_map,2)
-    if indB!=None:
-        enabledB = True
-        rangeB = ps4000.PS4000_RANGE['PS4000_'+M.in_range[indB]]
-        # Create buffers ready for assigning pointers for data collection
-        bufferBMax = np.zeros(shape=sizeOfOneBuffer, dtype=np.int16)
-        # Total buffer
-        bufferCompleteB = np.zeros(shape=totalSamples, dtype=np.int16)
-        print('Channel B: enabled with range '+'PS4000_'+M.in_range[indB]+' ('+str(rangeB)+')')
-        if M.in_coupling[indB].capitalize()=='Dc':
-           couplingB = 1
-        elif M.in_coupling[indB].capitalize()=='Ac':
-            couplingB = 0
-        else:
-            print("Input B coupling not recognized, set to 'dc'")
-            couplingB = 1
-            M.in_coupling[indB]='dc'
-    else:
-        enabledB = False
-        couplingB = 1
-        rangeB = ps4000.PS4000_RANGE['PS4000_10V']
-        print('Channel B: disabled')
-
-    # Set up channel B
-    status["setChB"] = ps4000.ps4000SetChannel(chandle,
-                                            ps4000.PS4000_CHANNEL['PS4000_CHANNEL_B'],
-                                            int(enabledB),
-                                            couplingB,
-                                            rangeB)
-    assert_pico_ok(status["setChB"])
-
-    # Set data buffer location for data collection from channel A
-    # Parameters :  handle = chandle
-    #               source = PS4000_CHANNEL_A = 0
-    #               pointer to buffer max = ctypes.byref(bufferAMax)
-    #               pointer to buffer min = ctypes.byref(bufferAMin)
-    #               buffer length = maxSamples
-    #               segment index = 0
-    #               ratio mode = PS4000_RATIO_MODE_NONE = 0
-    if enabledA:
-        status["setDataBuffersA"] = ps4000.ps4000SetDataBuffers(chandle,
-                                                        ps4000.PS4000_CHANNEL['PS4000_CHANNEL_A'],
-                                                        bufferAMax.ctypes.data_as(ctypes.POINTER(ctypes.c_int16)),
-                                                        None,
-                                                        sizeOfOneBuffer)
-        assert_pico_ok(status["setDataBuffersA"])
-
-    # Set data buffer location for data collection from channel B
-    # Parameters :  handle = chandle
-    #               source = PS4000_CHANNEL_B = 0
-    #               pointer to buffer max = ctypes.byref(bufferAMax)
-    #               pointer to buffer min = ctypes.byref(bufferAMin)
-    #               buffer length = maxSamples
-    #               segment index = 0
-    #               ratio mode = PS4000_RATIO_MODE_NONE = 0
-    if enabledB:
-        status["setDataBuffersB"] = ps4000.ps4000SetDataBuffers(chandle,
-                                                        ps4000.PS4000_CHANNEL['PS4000_CHANNEL_B'],
-                                                        bufferBMax.ctypes.data_as(ctypes.POINTER(ctypes.c_int16)),
-                                                        None,
-                                                        sizeOfOneBuffer)
-        assert_pico_ok(status["setDataBuffersB"])
-
-    now = datetime.now()
-    M.date = now.strftime("%Y-%m-%d")
-    M.time = now.strftime("%H:%M:%S")
-
-    # Begin streaming mode:
-    sampleUnits = ps4000.PS4000_TIME_UNITS['PS4000_NS']
-    # We are not triggering:
-    maxPreTriggerSamples = 0
-    autoStopOn = 1
-    # No downsampling:
-    downsampleRatio = 1
-    status["runStreaming"] = ps4000.ps4000RunStreaming(chandle,
-                                                    ctypes.byref(sampleInterval),
-                                                    sampleUnits,
-                                                    maxPreTriggerSamples,
-                                                    totalSamples,
-                                                    autoStopOn,
-                                                    downsampleRatio,
-                                                    sizeOfOneBuffer)
-    assert_pico_ok(status["runStreaming"])
-
-    actualSampleInterval = sampleInterval.value
-    actualSampleIntervalNs = actualSampleInterval * 1000
-
-    print("Capturing at sample interval %s ns" % actualSampleIntervalNs)
-
-    nextSample = 0
-    autoStopOuter = False
-    wasCalledBack = False
-
-    def streaming_callback(handle, noOfSamples, startIndex, overflow, triggerAt, triggered, autoStop, param):
-
-        global plotbuffer, timesincelastupdate, updtime
-        global nextSample, autoStopOuter, wasCalledBack
-        wasCalledBack = True
-        destEnd = nextSample + noOfSamples
-        sourceEnd = startIndex + noOfSamples
-        timesincelastupdate += noOfSamples/M.fs
-        plotbuffer=np.roll(plotbuffer,int(-noOfSamples),axis=0)
-        plotbuffer[-noOfSamples:] = (np.array(adc2mV(bufferAMax[startIndex:sourceEnd],rangeA,maxADC))/1000)
-        if timesincelastupdate > updtime:
-            linet.set_ydata(plotbuffer)
-            linef.set_ydata(np.abs(np.fft.fft(plotbuffer*np.hanning(plotbuffersize),norm='ortho')))
-            plt.pause(0.0001)
-            timesincelastupdate = 0.0
-        # if enabledA:
-        #     bufferCompleteA[nextSample:destEnd] = bufferAMax[startIndex:sourceEnd]
-        # if enabledB:
-        #     bufferCompleteB[nextSample:destEnd] = bufferBMax[startIndex:sourceEnd]
-        nextSample += noOfSamples
-        if autoStop:
-            autoStopOuter = True
-
-    # Convert the python function into a C function pointer.
-    cFuncPtr = ps4000.StreamingReadyType(streaming_callback)
-
-    # Fetch data from the driver in a loop, copying it out of the registered buffers and into our complete one.
-    while nextSample < totalSamples and not autoStopOuter and not stop:
-        wasCalledBack = False
-        status["getStreamingLastestValues"] = ps4000.ps4000GetStreamingLatestValues(chandle, cFuncPtr, None)
-        if not wasCalledBack:
-            # If we weren't called back by the driver, this means no data is ready. Sleep for a short while before trying
-            # again.
-            time.sleep(0.01)
-
-    print("Done.")
-
-    # # Convert ADC counts data to mV
-    # if enabledA:
-    #     adc2mVChAMax = adc2mV(bufferCompleteA, rangeA, maxADC)
-    # if enabledB:
-    #     adc2mVChBMax = adc2mV(bufferCompleteB, rangeB, maxADC)
-
-    # # Create time data
-    # time = np.linspace(0, (totalSamples - 1) * actualSampleIntervalNs, totalSamples)
-
-    # Stop the scope
-    # handle = chandle
-    status["stop"] = ps4000.ps4000Stop(chandle)
-    assert_pico_ok(status["stop"])
-
-    # Disconnect the scope
-    # handle = chandle
-    status["close"] = ps4000.ps4000CloseUnit(chandle)
-    assert_pico_ok(status["close"])
-
-    # for i in range(len(M.in_map)):
-    #     if M.in_map[i] == 1:
-    #         M.data[M.in_name[i]].raw = decimate(np.double(adc2mVChAMax[0:round(M.dur*effective_fs)])/1000,M.upsampling_factor)
-    #     elif M.in_map[i] == 2:
-    #         M.data[M.in_name[i]].raw = decimate(np.double(adc2mVChBMax[0:round(M.dur*effective_fs)])/1000,M.upsampling_factor)
-
-    # if M.fs!=effective_fs/M.upsampling_factor:
-    #     M.fs = effective_fs/M.upsampling_factor
-    #     print('Warning : Sampling frequency fs changed to nearest possible value of '+str(M.fs)+' Hz')
-    #     for i in range(len(M.in_map)):
-    #         M.data[M.in_name[i]].fs = M.fs
-    
-
-def ps4000_run_measurement(M):
-    # """
-    # This function needs M to contain the following properties:
-    #     - in_range : a list of strings specifying the voltage range.
-    #         Possible voltage ranges are "10MV", "20MV", "50MV", "100MV",
-    #         "200MV", "500MV", "1V", "2V", "5V", "10V", "20V", "50V", "100V"
-    #     - upsampling_factor : upsampling factor
-    #     - in_coupling : Coupling configuration of the channels.
-    #         Can be "ac" or "dc"
-    # """
-
-    import time
-    global nextSample, autoStopOuter, wasCalledBack
-
-    # Buffer size fixed to 20k samples
-    sizeOfOneBuffer = 100_000
-
-    # Effective sampling frequency
-    # If upsampling is > 1, the actual data acquisition is
-    # performed at fs*upsampling, and then decimated to
-    # the desired frequency
-    effective_fs = M.fs * M.upsampling_factor
-
-    # Sample interval is the duration between two consecutive samples
-    # As it is the sampling frequency that is specified,
-    # and the sampling interval can only take integer increments
-    # of 1 nanoseconds, the actual sampling frequency might
-    # necessitate adjustments
-    si = round(1e9/effective_fs)
-    if effective_fs != (1e9/si):
-        effective_fs = (1e9/si)
-        print("Warning : Sampling frequency fs changed to nearest possible value of "+str(effective_fs)+" Hz")
-    
-    print("Effective sampling frequency: "+str(effective_fs))
-
-    numdesiredsamples = int(round(effective_fs*M.dur))
-    numBuffersToCapture = int(np.ceil(numdesiredsamples/sizeOfOneBuffer))
-    sampleInterval = ctypes.c_int32(si)
-    totalSamples = sizeOfOneBuffer * numBuffersToCapture
-    chandle = ctypes.c_int16()
-    status = {}
-
-    # Open PicoScope 4000 Series device
-    # Returns handle to chandle for use in future API functions
-    status["openunit"] = ps4000.ps4000OpenUnit(ctypes.byref(chandle))
-    assert_pico_ok(status["openunit"])
-
-    # Setup channel A
-    indA = findindex(M.in_map,1)
-    if indA!=None:
-        enabledA = True
-        rangeA = ps4000.PS4000_RANGE['PS4000_'+M.in_range[indA]]
-        if M.in_coupling[indA].capitalize()=='Dc':
-           couplingA = 1
-        elif M.in_coupling[indA].capitalize()=='Ac':
-            couplingA = 0
-        else:
-            print("Input A coupling not recognized, set to 'dc'")
-            couplingA = 1
-            M.in_coupling[indA]='dc'
-        # Create buffers ready for assigning pointers for data collection
-        bufferAMax = np.zeros(shape=sizeOfOneBuffer, dtype=np.int16)
-        # Total buffer
-        bufferCompleteA = np.zeros(shape=totalSamples, dtype=np.int16)
-        print('Channel A: enabled with range '+'PS4000_'+M.in_range[indA]+' ('+str(rangeA)+')')
-    else:
-        enabledA = False
-        rangeA = ps4000.PS4000_RANGE['PS4000_10V']
-        print('Channel A: disabled')
-
-    # Set up channel A
-    channel_range = ps4000.PS4000_RANGE['PS4000_50MV']
-    status["setChA"] = ps4000.ps4000SetChannel(chandle,
-                                            ps4000.PS4000_CHANNEL['PS4000_CHANNEL_A'],
-                                            int(enabledA),
-                                            couplingA,
-                                            rangeA)
-    assert_pico_ok(status["setChA"])
-
-    # Setup channel B
-    indB = findindex(M.in_map,2)
-    if indB!=None:
-        enabledB = True
-        rangeB = ps4000.PS4000_RANGE['PS4000_'+M.in_range[indB]]
-        # Create buffers ready for assigning pointers for data collection
-        bufferBMax = np.zeros(shape=sizeOfOneBuffer, dtype=np.int16)
-        # Total buffer
-        bufferCompleteB = np.zeros(shape=totalSamples, dtype=np.int16)
-        print('Channel B: enabled with range '+'PS4000_'+M.in_range[indB]+' ('+str(rangeB)+')')
-        if M.in_coupling[indB].capitalize()=='Dc':
-           couplingB = 1
-        elif M.in_coupling[indB].capitalize()=='Ac':
-            couplingB = 0
-        else:
-            print("Input B coupling not recognized, set to 'dc'")
-            couplingB = 1
-            M.in_coupling[indB]='dc'
-    else:
-        enabledB = False
-        rangeB = ps4000.PS4000_RANGE['PS4000_10V']
-        print('Channel B: disabled')
-
-    # Set up channel B
-    status["setChB"] = ps4000.ps4000SetChannel(chandle,
-                                            ps4000.PS4000_CHANNEL['PS4000_CHANNEL_B'],
-                                            int(enabledB),
-                                            couplingB,
-                                            rangeB)
-    assert_pico_ok(status["setChB"])
-
-    # Set data buffer location for data collection from channel A
-    # Parameters :  handle = chandle
-    #               source = PS4000_CHANNEL_A = 0
-    #               pointer to buffer max = ctypes.byref(bufferAMax)
-    #               pointer to buffer min = ctypes.byref(bufferAMin)
-    #               buffer length = maxSamples
-    #               segment index = 0
-    #               ratio mode = PS4000_RATIO_MODE_NONE = 0
-    if enabledA:
-        status["setDataBuffersA"] = ps4000.ps4000SetDataBuffers(chandle,
-                                                        ps4000.PS4000_CHANNEL['PS4000_CHANNEL_A'],
-                                                        bufferAMax.ctypes.data_as(ctypes.POINTER(ctypes.c_int16)),
-                                                        None,
-                                                        sizeOfOneBuffer)
-        assert_pico_ok(status["setDataBuffersA"])
-
-    # Set data buffer location for data collection from channel B
-    # Parameters :  handle = chandle
-    #               source = PS4000_CHANNEL_B = 0
-    #               pointer to buffer max = ctypes.byref(bufferAMax)
-    #               pointer to buffer min = ctypes.byref(bufferAMin)
-    #               buffer length = maxSamples
-    #               segment index = 0
-    #               ratio mode = PS4000_RATIO_MODE_NONE = 0
-    if enabledB:
-        status["setDataBuffersB"] = ps4000.ps4000SetDataBuffers(chandle,
-                                                        ps4000.PS4000_CHANNEL['PS4000_CHANNEL_B'],
-                                                        bufferBMax.ctypes.data_as(ctypes.POINTER(ctypes.c_int16)),
-                                                        None,
-                                                        sizeOfOneBuffer)
-        assert_pico_ok(status["setDataBuffersB"])
-
-    now = datetime.now()
-    M.date = now.strftime("%Y-%m-%d")
-    M.time = now.strftime("%H:%M:%S")
-
-    # Begin streaming mode:
-    sampleUnits = ps4000.PS4000_TIME_UNITS['PS4000_NS']
-    # We are not triggering:
-    maxPreTriggerSamples = 0
-    autoStopOn = 1
-    # No downsampling:
-    downsampleRatio = 1
-    status["runStreaming"] = ps4000.ps4000RunStreaming(chandle,
-                                                    ctypes.byref(sampleInterval),
-                                                    sampleUnits,
-                                                    maxPreTriggerSamples,
-                                                    totalSamples,
-                                                    autoStopOn,
-                                                    downsampleRatio,
-                                                    sizeOfOneBuffer)
-    assert_pico_ok(status["runStreaming"])
-
-    actualSampleInterval = sampleInterval.value
-    actualSampleIntervalNs = actualSampleInterval * 1000
-
-    print("Capturing at sample interval %s ns" % actualSampleIntervalNs)
-
-    nextSample = 0
-    autoStopOuter = False
-    wasCalledBack = False
-
-    def streaming_callback(handle, noOfSamples, startIndex, overflow, triggerAt, triggered, autoStop, param):
-        global nextSample, autoStopOuter, wasCalledBack
-        wasCalledBack = True
-        destEnd = nextSample + noOfSamples
-        sourceEnd = startIndex + noOfSamples
-        if enabledA:
-            bufferCompleteA[nextSample:destEnd] = bufferAMax[startIndex:sourceEnd]
-        if enabledB:
-            bufferCompleteB[nextSample:destEnd] = bufferBMax[startIndex:sourceEnd]
-        nextSample += noOfSamples
-        if autoStop:
-            autoStopOuter = True
-            print("auto")
-
-    # if M.sig_gen:
-    #     res=ps4000.ps4000SetSigGenBuiltIn(chandle,
-    #             int(M.offset*1e6),      # offset voltage in uV
-    #             int(M.amp/2*1e6),       # peak-to-peak votage in uV
-    #             M.wave,                 # type of waveform (0 = sine wave)
-    #             M.freq_start,           # start frequency in Hz
-    #             M.freq_stop,            # stop frequency in Hz
-    #             M.freq_change,          # frequency change per interval in Hz
-    #             M.freq_int,             # interval of frequency change in seconds
-    #             M.sweep_dir,            # sweep direction (0 = up)
-    #             0,
-    #             1,
-    #             0,
-    #             0,
-    #             0,
-    #             0
-    #         )
-        
-    #     print("config")
-    #     assert_pico_ok(res)
-    #     print("fin assert")
-    # print("suite")
-
-    # Convert the python function into a C function pointer.
-    cFuncPtr = ps4000.StreamingReadyType(streaming_callback)
-
-    # Fetch data from the driver in a loop, copying it out of the registered buffers and into our complete one.
-    while nextSample < totalSamples:  #and not autoStopOuter:
-        wasCalledBack = False
-        status["getStreamingLastestValues"] = ps4000.ps4000GetStreamingLatestValues(chandle, cFuncPtr, None)
-        if not wasCalledBack:
-            # If we weren't called back by the driver, this means no data is ready. Sleep for a short while before trying
-            # again.
-            time.sleep(0.01)
-
-    print("Done.")
-
-    # Find maximum ADC count value
-    # handle = chandle
-    # pointer to value = ctypes.byref(maxADC)
-    maxADC = ctypes.c_int16(32767)
-
-    # Convert ADC counts data to mV
-    if enabledA:
-        adc2mVChAMax = adc2mV(bufferCompleteA, rangeA, maxADC)
-    if enabledB:
-        adc2mVChBMax = adc2mV(bufferCompleteB, rangeB, maxADC)
-
-    # Create time data
-    time = np.linspace(0, (totalSamples - 1) * actualSampleIntervalNs, totalSamples)
-
-    # Stop the scope
-    # handle = chandle
-    status["stop"] = ps4000.ps4000Stop(chandle)
-    assert_pico_ok(status["stop"])
-
-    # Disconnect the scope
-    # handle = chandle
-    status["close"] = ps4000.ps4000CloseUnit(chandle)
-    assert_pico_ok(status["close"])
-
-    for i in range(len(M.in_map)):
-        if M.in_map[i] == 1:
-            M.in_sig[i].raw = decimate(np.double(adc2mVChAMax[0:round(M.dur*effective_fs)])/1000,M.upsampling_factor)
-        elif M.in_map[i] == 2:
-            M.in_sig[i].raw = decimate(np.double(adc2mVChBMax[0:round(M.dur*effective_fs)])/1000,M.upsampling_factor)
-
-    if M.fs!=effective_fs/M.upsampling_factor:
-        M.fs = effective_fs/M.upsampling_factor
-        print('Warning : Sampling frequency fs changed to nearest possible value of '+str(M.fs)+' Hz')
-        for i,s in enumerate(M.in_sig):
-            s.fs = M.fs
-    
+            enabled = False
+            pico_range = self.pico_range("10V")
+            coupling = 1
+            print(f"Channel {self.channel_name[chan_index]}: disabled")
+            buffer = None
+        self.Channels[self.channel_name[chan_index]]["enabled"] = enabled
+        self.Channels[self.channel_name[chan_index]]["range"] = pico_range
+        self.Channels[self.channel_name[chan_index]]["coupling"] = coupling
+        self.Channels[self.channel_name[chan_index]]["buffer"] = buffer
+
+    def setup_callback(self):
+        """
+        Create threads queues and callback metod
+
+        :param chan_to_plot: Channel to plot
+        :type chan_to_plot: str
+        :raises NotImplementedError: save in hdf5 should be multichannel
+        :return: calback function used by picoscope
+        :rtype: method
+
+        """
+        ##For each case setup process and define get_overview_buffers
+        self.nextSample = 0
+        self.autoStopOuter = False
+        self.wasCalledBack = False
+        # listbuff = [chan["buffer"] for chan in self.Channels.values() if chan["enabled"]]
+        # def streaming_callback(
+        #     handle,
+        #     noOfSamples,
+        #     startIndex,
+        #     overflow,
+        #     triggerAt,
+        #     triggered,
+        #     autoStop,
+        #     param,
+        # ):
+        #     self.wasCalledBack = True
+        #     sourceEnd = startIndex + noOfSamples
+        #     self.dataqueue.put([buff[startIndex:sourceEnd].copy() for buff in listbuff])
+        #     if autoStop:
+        #         self.autoStopOuter = True
+
+        if self.nchannels == 2:
+
+            def streaming_callback(
+                handle,
+                noOfSamples,
+                startIndex,
+                overflow,
+                triggerAt,
+                triggered,
+                autoStop,
+                param,
+            ):
+                self.wasCalledBack = True
+                sourceEnd = startIndex + noOfSamples
+                self.dataqueue.put(
+                    [
+                        self.Channels["A"]["buffer"][startIndex:sourceEnd].copy(),
+                        self.Channels["B"]["buffer"][startIndex:sourceEnd].copy(),
+                    ]
+                )
+                if autoStop:
+                    self.autoStopOuter = True
+
+        elif self.Channels["A"]["enabled"]:
+
+            def streaming_callback(
+                handle,
+                noOfSamples,
+                startIndex,
+                overflow,
+                triggerAt,
+                triggered,
+                autoStop,
+                param,
+            ):
+                self.wasCalledBack = True
+                sourceEnd = startIndex + noOfSamples
+                self.dataqueue.put(
+                    [self.Channels["A"]["buffer"][startIndex:sourceEnd].copy()]
+                )
+                self.nextSample += noOfSamples
+                if autoStop:
+                    self.autoStopOuter = True
+
+        elif self.Channels["B"]["enabled"]:
+
+            def streaming_callback(
+                handle,
+                noOfSamples,
+                startIndex,
+                overflow,
+                triggerAt,
+                triggered,
+                autoStop,
+                param,
+            ):
+                self.wasCalledBack = True
+                sourceEnd = startIndex + noOfSamples
+                self.dataqueue.put(
+                    self.Channels["B"]["buffer"][startIndex:sourceEnd].copy()
+                )
+                self.nextSample += noOfSamples
+                if autoStop:
+                    self.autoStopOuter = True
+
+        return ps4000.StreamingReadyType(streaming_callback)
+
+    def start_measurment(self):
+        callback = self.setup_callback()
+        now = datetime.now()
+        self.M.date = now.strftime("%Y-%m-%d")
+        self.M.time = now.strftime("%H:%M:%S")
+
+        # Begin streaming mode:
+        sampleUnits = ps4000.PS4000_TIME_UNITS["PS4000_NS"]
+        # We are not triggering:
+        maxPreTriggerSamples = 0
+        autoStopOn = 1
+        # No downsampling:
+        downsampleRatio = 1
+        self.status["runStreaming"] = ps4000.ps4000RunStreaming(
+            self.chandle,
+            ctypes.byref(self.sampleInterval),
+            sampleUnits,
+            maxPreTriggerSamples,
+            self.totalSamples,
+            autoStopOn,
+            downsampleRatio,
+            self.overview_buffer_size,
+        )
+        assert_pico_ok(self.status["runStreaming"])
+
+        print(f"Capturing at sample interval {self.sampleInterval.value} ns")
+        try:
+            while (
+                self.nextSample < self.totalSamples
+                and not self.autoStopOuter
+                and not self.stop_measurement.is_set()
+            ):
+                self.wasCalledBack = False
+                self.status[
+                    "getStreamingLastestValues"
+                ] = ps4000.ps4000GetStreamingLatestValues(
+                    self.chandle, callback, None
+                )
+                if not self.wasCalledBack:
+                    # If we weren't called back by the driver, this means no data is ready. Sleep for a short while before trying
+                    # again.
+                    time.sleep(self.time_to_fill_half_buffer)
+        except KeyboardInterrupt:
+            pass
+        self.dataqueue.put(None)
+        print("Measurment done")
+        # Stop the scope
+        self.close_unit()
+
+    @staticmethod
+    def pico_range(prange):
+        return ps4000.PS4000_RANGE["PS4000_" + prange]
