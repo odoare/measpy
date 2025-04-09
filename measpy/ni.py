@@ -26,7 +26,7 @@ def _n_to_ain(n):
 def _n_to_aon(n):
     return 'ao'+str(n-1)
 
-def ni_run_measurement(M, filename=None, duration="default"):
+def ni_run_measurement(M, filename=None, duration="default", chunck_size = 0):
     """
     Runs a measurement defined in the object of
     the class measpy.measurement.Measurement given
@@ -47,21 +47,26 @@ def ni_run_measurement(M, filename=None, duration="default"):
     :return: Nothing, the measurement passed as argument is modified in place.
 
     """
-    if filename is not None and H5file_valid(filename):
-        M.to_hdf5(filename)
+    if filename is not None:
+        if H5file_valid(filename):
+            # M.to_hdf5(filename)
+            M.create_hdf5(filename,chunck_size=chunck_size)
 
-        def callback(buffer_in, n_values):
-            _add_N_data(H5file["in_sig"], buffer_in, n_values)
+            def callback(buffer_in, n_values):
+                _add_N_data(H5file["in_sig"], buffer_in, n_values)
 
-        with h5py.File(filename, "r+") as H5file:
-            try:
-                n_values, Nchannel = H5file["in_sig"].chunks
-            except ValueError:
-                n_values = H5file["in_sig"].chunks[0]
-            with ni_callback_measurement(M) as NI:
-                NI.set_callback(callback, n_values)
-                NI.run(duration=duration)
-        M.load_h5data()
+            with h5py.File(filename, "r+") as H5file:
+                try:
+                    n_values, Nchannel = H5file["in_sig"].chunks
+                except ValueError:
+                    n_values = H5file["in_sig"].chunks[0]
+                with ni_callback_measurement(M) as NI:
+                    NI.set_callback(callback, n_values)
+                    NI.run(duration=duration)
+            M.load_h5data()
+        else:
+            if input("Write in file canceled, cancel measurement ? y/n\n") == "y":
+                return
     else:
         samples = []
 

@@ -14,150 +14,6 @@ import h5py
 import numbers
 from unyt import Unit
 from pathlib import Path
-from abc import ABC, abstractmethod
-from queue import Empty
-
-import matplotlib.pyplot as plt
-
-
-class plot_data_from_queue(ABC):
-    """
-    Abstract class used to analyse and plot data that are feed into a queue (by a measurment callback)
-    """
-    plot_attribute = [
-        "plotbuffer",
-        "x_data",
-        "fig",
-        "axes",
-        "lines",
-        "autoscale",
-    ]
-    def __init__(self, fs, updatetime=0.1, plotbuffersize=2000, nchannel = 1):
-        """
-        :param fs: Sampling frequency
-        :type fs: float
-        :param updatetime: Time beetwen 2 plot update, defaults to 0.1
-        :type updatetime: flaot, optional
-        :param plotbuffersize: Number of datapoint plotted, defaults to 2000
-        :type plotbuffersize: int, optional
-
-        """
-        for x in self.plot_attribute:
-            setattr(self, x, None)
-        self.timesincelastupdate = 0
-        self.plotbuffersize = plotbuffersize
-        self.updatetime = updatetime
-        self.timeout = 0.1 * updatetime
-        self.fs = fs
-        self.timeinterval = 1 / self.fs
-        self.databuffersize = max(int(updatetime * self.fs),plotbuffersize)
-        if nchannel>1:
-            self.data_buffer = np.zeros((self.databuffersize, nchannel))
-        else:
-            self.data_buffer = np.zeros((self.databuffersize))
-        self.plot_setup()
-        for x in self.plot_attribute:
-            if getattr(self, x) is None:
-                raise TypeError(
-                    f"Subclasses 'plot_setup' method must set {x} to a non-None value"
-                )
-
-    @abstractmethod
-    def plot_setup(self):
-        """
-        Create a plot object
-        This method should be overridden, should create attribute used by the class:
-            plotbuffer: list of Numpy array that contain data to be plotted
-            x_data : list of Numpy array that contain the x axis values of data
-            fig : matplotlib figure
-            axes : list of matplotlib axes
-            lines : list of  matplotlib lines
-            autoscale = list of boolean, if true the corresponding axis is autoscaled after each plot
-
-        """
-        pass
-
-    @abstractmethod
-    def data_process(self):
-        """
-        Process data to be plotted
-        This method should be overridden, it modify plotbuffer and x_data using data_buffer
-
-        """
-        pass
-
-    def _plotting_buffer(self):
-        self.data_process()
-        for ax, line, x, y, autoscale in zip(
-            self.axes, self.lines, self.x_data, self.plotbuffer, self.autoscale
-        ):
-            line.set_xdata(x)
-            line.set_ydata(y)
-            if autoscale:
-                ax.relim()
-                ax.autoscale_view()
-        self.rescaling()
-        plt.pause(0.0001)
-        self.timesincelastupdate = 0
-
-    def rescaling(self):
-        """
-        This method is called automatically to rescale the data after each plot
-        By default, it does nothing.
-
-        """
-        pass
-
-    def _update_data_buffer(self, item):
-        n_values = len(item)
-        # item = np.asarray(item) * 0.001  #mv to V
-        self.timesincelastupdate += n_values
-        self.data_buffer[:-n_values] = self.data_buffer[n_values:]
-        self.data_buffer[-n_values:] = item
-
-    def update_plot(self, updatetime=None):
-        updatetime = self.updatetime if updatetime is None else updatetime
-        try:
-            if (item := self.dataqueue.get(timeout=self.timeout)) is not None:
-                self._update_data_buffer(item)
-                if self.timesincelastupdate * self.timeinterval > updatetime:
-                    self._plotting_buffer()
-        except (Empty, AttributeError):
-            pass
-
-    def update_plot_until_empty(self):
-        try:
-            while (item := self.dataqueue.get(timeout=10)) is not None:
-                self._update_data_buffer(item)
-                if self.timesincelastupdate * self.timeinterval > self.updatetime:
-                    self._plotting_buffer()
-            if self.timesincelastupdate > 0:
-                self._plotting_buffer()
-        except (Empty, AttributeError):
-            pass
-
-    def close(self):
-        plt.close(self.fig)
-
-    @property
-    def dataqueue(self):
-        try:
-            return self._dataqueue
-        except AttributeError:
-            print("No dataqueue defined")
-            return None
-
-    @dataqueue.setter
-    def dataqueue(self, dataqueue):
-        if (
-            item := dataqueue.get(timeout=10 * self.timeout)
-        ) is not None and item[0].size == self.data_buffer[0].size:
-            self._update_data_buffer(item)
-            if self.timesincelastupdate * self.timeinterval > self.updatetime:
-                self._plotting_buffer()
-            self._dataqueue = dataqueue
-        else:
-            raise ValueError("Invalid queue")
 
 def csv_to_dict(filename):
     """ Conversion from a CSV (produced by the class Measurement) to a dict
@@ -314,7 +170,7 @@ def decodeH5str(h5str):
         except:
             return h5str.strip("\'")
 
-def h5file_write_from_queue(queue, filename, dataset_name, Nchannel):
+def h5file_write_from_queue(queue, filename, dataset_name, Channel_map):
     """
     Data writer in hdf5 file from a Queue
     :param queue: A Queue which contains data, the shape is [lenght,Nchannel].
@@ -323,8 +179,8 @@ def h5file_write_from_queue(queue, filename, dataset_name, Nchannel):
     :type filename: str,Pat
     :param dataset_name: Name of the hdf5 dataset where data will be written.
     :type dataset_name: str
-    :param Nchannel: Number of expected channel,
-    :type Nchannel: int
+    :param Channel_map: Map of channel inside the queue,
+    :type Channel_map: list of int
     :return: None
     :rtype: None
 
@@ -332,9 +188,10 @@ def h5file_write_from_queue(queue, filename, dataset_name, Nchannel):
 
     print(f"Starting saving data in {filename}/{dataset_name}")
     with h5py.File(filename, "r+") as H5file:
-        item = np.array(queue.get()).transpose()
+        item = np.array(queue.get()).transpose()[:,Channel_map].squeeze()
         #Get dimension of item for multichannel case
         dims = item.shape
+        Nchannel = len(Channel_map)
         if Nchannel>1:
             assert dims[1] == Nchannel, f"Wrong format, queue item shape = {dims}, for a {Nchannel}-channel signal"
         Npoints = dims[0]
@@ -346,7 +203,7 @@ def h5file_write_from_queue(queue, filename, dataset_name, Nchannel):
         writebuffer = np.empty((chunksize, Nchannel),dtype=datatype).squeeze()
         buffer_position = _add_item(writebuffer, 0, item, Npoints, dataset, chunksize)
         while (item := queue.get(timeout=5)) is not None:
-            item = np.array(item).transpose()
+            item = np.array(item).transpose()[:,Channel_map].squeeze()
             Npoints = item.shape[0]
             buffer_position = _add_item(
                 writebuffer, buffer_position, item, Npoints, dataset, chunksize
