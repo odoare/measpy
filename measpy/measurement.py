@@ -292,8 +292,10 @@ class Measurement:
         """
         mesu = self._to_dict()
         in_sig = mesu.pop("in_sig",None)
+        if not any([s.dur>0 for s in in_sig]):
+            print("There is no data in this measurement, use 'create_hdf5' instead")
+            return
         out_sig = mesu.pop("out_sig",None)
-        data_type = mesu.pop("data_type",None)
         with h5py.File(filename, "x") as H5file:
             for name, value in mesu.items():
                 if value is not None:
@@ -301,19 +303,45 @@ class Measurement:
             if isinstance(in_sig,list):
                 in_sig = Signal.pack(in_sig)
             if isinstance(in_sig,Signal):
-                in_sig.to_hdf5(H5file, "in_sig", data_type)
-                if self.device_type=='pico':
-                    # picoscope read data in channel order, remaping to match in_map
-                    Channel_map = np.argsort(np.argsort(self.in_map))
-                else:
-                    Channel_map = None
-                in_sig.to_hdf5(H5file, "in_sig", data_type, Channel_map)
-                self.h5save_data = in_sig.h5save_data
+                in_sig.to_hdf5(H5file, "in_sig")
+                # self.h5save_data = in_sig.h5save_data
+            if isinstance(out_sig,list):
+                out_sig = Signal.pack(out_sig)
+            if isinstance(out_sig,Signal):
+                out_sig.to_hdf5(H5file, "out_sig")
+        self.filename = filename
+
+    def create_hdf5(self, filename, chunck_size=0, datatype=None, dbfs=None):
+        mesu = self._to_dict()
+        in_sig = mesu.pop("in_sig",None)
+        out_sig = mesu.pop("out_sig",None)
+        data_type = mesu.pop("data_type",datatype)
+        with h5py.File(filename, "x") as H5file:
+            for name, value in mesu.items():
+                if value is not None:
+                    H5file.attrs[name] = value
             if isinstance(out_sig,list):
                 out_sig = Signal.pack(out_sig)
             if isinstance(out_sig,Signal):
                 out_sig.to_hdf5(H5file, "out_sig", data_type)
-        self.filename = filename
+            if isinstance(in_sig,list):
+                in_sig = Signal.pack(in_sig)
+            if isinstance(in_sig,Signal):
+                if self.device_type=='pico':
+                    # picoscope read data in increasing channel number order, remaping to match in_map order
+                    Channel_map = np.argsort(np.argsort(self.in_map))
+                else:
+                    Channel_map = None
+            self.filename = filename
+            return in_sig.create_hdf5dataset(
+                H5file,
+                chunck_size=chunck_size,
+                dataset_name="in_sig",
+                data_type=data_type,
+                Channel_map=Channel_map,
+                dbfs=dbfs,
+                )
+
 
     def load_h5data(self):
         if hasattr(self, "filename"):
@@ -321,7 +349,7 @@ class Measurement:
             with h5py.File(self.filename, "r") as H5file:
                 self._load_h5signal(H5file)
         else:
-            print("There is not H5file")
+            print("No hdf5 file associated with this measurement")
 
     def _load_h5signal(self, H5file):
         try:

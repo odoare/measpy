@@ -447,21 +447,20 @@ class Pico_thread(ABC, Thread):
             )
         print("Preprocess data done")
 
-    def dbfs_save(self):
+    def create_h5file(self):
         """
         save h5file with dbfs according to channel parameter
         :return: None
         :rtype: None
 
         """
+        dbfs = []
         for sig, prange in zip(self.M.in_sig, self.M.in_range):
             sig.unit = "mV"
-            sig.dbfs = adc2mV([1], self.pico_range(prange), self.Data_type)[0]
+            dbfs.append(adc2mV([1], self.pico_range(prange), self.Data_type)[0])
         self.M.datatype = np.dtype(self.Data_type).name
         print("Creating the H5file with measurment parameters")
-        self.M.to_hdf5(self.filename)
-        for sig in self.M.in_sig:
-            sig.dbfs = 1
+        self.h5save_data = self.M.create_hdf5(self.filename, dbfs = dbfs)
 
     def setup_threads(self):
         # threads and outputs set up (preprocessing, put into queue, put into Signal)
@@ -469,7 +468,7 @@ class Pico_thread(ABC, Thread):
         if self.savehdf5:
             # In hdf5 ADC data (integers) are directly saved to file
             # dbfs convert ADC to mVolt and is saved in the parameters
-            self.dbfs_save()
+            self.create_h5file()
             queuesave = Queue()
             queueprocess = Queue()
             ret.append(
@@ -478,7 +477,7 @@ class Pico_thread(ABC, Thread):
                     args=(self.dataqueue, [queuesave, queueprocess]),
                 )
             )
-            ret.append(Thread(target=self.M.h5save_data, args=(queuesave,)))
+            ret.append(Thread(target=self.h5save_data, args=(queuesave,)))
         else:
             queueprocess = self.dataqueue
         process_data = self.setup_preprocess()
@@ -648,7 +647,7 @@ class Pico_thread(ABC, Thread):
     def pico_range(prange):
         """
         Picoscope voltage range (mapped from picoscope lib)
-        This property should be overridden, used by dbfs_save
+        This property should be overridden, used by create_h5file and setup_channel
         """
         pass
 
