@@ -28,43 +28,43 @@ Plot data in Volt and PSD at the same time as measurment with ni card, with axis
 class inline_plotting(plot_data_from_queue):
     def plot_setup(self):
         # define x_data : list of numpy array : x axis of the plot
-        self.x_data = [
+        x_data = [
             np.arange(0, self.plotbuffersize) * self.timeinterval,
             np.fft.rfftfreq(n=self.plotbuffersize, d=self.timeinterval),
         ]
         # define plotbuffer, list of numpy array : y axis of the plot
-        self.plotbuffer = [np.zeros_like(x) for x in self.x_data]
+        self.plotbuffer = [np.zeros_like(x) for x in x_data]
+        # set defaults data to nan so it doesn't appear on the plot
         for buff in self.plotbuffer:
             buff[:] = np.nan
         # define figure and axes
         self.fig, self.axes = plt.subplots(1, 2, figsize=(15, 5))
         self.fig.subplots_adjust(bottom=0.2)
-        # axes labesl
+        # set axes labels
         self.axes[0].set_xlabel("Temps [s]", fontsize=15)
         self.axes[0].set_ylabel("Tension [V]", fontsize=15)
         self.axes[1].set_xlabel("Fréquence [Hz]", fontsize=15)
         self.axes[1].set_ylabel("Tension [V]", fontsize=15)
-        self.axes[0].set_xlim([self.x_data[0][0], self.x_data[0][-1]])
+        # set axes limits
+        self.axes[0].set_xlim([x_data[0][0], x_data[0][-1]])
         self.axes[0].set_ylim([-1, 1])
         self.axes[1].set_xlim([0.01, self.fs / 2])
         self.axes[1].set_ylim([10**-3, 10])
-        # Plot the buffer
-        (linet,) = self.axes[0].plot(
-            self.x_data[0], self.plotbuffer[0], animated=True
-        )
+        # Plot the buffer to create lines objects
+        (linet,) = self.axes[0].plot(x_data[0], self.plotbuffer[0], animated=True)
         (linef,) = self.axes[1].semilogy(
-            self.x_data[1],
-            np.ones_like(self.x_data[1]),
+            x_data[1],
+            np.ones_like(x_data[1]),
             animated=True,
         )
 
-        # define lines : list of plt line updated with the buffer
+        # define lines : list of line object that will be updated
         self.lines = [linet, linef]
 
-        # show t0 on first plot
-        self.timedata = [True, False]
+        # displace nans to the right for first plot
+        self.istimedata = [True, False]
 
-        # Stop button
+        # Define a Stop button
         self.stop_event = Event()
 
         def fstop(event):
@@ -74,7 +74,7 @@ class inline_plotting(plot_data_from_queue):
         self.bstop = Button(axs, "Stop")
         self.bstop.on_clicked(fstop)
 
-        # Buttons that can rescale axis (after each plot update)
+        # Define buttons to update a flag used to launch a method updating axis
         self.tamp_plus = False
 
         def tamp_plus(event):
@@ -147,12 +147,13 @@ class inline_plotting(plot_data_from_queue):
         self.freqm = Button(afreqm, "-")
         self.freqm.on_clicked(freq_moins)
 
+        # set Stop event to stop measurment when the figure is closed.
         self.fig.canvas.mpl_connect("close_event", fstop)
 
     def rescaling(self):
-        # defines method to rescale axis (called after each new plot)
-        # 'self.bm.change_axe = True' needed because changing axis impossible with fast plot
-        # using slow plot method when axis are changed
+        # defines method that rescale axis when a flag is set to True
+        # the other flag : 'self.bm.change_axe = True' is needed because changing axis
+        # is impossible with fast plot method, the axis are changed using slower plot method
 
         if self.tamp_plus:
             self.axes[0].set_ylim(np.array(self.axes[0].get_ylim()) * 0.5)
@@ -195,12 +196,14 @@ class inline_plotting(plot_data_from_queue):
             self.bm.changed_axe = True
 
     def data_process(self):
+        # Transfert data from data_buffer to plotbuffer
         self.plotbuffer[0][: -self.timesincelastupdate] = self.plotbuffer[0][
             self.timesincelastupdate :
         ]
         self.plotbuffer[0][-self.timesincelastupdate :] = self.data_buffer[
             -self.timesincelastupdate :
         ].copy()
+        # fft for the second plot, begin to be calculated only after enough data arrived
         if not any(np.isnan(self.plotbuffer[0])):
             self.plotbuffer[1][:] = np.abs(
                 np.fft.rfft(self.plotbuffer[0], norm="ortho")
@@ -219,7 +222,9 @@ if __name__ == "__main__":
     # define plot parameter
     plot_time = 5
     refresh_delay = 0.1
+    # size of plot buffer equal to the size of plot
     plotbuffersize = plot_time * fs
+    # Create plot instance
     A = inline_plotting(
         fs,
         updatetime=refresh_delay,
@@ -231,13 +236,13 @@ if __name__ == "__main__":
     Q = Queue()
 
     # define the callback that fill up the queue
-    n_values = min(int(fs * refresh_delay / 2), plotbuffersize)
 
     def callback(buffer_in, n_values):
         Q.put(buffer_in.copy())
 
+    # read data every refresh delay or time to fill the data buffer
+    n_values = min(int(fs * refresh_delay), A.databuffersize)
     # use ni_callback_measurement to set up measrument
-
     with ni_callback_measurement(M) as NI:
         NI.set_callback(callback, n_values)
 
@@ -245,6 +250,7 @@ if __name__ == "__main__":
         def work(*args):
             NI.run(*args)
             print("measurment done")
+            # Don't forget end flag for the Queue
             Q.put(None)
 
         T = Thread(target=work, args=(A.stop_event, None))
@@ -253,10 +259,12 @@ if __name__ == "__main__":
         # tstop.start()
 
         try:
-            # wait for first data to update before update the plot
+            # wait for first data chunk to arrive before giving the queue to the plot instance
             time.sleep(1.5 * n_values / fs)
             A.dataqueue = Q
+            # update the plot until end flag
             A.update_plot_until_empty()
+            # wait for measurement to finish (should be already finished here)
             T.join()
         except Exception as e:
             # stop measurment in case of exeption

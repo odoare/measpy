@@ -143,18 +143,26 @@ class plot_data_from_queue(ABC):
     Abstract class used to analyse and plot data that are feed into a queue (by a measurment callback)
     """
 
-    plot_attribute = ["plotbuffer", "x_data", "fig", "axes", "lines", "timedata"]
+    plot_attribute = ["plotbuffer", "axes", "lines", "istimedata"]
 
     def __init__(
         self, fs, updatetime=0.1, plotbuffersize=2000, nchannel=1, show_time0=True
     ):
         """
-        :param fs: Sampling frequency
+        :param fs: Frequency (Hz) of the signal, used to define 'timeinterval' attribute
+        that manage the time dependencies of the plot.
         :type fs: float
-        :param updatetime: Time beetwen 2 plot update, defaults to 0.1
+        :param updatetime: Time (second) between each update of the plot, defaults to 0.1
         :type updatetime: flaot, optional
-        :param plotbuffersize: Number of datapoint plotted, defaults to 2000
+        :param plotbuffersize: define attribute to store a size of the plot buffer
+        that can be used inside 'plot_setup' method, defaults to 2000
         :type plotbuffersize: int, optional
+        :param nchannel: Number of channels inside the Queue, defaults to 1
+        :type nchannel: int, optional
+        :param show_time0: If true, show a indicator for t0, defaults to True
+        :type show_time0: bool, optional
+        :return: Initialise the instance, with attribute useful to define plot and mandatory to use the class
+        :rtype: plot_data_from_queue
 
         """
         for x in self.plot_attribute:
@@ -172,11 +180,23 @@ class plot_data_from_queue(ABC):
         else:
             self.data_buffer = np.zeros((self.databuffersize))
         self.plot_setup()
-        for x in self.plot_attribute:
+        for x in self.plot_attribute + ["fig"]:
             if getattr(self, x) is None:
                 raise TypeError(
                     f"Subclasses 'plot_setup' method must set {x} to a non-None value"
                 )
+        nlines = len(self.lines)
+        for x in self.plot_attribute:
+            if not len(getattr(self, x)) == nlines:
+                raise ValueError(
+                    f"The size of {x} is not the same as the number of lines = {nlines}"
+                )
+        for buff in self.plotbuffer:
+            if (s := buff.size) != self.plotbuffersize:
+                print(
+                    f"Warning : size of plotbuffer {s} is different than attribute 'plotbuffersize' {self.plotbuffersize}"
+                )
+
         animated_artists = self.lines
         self.tend = 0
         if show_time0:
@@ -197,15 +217,16 @@ class plot_data_from_queue(ABC):
     @abstractmethod
     def plot_setup(self):
         """
-        Create a plot object
-        This method should be overridden, should create attribute used by the class:
-            plotbuffer: list of Numpy array that contain data to be plotted
-            x_data : list of Numpy array that contain the x axis values of data
-            fig : matplotlib figure
-            axes : list of matplotlib axes
-            lines : list of  matplotlib lines
-            timedata : list of boolean, if true the nan for the considered axis are displaced
-            to the right (better display at begining)
+        Create the plot and attributes used to modify the plot :
+            - plotbuffer: list of Numpy array that contain data to be plotted
+            - fig : matplotlib figure
+            - axes : list of matplotlib axes
+            - lines : list of  matplotlib lines
+            - istimedata : list of boolean, if true the nan for the considered axis are displaced
+            to the right (allow better display at begining)
+
+        plotbuffer, axes, lines and istimedata should be lists of the same size,
+        each element corresponds to one line of data plotted
 
         """
         pass
@@ -213,21 +234,22 @@ class plot_data_from_queue(ABC):
     @abstractmethod
     def data_process(self):
         """
-        Process data to be plotted
-        This method should be overridden, it modify plotbuffer and x_data using data_buffer
+        Process data to be plotted by updating plotbuffer using data_buffer
+        data_buffer is a numpy array (dimensions = [databuffersize,nchannels])
+        that contain the data from the Queue
+        databuffersize is greater than plotbuffersize and updatetime * fs
 
         """
         pass
 
     def _plotting_buffer(self):
         self.data_process()
-        for ax, line, x, y, timedata in zip(
-            self.axes, self.lines, self.x_data, self.plotbuffer, self.timedata
+        for ax, line, data, istimedata in zip(
+            self.axes, self.lines, self.plotbuffer, self.istimedata
         ):
-            if timedata:
-                y = justify(y)
-            line.set_xdata(x)
-            line.set_ydata(y)
+            if istimedata:
+                data = justify(data)
+            line.set_ydata(data)
         self.rescaling()
         if self.time0 is not None:
             self.tend += self.timesincelastupdate * self.timeinterval
@@ -241,7 +263,7 @@ class plot_data_from_queue(ABC):
         """
         This method is called automatically to rescale the data after each plot
         By default, it does nothing.
-        It need to set self.bm.change_axe to True when axes are changed
+        It has to set self.bm.change_axe to True when axes are changed
 
         """
         pass
