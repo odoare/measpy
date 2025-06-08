@@ -1254,7 +1254,7 @@ class Signal:
                         else:
                             sig.__dict__[key] = decodeH5str(val)
                     sig._rawvalues = data
-                    out.append(sig)
+                out.append(sig)
             if (Nsig := len(datasets))>1:
                 print(f"Warning there are {Nsig} signals in current file : {list(H5file.keys())}")
                 return out
@@ -2017,8 +2017,6 @@ class Signal:
 
     def to_hdf5(self, hdf5_object, dataset_name="in_sigs"):
         """ Saves the signal in an hdf5 file
-
-        Save Signal in hdf5 file
 
         :param hdf5_object: The file or hdf5 object where to save the data
         :type hdf5_object: str, Path or opened h5file handle
