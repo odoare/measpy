@@ -76,8 +76,9 @@ def ni_run_measurement(M, filename=None, duration="default", chunck_size = 0):
             nonlocal samples
             samples.extend(buffer_in.copy())
 
+        n_values = min(2**14,int(0.1*M.dur*M.fs))
         with ni_callback_measurement(M) as NI:
-            NI.set_callback(callback, 2**14)
+            NI.set_callback(callback, n_values)
             NI.run(duration=duration)
         if isinstance(M.in_sig, Signal):
             M.in_sig.raw = np.fromiter(
