@@ -90,7 +90,8 @@ def Queue2prealocated_array(q_in, array):
     datasize = array.shape[0]
     nextSample = 0
     while (item := q_in.get(timeout=maxtimeout)) is not None:
-        noOfSamples = len(item)
+        item = np.asarray(item).transpose()
+        noOfSamples = item.shape[0]
         lastsample = nextSample + noOfSamples
         try:
             array[nextSample:lastsample] = item
@@ -104,12 +105,11 @@ def Queue2prealocated_array(q_in, array):
 
 
 def Queue2array(q_in):
-    data = []
+    data = q_in.get(timeout=maxtimeout)
     while (item := q_in.get(timeout=maxtimeout)) is not None:
-        data.extend(item)
-    return np.fromiter(
-        data, np.dtype((float, (len(data[0]),))), count=len(data)
-    ).squeeze()
+        item = np.asarray(item).transpose()
+        data =  np.concatenate([data,item],axis = 1)
+    return data
 
 
 def findindex(l, e):
@@ -135,9 +135,9 @@ def detect_rising_pulses_threshold_ind(
     :type ind0: int
     :param previous_data_point: Value of the last data point (indice = ind0-1).
         useful to not lose the peak at ind0
-    :type previous_data_point: number
+    :type previous_data_point: list with one number
     :param threshold: threshold (in adc values).
-    :type threshold: int
+    :type threshold: list with one int
     :return: List of indices where a rising pulse is detected.
     :rtype: List
     """
@@ -555,11 +555,15 @@ class Pico_thread(ABC, Thread):
                 methods.append(partial(method, **partial_kwargs))
             else:
                 methods.append(method)
-        return methods
+
+        def process(values):
+            return [method(values[ind]) for (ind, method) in zip(self.buffers_map, methods)]
+
+        return process
 
     def setup_preprocess(self):
         # define func that preprocess raw data
-        methods = self.methods_setup()
+        preprocess = self.methods_setup()
 
         if self.min_chunksize_processed > 0:
 
@@ -568,23 +572,11 @@ class Pico_thread(ABC, Thread):
                 while (item := queue.get(timeout=maxtimeout)) is not None:
                     _ = [c.extend(it) for (c, it) in zip(chunk_data, item)]
                     if len(chunk_data[0]) > self.min_chunksize_processed:
-                        values = transposelist(
-                            [
-                                method(chunk_data[ind])
-                                for (ind, method) in zip(
-                                    self.buffers_map, methods
-                                )
-                            ]
-                        )
+                        values = preprocess(chunk_data)
                         queueout.put(values)
                         chunk_data = [[] for _ in range(self.nchannels)]
                 if len(chunk_data[0]) > 0:
-                    values = transposelist(
-                        [
-                            method(chunk_data[ind])
-                            for (ind, method) in zip(self.buffers_map, methods)
-                        ]
-                    )
+                    values = preprocess(chunk_data)
                     queueout.put(values)
                 queueout.put(None)
 
@@ -592,12 +584,7 @@ class Pico_thread(ABC, Thread):
 
             def func(queue, queueout):
                 while (item := queue.get(timeout=maxtimeout)) is not None:
-                    values = transposelist(
-                        [
-                            method(item[ind])
-                            for (ind, method) in zip(self.buffers_map, methods)
-                        ]
-                    )
+                    values = preprocess(item)
                     queueout.put(values)
                 queueout.put(None)
 
