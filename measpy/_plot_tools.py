@@ -104,10 +104,17 @@ class BlitManager:
             the canvas this class is managing.
 
         """
-        if art.figure != self.canvas.figure:
-            raise RuntimeError
-        art.set_animated(True)
-        self._artists.append(art)
+        if type(art) is list:
+            for oneArt in art:
+                if oneArt.figure != self.canvas.figure:
+                    raise RuntimeError
+                oneArt.set_animated(True)
+                self._artists.append(oneArt)
+        else:
+            if art.figure != self.canvas.figure:
+                raise RuntimeError
+            art.set_animated(True)
+            self._artists.append(art)
 
     def _draw_animated(self):
         """Draw all of the animated artists."""
@@ -175,6 +182,7 @@ class plot_data_from_queue(ABC):
         self.timeinterval = 1 / self.fs
         self.plot_duration = plotbuffersize * self.timeinterval
         self.databuffersize = max(int(updatetime * self.fs), plotbuffersize)
+        self.nchannel = nchannel
         if nchannel > 1:
             self.data_buffer = np.zeros((self.databuffersize, nchannel))
         else:
@@ -190,11 +198,6 @@ class plot_data_from_queue(ABC):
             if not len(getattr(self, x)) == nlines:
                 raise ValueError(
                     f"The size of {x} is not the same as the number of lines = {nlines}"
-                )
-        for buff in self.plotbuffer:
-            if (s := buff.size) != self.plotbuffersize:
-                print(
-                    f"Warning : size of plotbuffer {s} is different than attribute 'plotbuffersize' {self.plotbuffersize}"
                 )
 
         animated_artists = self.lines

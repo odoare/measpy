@@ -61,6 +61,12 @@ from ._tools import (add_step,
                            mix_dicts,
                            decodeH5str)
 
+from enum import Enum
+
+class SignalType(Enum):
+    DIGITAL = "digital signal"
+    ANALOG = "analog signal"
+
 ##################
 ##              ##
 ## Signal class ##
@@ -138,6 +144,8 @@ class Signal:
     :type volts: 1D numpy array, optional
     :param values: data of the signal givent in its physical units
     :type values: 1D numpy array, optional
+    :param type: Type of the signal, analog or digital
+    :type type: measpy.signal.SignalType
     :param any: Any other parameter can be given. They are stored as a new property for a user-personalized use. For instance, the log_sweep creation method introduced above stores the low and high frequencies in the properties freq_min and freq_max, as it can be useful to keep track of these values for later signal processing.
 
     Some defined properties are calculated on demand when called. For instance, the duration of the signal depends on the number of samples and sampling frequency.
@@ -193,6 +201,8 @@ class Signal:
         :type volts: numpy.array, optional
         :param raw: Signal values given as raw samples
         :type raw: numpy.array, optional
+        :param type: Signal type, defaults to ANALOG
+        :type type: measpy.signal.SignalType
         :return: A signal
         :rtype: measpy.signal.Signal
 
@@ -202,6 +212,8 @@ class Signal:
             self.fs = 1.0
         if 'desc' not in kwargs:
             self.desc = 'A signal'
+        if 'type' not in kwargs:
+            self.type = SignalType.ANALOG
 
         # We have to make sure that properties such as dbfs
         # and cal are the correct ones BEFORE values are calculated
@@ -224,6 +236,8 @@ class Signal:
                 self.cal = val
             elif arg == 'dur':
                 raise AttributeError("Property 'dur' cannot be set")
+            elif arg == 'type':
+                self.type = val
             else:
                 self.__dict__[arg] = val
 
@@ -1415,13 +1429,20 @@ class Signal:
         Values as 1D numpy array
         """
         if isinstance(self.cal, (int, float, np.ndarray)) and isinstance(self.dbfs, (int, float, np.ndarray)):
-            return self._rawvalues*self.dbfs/self.cal
+            values = self._rawvalues*self.dbfs/self.cal
+            if self.type == SignalType.DIGITAL:
+                values = values.astype(int)
+            return values
+
         elif isinstance(self.cal,str):
             d = {}
             d['x'] = self.raw*self.dbfs
             command = 'y='+self.cal
             exec(command, d)
-            return d['y']
+            values = self._rawvalues*self.dbfs/cal
+            if self.type == SignalType.DIGITAL:
+                values = values.astype(int)
+            return values
         elif isinstance(self.cal,list):
             # Here we convert a list of values to ndarray
             # (converting eventual None values to 1.0)
