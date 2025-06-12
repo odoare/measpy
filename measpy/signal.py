@@ -1439,7 +1439,7 @@ class Signal:
             d['x'] = self.raw*self.dbfs
             command = 'y='+self.cal
             exec(command, d)
-            values = self._rawvalues*self.dbfs/self.cal
+            values = d['y']
             if self.type == SignalType.DIGITAL:
                 values = values.astype(int)
             return values
