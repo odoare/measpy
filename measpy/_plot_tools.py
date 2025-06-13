@@ -187,7 +187,9 @@ class plot_data_from_queue(ABC):
             self.data_buffer = np.zeros((self.databuffersize, nchannel))
         else:
             self.data_buffer = np.zeros((self.databuffersize))
-        self.plot_setup()
+        animated_artists = self.plot_setup()
+        if not animated_artists:
+            animated_artists = []
         for x in self.plot_attribute + ["fig"]:
             if getattr(self, x) is None:
                 raise TypeError(
@@ -200,7 +202,7 @@ class plot_data_from_queue(ABC):
                     f"The size of {x} is not the same as the number of lines = {nlines}"
                 )
 
-        animated_artists = self.lines
+        animated_artists += self.lines
         self.tend = 0
         if show_time0:
             self.time0 = self.axes[0].text(
@@ -230,6 +232,7 @@ class plot_data_from_queue(ABC):
 
         plotbuffer, axes, lines and istimedata should be lists of the same size,
         each element corresponds to one line of data plotted
+        can return a animated artist to be updated inside data_process
 
         """
         pass

@@ -7,7 +7,7 @@ Created on Tue Feb 25 16:15:18 2025
 
 import matplotlib
 
-matplotlib.use("TkAgg")
+# matplotlib.use("TkAgg")
 
 import numpy as np
 import measpy as mp
@@ -39,7 +39,7 @@ class inline_plotting(plot_data_from_queue):
             buff[:] = np.nan
         # define figure and axes
         self.fig, self.axes = plt.subplots(1, 2, figsize=(15, 5))
-        self.fig.subplots_adjust(bottom=0.2)
+        self.fig.subplots_adjust(bottom=0.2,left=0.2)
         # set axes labels
         self.axes[0].set_xlabel("Temps [s]", fontsize=15)
         self.axes[0].set_ylabel("Tension [V]", fontsize=15)
@@ -55,6 +55,25 @@ class inline_plotting(plot_data_from_queue):
         (linef,) = self.axes[1].semilogy(
             x_data[1],
             np.ones_like(x_data[1]),
+            animated=True,
+        )
+        #create animated artist to show some values
+        self.std = self.axes[0].text(
+            -0.5,
+            0.8,
+            "$standard \quad deviation = 0$",
+            transform=self.axes[0].transAxes,
+            va="bottom",
+            ha="left",
+            animated=True,
+        )
+        self.mean = self.axes[0].text(
+            -0.5,
+            0.9,
+            "$mean = 0$",
+            transform=self.axes[0].transAxes,
+            va="bottom",
+            ha="left",
             animated=True,
         )
 
@@ -149,6 +168,8 @@ class inline_plotting(plot_data_from_queue):
 
         # set Stop event to stop measurment when the figure is closed.
         self.fig.canvas.mpl_connect("close_event", fstop)
+        #this metho return list of animated artist
+        return [self.std,self.mean]
 
     def rescaling(self):
         # defines method that rescale axis when a flag is set to True
@@ -208,6 +229,15 @@ class inline_plotting(plot_data_from_queue):
             self.plotbuffer[1][:] = np.abs(
                 np.fft.rfft(self.plotbuffer[0], norm="ortho")
             )
+        #update the animated artist text
+        std = np.std(self.plotbuffer[0])
+        self.std.set_text(
+            f"$standard \quad deviation = {std:.2f}$"
+        )
+        mean = np.mean(self.plotbuffer[0])
+        self.mean.set_text(
+            f"$mean = {mean:.2f}$"
+        )
 
 
 if __name__ == "__main__":
