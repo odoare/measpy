@@ -112,6 +112,7 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="measpy.html#module-measpy.measurement">measpy.measurement module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="measpy.html#measpy.measurement.Measurement"><code class="docutils literal notranslate"><span class="pre">Measurement</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.measurement.Measurement.create_hdf5"><code class="docutils literal notranslate"><span class="pre">Measurement.create_hdf5()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.measurement.Measurement.from_dir"><code class="docutils literal notranslate"><span class="pre">Measurement.from_dir()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.measurement.Measurement.from_hdf5"><code class="docutils literal notranslate"><span class="pre">Measurement.from_hdf5()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.measurement.Measurement.load_h5data"><code class="docutils literal notranslate"><span class="pre">Measurement.load_h5data()</span></code></a></li>
@@ -144,8 +145,8 @@
 <li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.pico.Pico_thread.channel_name"><code class="docutils literal notranslate"><span class="pre">Pico_thread.channel_name</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.pico.Pico_thread.channels_setup"><code class="docutils literal notranslate"><span class="pre">Pico_thread.channels_setup()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.pico.Pico_thread.close_unit"><code class="docutils literal notranslate"><span class="pre">Pico_thread.close_unit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.pico.Pico_thread.create_h5file"><code class="docutils literal notranslate"><span class="pre">Pico_thread.create_h5file()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.pico.Pico_thread.dataqueue"><code class="docutils literal notranslate"><span class="pre">Pico_thread.dataqueue</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.pico.Pico_thread.dbfs_save"><code class="docutils literal notranslate"><span class="pre">Pico_thread.dbfs_save()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.pico.Pico_thread.methods_setup"><code class="docutils literal notranslate"><span class="pre">Pico_thread.methods_setup()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.pico.Pico_thread.open_unit"><code class="docutils literal notranslate"><span class="pre">Pico_thread.open_unit()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.pico.Pico_thread.pico_range"><code class="docutils literal notranslate"><span class="pre">Pico_thread.pico_range()</span></code></a></li>
@@ -184,6 +185,7 @@
 <li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.coh"><code class="docutils literal notranslate"><span class="pre">Signal.coh()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.convolve"><code class="docutils literal notranslate"><span class="pre">Signal.convolve()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.corr"><code class="docutils literal notranslate"><span class="pre">Signal.corr()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.create_hdf5dataset"><code class="docutils literal notranslate"><span class="pre">Signal.create_hdf5dataset()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.cut"><code class="docutils literal notranslate"><span class="pre">Signal.cut()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.dB"><code class="docutils literal notranslate"><span class="pre">Signal.dB()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.dB_SPL"><code class="docutils literal notranslate"><span class="pre">Signal.dB_SPL()</span></code></a></li>
@@ -244,6 +246,11 @@
 <li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.values"><code class="docutils literal notranslate"><span class="pre">Signal.values</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.volts"><code class="docutils literal notranslate"><span class="pre">Signal.volts</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Signal.window"><code class="docutils literal notranslate"><span class="pre">Signal.window()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="measpy.html#measpy.signal.SignalType"><code class="docutils literal notranslate"><span class="pre">SignalType</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.SignalType.ANALOG"><code class="docutils literal notranslate"><span class="pre">SignalType.ANALOG</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.SignalType.DIGITAL"><code class="docutils literal notranslate"><span class="pre">SignalType.DIGITAL</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="measpy.html#measpy.signal.Spectral"><code class="docutils literal notranslate"><span class="pre">Spectral</span></code></a><ul>

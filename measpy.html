@@ -58,6 +58,7 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#module-measpy.measurement">measpy.measurement module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#measpy.measurement.Measurement"><code class="docutils literal notranslate"><span class="pre">Measurement</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#measpy.measurement.Measurement.create_hdf5"><code class="docutils literal notranslate"><span class="pre">Measurement.create_hdf5()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.measurement.Measurement.from_dir"><code class="docutils literal notranslate"><span class="pre">Measurement.from_dir()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.measurement.Measurement.from_hdf5"><code class="docutils literal notranslate"><span class="pre">Measurement.from_hdf5()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.measurement.Measurement.load_h5data"><code class="docutils literal notranslate"><span class="pre">Measurement.load_h5data()</span></code></a></li>
@@ -90,8 +91,8 @@
 <li class="toctree-l4"><a class="reference internal" href="#measpy.pico.Pico_thread.channel_name"><code class="docutils literal notranslate"><span class="pre">Pico_thread.channel_name</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.pico.Pico_thread.channels_setup"><code class="docutils literal notranslate"><span class="pre">Pico_thread.channels_setup()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.pico.Pico_thread.close_unit"><code class="docutils literal notranslate"><span class="pre">Pico_thread.close_unit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#measpy.pico.Pico_thread.create_h5file"><code class="docutils literal notranslate"><span class="pre">Pico_thread.create_h5file()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.pico.Pico_thread.dataqueue"><code class="docutils literal notranslate"><span class="pre">Pico_thread.dataqueue</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#measpy.pico.Pico_thread.dbfs_save"><code class="docutils literal notranslate"><span class="pre">Pico_thread.dbfs_save()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.pico.Pico_thread.methods_setup"><code class="docutils literal notranslate"><span class="pre">Pico_thread.methods_setup()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.pico.Pico_thread.open_unit"><code class="docutils literal notranslate"><span class="pre">Pico_thread.open_unit()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.pico.Pico_thread.pico_range"><code class="docutils literal notranslate"><span class="pre">Pico_thread.pico_range()</span></code></a></li>
@@ -130,6 +131,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.coh"><code class="docutils literal notranslate"><span class="pre">Signal.coh()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.convolve"><code class="docutils literal notranslate"><span class="pre">Signal.convolve()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.corr"><code class="docutils literal notranslate"><span class="pre">Signal.corr()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.create_hdf5dataset"><code class="docutils literal notranslate"><span class="pre">Signal.create_hdf5dataset()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.cut"><code class="docutils literal notranslate"><span class="pre">Signal.cut()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.dB"><code class="docutils literal notranslate"><span class="pre">Signal.dB()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.dB_SPL"><code class="docutils literal notranslate"><span class="pre">Signal.dB_SPL()</span></code></a></li>
@@ -190,6 +192,11 @@
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.values"><code class="docutils literal notranslate"><span class="pre">Signal.values</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.volts"><code class="docutils literal notranslate"><span class="pre">Signal.volts</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Signal.window"><code class="docutils literal notranslate"><span class="pre">Signal.window()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#measpy.signal.SignalType"><code class="docutils literal notranslate"><span class="pre">SignalType</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#measpy.signal.SignalType.ANALOG"><code class="docutils literal notranslate"><span class="pre">SignalType.ANALOG</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#measpy.signal.SignalType.DIGITAL"><code class="docutils literal notranslate"><span class="pre">SignalType.DIGITAL</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#measpy.signal.Spectral"><code class="docutils literal notranslate"><span class="pre">Spectral</span></code></a><ul>
@@ -327,6 +334,11 @@ All the acquired signals are then re-synced from the time lag value.</p>
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">measpy.measurement.</span></span><span class="sig-name descname"><span class="pre">Measurement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.measurement.Measurement" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <dl class="py method">
+<dt class="sig sig-object py" id="measpy.measurement.Measurement.create_hdf5">
+<span class="sig-name descname"><span class="pre">create_hdf5</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunck_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">datatype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dbfs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.measurement.Measurement.create_hdf5" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="measpy.measurement.Measurement.from_dir">
 <em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dirname</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.measurement.Measurement.from_dir" title="Link to this definition"></a></dt>
 <dd><p>Load a measurement object from a directory</p>
@@ -413,7 +425,7 @@ Using nidaqmx.Task.register_every_n_samples_acquired_into_buffer_event</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.ni.ni_callback_measurement.run">
-<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stop=&lt;threading.Event</span> <span class="pre">at</span> <span class="pre">0x7f69d16d1e50:</span> <span class="pre">unset&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">duration='default'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.ni.ni_callback_measurement.run" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stop=&lt;threading.Event</span> <span class="pre">at</span> <span class="pre">0x7f72c8679b90:</span> <span class="pre">unset&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">duration='default'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.ni.ni_callback_measurement.run" title="Link to this definition"></a></dt>
 <dd><p>Run the measurment
 :param stop: Trigger to stop the measurment, defaults to Event()
 :type stop: threading.Event, optional
@@ -454,7 +466,7 @@ the custom ‘callback_method’, it is called every ‘n_values’ written into
 
 <dl class="py function">
 <dt class="sig sig-object py" id="measpy.ni.ni_run_measurement">
-<span class="sig-prename descclassname"><span class="pre">measpy.ni.</span></span><span class="sig-name descname"><span class="pre">ni_run_measurement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">duration</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.ni.ni_run_measurement" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">measpy.ni.</span></span><span class="sig-name descname"><span class="pre">ni_run_measurement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">duration</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunck_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.ni.ni_run_measurement" title="Link to this definition"></a></dt>
 <dd><p>Runs a measurement defined in the object of
 the class measpy.measurement.Measurement given
 as argument.</p>
@@ -513,7 +525,7 @@ All the acquired signals are then re-synced from the time lag value.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="measpy.pico.Pico_thread">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">measpy.pico.</span></span><span class="sig-name descname"><span class="pre">Pico_thread</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_queue=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pre_process=picosdk.functions.adc2mV</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_into_Signal=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_chunksize_processed=0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffersize=20000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_samples=100000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">serial=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop_event=&lt;threading.Event</span> <span class="pre">at</span> <span class="pre">0x7f69d10d4d50:</span> <span class="pre">unset&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.pico.Pico_thread" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">measpy.pico.</span></span><span class="sig-name descname"><span class="pre">Pico_thread</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_queue=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pre_process=picosdk.functions.adc2mV</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_into_Signal=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_chunksize_processed=0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffersize=20000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_samples=100000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">serial=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop_event=&lt;threading.Event</span> <span class="pre">at</span> <span class="pre">0x7f72c8275e50:</span> <span class="pre">unset&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.pico.Pico_thread" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Thread</span></code></p>
 <dl class="simple">
 <dt>This needs M to contain the following properties:</dt><dd><ul class="simple">
@@ -558,18 +570,18 @@ All the acquired signals are then re-synced from the time lag value.</p>
 <dd><p>Close picoscope</p>
 </dd></dl>
 
-<dl class="py attribute">
-<dt class="sig sig-object py" id="measpy.pico.Pico_thread.dataqueue">
-<span class="sig-name descname"><span class="pre">dataqueue</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;queue.Queue</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#measpy.pico.Pico_thread.dataqueue" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
 <dl class="py method">
-<dt class="sig sig-object py" id="measpy.pico.Pico_thread.dbfs_save">
-<span class="sig-name descname"><span class="pre">dbfs_save</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#measpy.pico.Pico_thread.dbfs_save" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="measpy.pico.Pico_thread.create_h5file">
+<span class="sig-name descname"><span class="pre">create_h5file</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#measpy.pico.Pico_thread.create_h5file" title="Link to this definition"></a></dt>
 <dd><p>save h5file with dbfs according to channel parameter
 :return: None
 :rtype: None</p>
 </dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="measpy.pico.Pico_thread.dataqueue">
+<span class="sig-name descname"><span class="pre">dataqueue</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;queue.Queue</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#measpy.pico.Pico_thread.dataqueue" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.pico.Pico_thread.methods_setup">
@@ -586,7 +598,7 @@ All the acquired signals are then re-synced from the time lag value.</p>
 <dt class="sig sig-object py" id="measpy.pico.Pico_thread.pico_range">
 <em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pico_range</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prange</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.pico.Pico_thread.pico_range" title="Link to this definition"></a></dt>
 <dd><p>Picoscope voltage range (mapped from picoscope lib)
-This property should be overridden, used by dbfs_save</p>
+This property should be overridden, used by create_h5file and setup_channel</p>
 </dd></dl>
 
 <dl class="py method">
@@ -652,9 +664,9 @@ channel range and channel data buffer.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>values</strong> (<em>List</em>) – Data.</p></li>
 <li><p><strong>ind0</strong> (<em>int</em>) – indice of the first data point.</p></li>
-<li><p><strong>previous_data_point</strong> (<em>number</em>) – Value of the last data point (indice = ind0-1).
+<li><p><strong>previous_data_point</strong> (<em>list with one number</em>) – Value of the last data point (indice = ind0-1).
 useful to not lose the peak at ind0</p></li>
-<li><p><strong>threshold</strong> (<em>int</em>) – threshold (in adc values).</p></li>
+<li><p><strong>threshold</strong> (<em>list with one int</em>) – threshold (in adc values).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -783,6 +795,7 @@ For example a five seconds logarithmic sweep from 20Hz to 20kHz, of dimension vo
 <li><p><strong>raw</strong> (<em>1D numpy array</em><em>, </em><em>optional</em>) – raw data of the signal, defaults to array(None)</p></li>
 <li><p><strong>volts</strong> (<em>1D numpy array</em><em>, </em><em>optional</em>) – data of the signal given in volts</p></li>
 <li><p><strong>values</strong> (<em>1D numpy array</em><em>, </em><em>optional</em>) – data of the signal givent in its physical units</p></li>
+<li><p><strong>type</strong> (<a class="reference internal" href="#measpy.signal.SignalType" title="measpy.signal.SignalType"><em>measpy.signal.SignalType</em></a>) – Type of the signal, analog or digital</p></li>
 <li><p><strong>any</strong> – Any other parameter can be given. They are stored as a new property for a user-personalized use. For instance, the log_sweep creation method introduced above stores the low and high frequencies in the properties freq_min and freq_max, as it can be useful to keep track of these values for later signal processing.</p></li>
 </ul>
 </dd>
@@ -959,6 +972,30 @@ For example a five seconds logarithmic sweep from 20Hz to 20kHz, of dimension vo
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#measpy.signal.Signal" title="measpy.signal.Signal">measpy.signal.Signal</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="measpy.signal.Signal.create_hdf5dataset">
+<span class="sig-name descname"><span class="pre">create_hdf5dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hdf5_object</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunck_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'in_sigs'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Channel_map</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dbfs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.create_hdf5dataset" title="Link to this definition"></a></dt>
+<dd><p>Create an empty dataset with attribute from a signal</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hdf5_object</strong> (<em>str</em><em>, </em><em>Path</em><em> or </em><em>opened h5file handle</em>) – The file or hdf5 object where to save the data</p></li>
+<li><p><strong>chunck_size</strong> (<em>int</em><em>, </em><em>optional</em>) – Size of chunk of the dataset, defaults to 0</p></li>
+<li><p><strong>dataset_name</strong> (<em>str</em><em>, </em><em>optional</em>) – Name of the hdf5 dataset, defaults to “in_sigs”</p></li>
+<li><p><strong>data_type</strong> (<em>str</em>) – Data format (Numpy dtype)</p></li>
+<li><p><strong>Channel_map</strong> (<em>list</em><em> of </em><em>int</em>) – Map of channel inside the queue,</p></li>
+<li><p><strong>dbfs</strong> (<em>float</em><em>, </em><em>optional</em>) – for picocope, value of the dbfs (conversion to mv), defaults to None</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Method that fill the dataset from a Queue</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Method</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1752,21 +1789,18 @@ the two signals.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Signal.to_hdf5">
-<span class="sig-name descname"><span class="pre">to_hdf5</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hdf5_object</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'in_sigs'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Channel_map</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.to_hdf5" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">to_hdf5</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hdf5_object</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'in_sigs'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.to_hdf5" title="Link to this definition"></a></dt>
 <dd><p>Saves the signal in an hdf5 file</p>
-<p>Save Signal in hdf5 file</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>hdf5_object</strong> (<em>str</em><em>, </em><em>Path</em><em> or </em><em>opened h5file handle</em>) – The file or hdf5 object where to save the data</p></li>
 <li><p><strong>dataset_name</strong> (<em>str</em>) – Name of the hdf5 dataset</p></li>
-<li><p><strong>data_type</strong> (<em>str</em>) – Data format (Numpy dtype)</p></li>
-<li><p><strong>Channel_map</strong> (<em>list</em><em> of </em><em>int</em>) – Map of channel inside the queue,</p></li>
 </ul>
 </dd>
 </dl>
-<p>If parameter hdf5_object is str or path, it is opened with statement,
-else it is an opened h5file handle already in with statement</p>
+<p>If parameter hdf5_object is str or path, it is opened in context manager,
+else it should be an opened h5file handle in a context manager</p>
 </dd></dl>
 
 <dl class="py method">
@@ -1848,6 +1882,22 @@ else it is an opened h5file handle already in with statement</p>
 </dd>
 </dl>
 </dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="measpy.signal.SignalType">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">measpy.signal.</span></span><span class="sig-name descname"><span class="pre">SignalType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.SignalType" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="measpy.signal.SignalType.ANALOG">
+<span class="sig-name descname"><span class="pre">ANALOG</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'analog</span> <span class="pre">signal'</span></em><a class="headerlink" href="#measpy.signal.SignalType.ANALOG" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="measpy.signal.SignalType.DIGITAL">
+<span class="sig-name descname"><span class="pre">DIGITAL</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'digital</span> <span class="pre">signal'</span></em><a class="headerlink" href="#measpy.signal.SignalType.DIGITAL" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
