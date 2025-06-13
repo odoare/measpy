@@ -61,6 +61,12 @@ from ._tools import (add_step,
                            mix_dicts,
                            decodeH5str)
 
+from enum import Enum
+
+class SignalType(Enum):
+    DIGITAL = "digital signal"
+    ANALOG = "analog signal"
+
 ##################
 ##              ##
 ## Signal class ##
@@ -138,6 +144,8 @@ class Signal:
     :type volts: 1D numpy array, optional
     :param values: data of the signal givent in its physical units
     :type values: 1D numpy array, optional
+    :param type: Type of the signal, analog or digital
+    :type type: measpy.signal.SignalType
     :param any: Any other parameter can be given. They are stored as a new property for a user-personalized use. For instance, the log_sweep creation method introduced above stores the low and high frequencies in the properties freq_min and freq_max, as it can be useful to keep track of these values for later signal processing.
 
     Some defined properties are calculated on demand when called. For instance, the duration of the signal depends on the number of samples and sampling frequency.
@@ -193,6 +201,8 @@ class Signal:
         :type volts: numpy.array, optional
         :param raw: Signal values given as raw samples
         :type raw: numpy.array, optional
+        :param type: Signal type, defaults to ANALOG
+        :type type: measpy.signal.SignalType
         :return: A signal
         :rtype: measpy.signal.Signal
 
@@ -202,6 +212,8 @@ class Signal:
             self.fs = 1.0
         if 'desc' not in kwargs:
             self.desc = 'A signal'
+        if 'type' not in kwargs:
+            self.type = SignalType.ANALOG
 
         # We have to make sure that properties such as dbfs
         # and cal are the correct ones BEFORE values are calculated
@@ -224,6 +236,8 @@ class Signal:
                 self.cal = val
             elif arg == 'dur':
                 raise AttributeError("Property 'dur' cannot be set")
+            elif arg == 'type':
+                self.type = val
             else:
                 self.__dict__[arg] = val
 
@@ -1240,7 +1254,7 @@ class Signal:
                         else:
                             sig.__dict__[key] = decodeH5str(val)
                     sig._rawvalues = data
-                    out.append(sig)
+                out.append(sig)
             if (Nsig := len(datasets))>1:
                 print(f"Warning there are {Nsig} signals in current file : {list(H5file.keys())}")
                 return out
@@ -1415,13 +1429,20 @@ class Signal:
         Values as 1D numpy array
         """
         if isinstance(self.cal, (int, float, np.ndarray)) and isinstance(self.dbfs, (int, float, np.ndarray)):
-            return self._rawvalues*self.dbfs/self.cal
+            values = self._rawvalues*self.dbfs/self.cal
+            if self.type == SignalType.DIGITAL:
+                values = values.astype(int)
+            return values
+
         elif isinstance(self.cal,str):
             d = {}
             d['x'] = self.raw*self.dbfs
             command = 'y='+self.cal
             exec(command, d)
-            return d['y']
+            values = d['y']
+            if self.type == SignalType.DIGITAL:
+                values = values.astype(int)
+            return values
         elif isinstance(self.cal,list):
             # Here we convert a list of values to ndarray
             # (converting eventual None values to 1.0)
@@ -1994,70 +2015,103 @@ class Signal:
                 writer.writerow(r.tolist()[0])
 
 
-    def to_hdf5(self, hdf5_object, dataset_name="in_sigs", data_type=None, Channel_map=None):
+    def to_hdf5(self, hdf5_object, dataset_name="in_sigs"):
         """ Saves the signal in an hdf5 file
-
-        Save Signal in hdf5 file
 
         :param hdf5_object: The file or hdf5 object where to save the data
         :type hdf5_object: str, Path or opened h5file handle
         :param dataset_name: Name of the hdf5 dataset
         :type dataset_name: str
-        :param data_type: Data format (Numpy dtype)
-        :type data_type: str
-        :param Channel_map: Map of channel inside the queue,
-        :type Channel_map: list of int
-        
 
-        If parameter hdf5_object is str or path, it is opened with statement,
-        else it is an opened h5file handle already in with statement
+        If parameter hdf5_object is str or path, it is opened in context manager,
+        else it should be an opened h5file handle in a context manager
         """
-
-        if data_type is None :
-            data_type = self._rawvalues.dtype
         with ExitStack() as stack:
             if isinstance(hdf5_object, (str,Path)):
                 H5file = stack.enter_context(h5py.File(hdf5_object, "x"))
             else:
                 H5file = hdf5_object
 
-            if self._rawvalues.size>0:
+            if self.dur>0:
                 dataset = H5file.create_dataset(dataset_name, data = self._rawvalues)
                 dataset.attrs["data_type"] = self._rawvalues.dtype.__str__()
-                self.h5save_data = None
-            elif data_type is not None:
-                print(f"There is no data, creating empty dataset {dataset_name} wity type = {data_type}")
-                #Chunck memory size should be between 10KiB and 1MiB, (bytes power of two 14 to 19 )
-                if Channel_map is None:
-                    Channel_map = list(range(self.nchannels))
-                power_two_chunck_size = 17
-                itemsize = np.dtype(data_type).itemsize
-                if self.nchannels>1:
-                    itemsize *= self.nchannels
-                    chunksize = 2**(power_two_chunck_size-(itemsize-1).bit_length())
-                    dataset = H5file.create_dataset(
-                        dataset_name, (0,self.nchannels), maxshape=(None,self.nchannels), dtype=data_type, chunks=(chunksize,self.nchannels)
-                    )
-                else:
-                    chunksize = 2**(power_two_chunck_size-(itemsize-1).bit_length())
-                    dataset = H5file.create_dataset(
-                        dataset_name, (0,), maxshape=(None,), dtype=data_type, chunks=(chunksize,)
-                    )
-                dataset.attrs["data_type"] = np.dtype(data_type).__str__()
-                # Create the method that can fill this dataset from queue.
-                self.h5save_data = partial(
-                    h5file_write_from_queue,
-                    filename=H5file.filename,
-                    dataset_name=dataset_name,
-                    Channel_map = Channel_map
-                    )
-                print(f"The method h5save_data(queue) will save data from the queue in the file {H5file.filename}")
+                # self.h5save_data = None
+                for key, value in self.__dict__.items():
+                    if key not in ['_rawvalues',"h5save_data"]:
+                        Val = value.__str__()
+                        dataset.attrs[key] = Val
             else:
-                raise TypeError("Cannot create empty dataset if the type is not specified")
-            for key, value in self.__dict__.items():
+                print("There is no data in this signal, use 'create_hdf5dataset' instead")
+
+    def create_hdf5dataset(self,
+                           hdf5_object,
+                           chunck_size=0,
+                           dataset_name="in_sigs",
+                           data_type=None,
+                           Channel_map=None,
+                           dbfs = None
+                           ):
+
+        """Create an empty dataset with attribute from a signal
+
+        :param hdf5_object: The file or hdf5 object where to save the data
+        :type hdf5_object: str, Path or opened h5file handle
+        :param chunck_size: Size of chunk of the dataset, defaults to 0
+        :type chunck_size: int, optional
+        :param dataset_name: Name of the hdf5 dataset, defaults to "in_sigs"
+        :type dataset_name: str, optional
+        :param data_type: Data format (Numpy dtype)
+        :type data_type: str
+        :param Channel_map: Map of channel inside the queue,
+        :type Channel_map: list of int
+        :param dbfs: for picocope, value of the dbfs (conversion to mv), defaults to None
+        :type dbfs: float, optional
+        :return: Method that fill the dataset from a Queue
+        :rtype: Method
+
+        """
+        if data_type is None :
+            data_type = self._rawvalues.dtype
+            if data_type is None:
+                raise ValueError("No data type defined")
+        with ExitStack() as stack:
+            if isinstance(hdf5_object, (str,Path)):
+                H5file = stack.enter_context(h5py.File(hdf5_object, "x"))
+            else:
+                H5file = hdf5_object
+            if Channel_map is None:
+                Channel_map = list(range(self.nchannels))
+            #chunksize from parameter or a default value based on hdf5 documentation recommandation :
+            #Chunck memory size should be between 10KiB and 1MiB, (bytes power of two 14 to 19 )
+            power_two_chunck_size = 17
+            itemsize = np.dtype(data_type).itemsize
+            if self.nchannels>1:
+                itemsize *= self.nchannels
+                chunksize = chunck_size or 2**(power_two_chunck_size-(itemsize-1).bit_length())
+                dataset = H5file.create_dataset(
+                    dataset_name, (0,self.nchannels), maxshape=(None,self.nchannels), dtype=data_type, chunks=(chunksize,self.nchannels)
+                )
+            else:
+                chunksize = chunck_size or 2**(power_two_chunck_size-(itemsize-1).bit_length())
+                dataset = H5file.create_dataset(
+                    dataset_name, (0,), maxshape=(None,), dtype=data_type, chunks=(chunksize,)
+                )
+            dataset.attrs["data_type"] = np.dtype(data_type).__str__()
+            dico = copy.deepcopy(self.__dict__)
+            if dbfs is not None:
+                dico["dbfs"] = dbfs
+            for key, value in dico.items():
                 if key not in ['_rawvalues',"h5save_data"]:
                     Val = value.__str__()
                     dataset.attrs[key] = Val
+            # Create the method that can fill this dataset from queue. 
+            return partial(
+                h5file_write_from_queue,
+                filename=H5file.filename,
+                dataset_name=dataset_name,
+                Channel_map = Channel_map,
+                )
+
 
     def harmonic_disto(self, nh=4, freq_min=20.0, freq_max=20000.0, delay=None, win_max_length=2**15, prop_before=0.25, nsmooth=24, debug_plot=False):
         """Compute the harmonic distorsion of an in/out system

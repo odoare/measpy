@@ -90,7 +90,8 @@ def Queue2prealocated_array(q_in, array):
     datasize = array.shape[0]
     nextSample = 0
     while (item := q_in.get(timeout=maxtimeout)) is not None:
-        noOfSamples = len(item)
+        item = np.asarray(item).transpose()
+        noOfSamples = item.shape[0]
         lastsample = nextSample + noOfSamples
         try:
             array[nextSample:lastsample] = item
@@ -104,12 +105,11 @@ def Queue2prealocated_array(q_in, array):
 
 
 def Queue2array(q_in):
-    data = []
+    data = q_in.get(timeout=maxtimeout)
     while (item := q_in.get(timeout=maxtimeout)) is not None:
-        data.extend(item)
-    return np.fromiter(
-        data, np.dtype((float, (len(data[0]),))), count=len(data)
-    ).squeeze()
+        item = np.asarray(item).transpose()
+        data =  np.concatenate([data,item],axis = 1)
+    return data
 
 
 def findindex(l, e):
@@ -135,9 +135,9 @@ def detect_rising_pulses_threshold_ind(
     :type ind0: int
     :param previous_data_point: Value of the last data point (indice = ind0-1).
         useful to not lose the peak at ind0
-    :type previous_data_point: number
+    :type previous_data_point: list with one number
     :param threshold: threshold (in adc values).
-    :type threshold: int
+    :type threshold: list with one int
     :return: List of indices where a rising pulse is detected.
     :rtype: List
     """
@@ -447,21 +447,20 @@ class Pico_thread(ABC, Thread):
             )
         print("Preprocess data done")
 
-    def dbfs_save(self):
+    def create_h5file(self):
         """
         save h5file with dbfs according to channel parameter
         :return: None
         :rtype: None
 
         """
+        dbfs = []
         for sig, prange in zip(self.M.in_sig, self.M.in_range):
             sig.unit = "mV"
-            sig.dbfs = adc2mV([1], self.pico_range(prange), self.Data_type)[0]
+            dbfs.append(adc2mV([1], self.pico_range(prange), self.Data_type)[0])
         self.M.datatype = np.dtype(self.Data_type).name
         print("Creating the H5file with measurment parameters")
-        self.M.to_hdf5(self.filename)
-        for sig in self.M.in_sig:
-            sig.dbfs = 1
+        self.h5save_data = self.M.create_hdf5(self.filename, dbfs = dbfs)
 
     def setup_threads(self):
         # threads and outputs set up (preprocessing, put into queue, put into Signal)
@@ -469,7 +468,7 @@ class Pico_thread(ABC, Thread):
         if self.savehdf5:
             # In hdf5 ADC data (integers) are directly saved to file
             # dbfs convert ADC to mVolt and is saved in the parameters
-            self.dbfs_save()
+            self.create_h5file()
             queuesave = Queue()
             queueprocess = Queue()
             ret.append(
@@ -478,7 +477,7 @@ class Pico_thread(ABC, Thread):
                     args=(self.dataqueue, [queuesave, queueprocess]),
                 )
             )
-            ret.append(Thread(target=self.M.h5save_data, args=(queuesave,)))
+            ret.append(Thread(target=self.h5save_data, args=(queuesave,)))
         else:
             queueprocess = self.dataqueue
         process_data = self.setup_preprocess()
@@ -556,11 +555,15 @@ class Pico_thread(ABC, Thread):
                 methods.append(partial(method, **partial_kwargs))
             else:
                 methods.append(method)
-        return methods
+
+        def process(values):
+            return [method(values[ind]) for (ind, method) in zip(self.buffers_map, methods)]
+
+        return process
 
     def setup_preprocess(self):
         # define func that preprocess raw data
-        methods = self.methods_setup()
+        preprocess = self.methods_setup()
 
         if self.min_chunksize_processed > 0:
 
@@ -569,23 +572,11 @@ class Pico_thread(ABC, Thread):
                 while (item := queue.get(timeout=maxtimeout)) is not None:
                     _ = [c.extend(it) for (c, it) in zip(chunk_data, item)]
                     if len(chunk_data[0]) > self.min_chunksize_processed:
-                        values = transposelist(
-                            [
-                                method(chunk_data[ind])
-                                for (ind, method) in zip(
-                                    self.buffers_map, methods
-                                )
-                            ]
-                        )
+                        values = preprocess(chunk_data)
                         queueout.put(values)
                         chunk_data = [[] for _ in range(self.nchannels)]
                 if len(chunk_data[0]) > 0:
-                    values = transposelist(
-                        [
-                            method(chunk_data[ind])
-                            for (ind, method) in zip(self.buffers_map, methods)
-                        ]
-                    )
+                    values = preprocess(chunk_data)
                     queueout.put(values)
                 queueout.put(None)
 
@@ -593,12 +584,7 @@ class Pico_thread(ABC, Thread):
 
             def func(queue, queueout):
                 while (item := queue.get(timeout=maxtimeout)) is not None:
-                    values = transposelist(
-                        [
-                            method(item[ind])
-                            for (ind, method) in zip(self.buffers_map, methods)
-                        ]
-                    )
+                    values = preprocess(item)
                     queueout.put(values)
                 queueout.put(None)
 
@@ -648,7 +634,7 @@ class Pico_thread(ABC, Thread):
     def pico_range(prange):
         """
         Picoscope voltage range (mapped from picoscope lib)
-        This property should be overridden, used by dbfs_save
+        This property should be overridden, used by create_h5file and setup_channel
         """
         pass
 
