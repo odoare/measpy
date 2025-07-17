@@ -1,0 +1,4 @@
+- 2 entrées
+- 1 sortie + 2 entrées + synchro sur l'entrée 1
+- 1 entrée + plot callback
+- 1 entrée + plot + hdf5
