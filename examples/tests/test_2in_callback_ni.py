@@ -16,7 +16,7 @@ sys.path.insert(0, "../../")
 
 import measpy as mp
 from measpy._plot_tools import basic_plot
-from measpy._queue_tools import Process_manager
+from measpy._data_tools import Process_manager
 from measpy.ni import ni_callback_measurement
 from functools import partial
 import time

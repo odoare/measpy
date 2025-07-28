@@ -63,7 +63,7 @@ from ._tools import (add_step,
                            mix_dicts,
                            decodeH5str)
 
-from ._queue_tools import Queue2array,Queue2prealocated_array
+from ._data_tools import Queue2array,Queue2prealocated_array
 
 from enum import Enum
 
