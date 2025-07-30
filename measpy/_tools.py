@@ -15,6 +15,16 @@ import numbers
 from unyt import Unit
 from pathlib import Path
 
+
+def ensure_new_filename(filename):
+    filename = Path(filename).resolve()
+    if filename.exists():
+        i = 1
+        while (filename.parent/(filename.stem+f"({i})")).with_suffix(filename.suffix).exists():
+            i+=1
+        filename = (filename.parent/(filename.stem+f"({i})")).with_suffix(filename.suffix)
+    return filename
+
 def csv_to_dict(filename):
     """ Conversion from a CSV (produced by the class Measurement) to a dict
           Default separator is (,)
@@ -170,7 +180,7 @@ def decodeH5str(h5str):
         except:
             return h5str.strip("\'")
 
-def h5file_write_from_queue(queue, filename, dataset_name, Channel_map):
+def h5file_write_from_queue(queue, filename, dataset_name, Channel_map, datatranspose):
     """
     Data writer in hdf5 file from a Queue
     :param queue: A Queue which contains data, the shape is [lenght,Nchannel].
@@ -185,13 +195,26 @@ def h5file_write_from_queue(queue, filename, dataset_name, Channel_map):
     :rtype: None
 
     """
+    if (Nchannel := len(Channel_map))>1:
+        if datatranspose:
+            def item_formater(item):
+                return np.array(item).transpose()[:,Channel_map]
+        else:
+            def item_formater(item):
+                return np.array(item)[:,Channel_map]
+    else:
+        if datatranspose:
+            def item_formater(item):
+                return np.array(item).transpose().squeeze()
+        else:
+            def item_formater(item):
+                return np.array(item).squeeze()
 
     print(f"Starting saving data in {filename}/{dataset_name}")
     with h5py.File(filename, "r+") as H5file:
-        item = np.array(queue.get()).transpose()[:,Channel_map].squeeze()
+        item = item_formater(queue.get(timeout=5))
         #Get dimension of item for multichannel case
         dims = item.shape
-        Nchannel = len(Channel_map)
         if Nchannel>1:
             assert dims[1] == Nchannel, f"Wrong format, queue item shape = {dims}, for a {Nchannel}-channel signal"
         Npoints = dims[0]
@@ -203,7 +226,7 @@ def h5file_write_from_queue(queue, filename, dataset_name, Channel_map):
         writebuffer = np.empty((chunksize, Nchannel),dtype=datatype).squeeze()
         buffer_position = _add_item(writebuffer, 0, item, Npoints, dataset, chunksize)
         while (item := queue.get(timeout=5)) is not None:
-            item = np.array(item).transpose()[:,Channel_map].squeeze()
+            item = item_formater(item)
             Npoints = item.shape[0]
             buffer_position = _add_item(
                 writebuffer, buffer_position, item, Npoints, dataset, chunksize

@@ -34,7 +34,8 @@ from scipy.signal import (welch,
                           hilbert,
                           spectrogram,
                           convolve,
-                          get_window)
+                          get_window,
+                          decimate)
 # from scipy.interpolate import InterpolatedUnivariateSpline
 from csaps import csaps
 import scipy.io.wavfile as wav
@@ -42,6 +43,7 @@ import h5py
 
 import unyt
 from unyt import Unit
+from unyt.exceptions import UnitConversionError
 
 from ._tools import (add_step,
                            smooth,
@@ -60,6 +62,8 @@ from ._tools import (add_step,
                            to_list,
                            mix_dicts,
                            decodeH5str)
+
+from ._data_tools import Queue2array,Queue2prealocated_array
 
 from enum import Enum
 
@@ -783,6 +787,37 @@ class Signal:
         out = self.similar(raw=np.vstack((self.raw.T,other.raw.T)).T)
         out.__dict__ = out.__dict__ | mix_dicts(dicta,dictb,nc1,nc2)
         return out
+
+    def fill_from_queue(self, q_in, unit_in, Ndata=None, upsampling_factor=1):
+        if (self.nchannels>1) and not isinstance(self.unit, list):
+            self.unit = to_list(self.unit,self.nchannels)
+        for i,u in enumerate(to_list(self.unit,self.nchannels)):
+            if u == Unit("1"):
+                self.unit[i] = Unit(unit_in)
+                conversion = 1.0
+            else:
+                try:
+                    conversion = (1.0 * Unit(unit_in)).to_value(self.unit[i])
+                except UnitConversionError:
+                    print(
+                        f"Signal unit ({self.unit[i]}) incompatible with {unit_in}, Signal unit set to {unit_in} without conversion"
+                    )
+                    self.unit[i] = Unit(unit_in)
+                    conversion = 1.0
+        if Ndata:
+            array = np.zeros((Ndata, self.nchannels)).squeeze()
+            values = conversion * Queue2prealocated_array(q_in, array)
+        else:
+            values = conversion * Queue2array(q_in)
+
+        assert values.shape[1]==self.nchannels
+
+        if upsampling_factor > 1:
+            self.raw = decimate(
+                np.double(values), upsampling_factor, ftype="fir"
+            )
+        else:
+            self.raw = values
 
     # #################################################################
     # Methods that return an object of type Spectral
@@ -2045,6 +2080,7 @@ class Signal:
 
     def create_hdf5dataset(self,
                            hdf5_object,
+                           datatranspose,
                            chunck_size=0,
                            dataset_name="in_sigs",
                            data_type=None,
@@ -2109,7 +2145,8 @@ class Signal:
                 h5file_write_from_queue,
                 filename=H5file.filename,
                 dataset_name=dataset_name,
-                Channel_map = Channel_map,
+                Channel_map=Channel_map,
+                datatranspose=datatranspose,
                 )
 
 
