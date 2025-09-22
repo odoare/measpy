@@ -789,7 +789,7 @@ class Signal:
         return out
 
     def fill_from_queue(self, q_in, unit_in, Ndata=None, upsampling_factor=1):
-        if (self.nchannels>1) and not isinstance(self.unit, list):
+        if not isinstance(self.unit, list):
             self.unit = to_list(self.unit,self.nchannels)
         conversion = [1.0]*self.nchannels
         for i,u in enumerate(self.unit):
@@ -2081,11 +2081,13 @@ class Signal:
                            Channel_map=None,
                            dbfs = None
                            ):
-
-        """Create an empty dataset with attribute from a signal
+        """
+        Create an empty dataset with attribute from a signal
 
         :param hdf5_object: The file or hdf5 object where to save the data
         :type hdf5_object: str, Path or opened h5file handle
+        :param datatranspose: if true data from queue are transposed (for picoscope)
+        :type datatranspose: bool
         :param chunck_size: Size of chunk of the dataset
         :type chunck_size: int
         :param dataset_name: Name of the hdf5 dataset, defaults to "in_sigs"

@@ -312,7 +312,7 @@ class ni_callback_measurement:
             self.outtask.close()
         print("ni tasks closed")
 
-    def run(self, stop=Event(), duration="default"):
+    def run(self, stop=Event(), pause=Event(), duration="default"):
         """
         Run the measurment
         :param stop: Trigger to stop the measurment, defaults to Event()
@@ -350,12 +350,15 @@ class ni_callback_measurement:
         try:
             print("Start measurement")
             while (
-                not stop.is_set() and self.buffer_captured < numBuffersToCapture
+                not (stop.is_set() or pause.is_set()) and self.buffer_captured < numBuffersToCapture
             ):
                 sleep(time_to_fill_buffer)
         except KeyboardInterrupt:
             pass
-        self.stop()
+        if pause.is_set():
+            self.pause(pause,stop,duration)
+        else:
+            self.stop()
 
     def stop(self):
         #stop all task
@@ -364,6 +367,15 @@ class ni_callback_measurement:
         if self.M.out_sig != None:
             self.outtask.stop()
         print("ni tasks stopped")
+
+    def pause(self, pause_event,stop_event,duration):
+        self.stop()
+        try:
+            while pause_event.is_set():
+                sleep(0.1)
+            self.run(stop_event,pause_event,duration)
+        except KeyboardInterrupt:
+            pass
 
     def set_callback(self, callback_method, n_values):
         """

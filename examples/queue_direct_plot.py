@@ -277,13 +277,13 @@ if __name__ == "__main__":
         NI.set_callback(callback, n_values)
 
         # put the measurment into a thread
-        def work(*args):
-            NI.run(*args)
+        def work(*args,**kwargs):
+            NI.run(*args,**kwargs)
             print("measurment done")
             # Don't forget end flag for the Queue
             Q.put(None)
 
-        T = Thread(target=work, args=(A.stop_event, None))
+        T = Thread(target=work, kwargs={"stop":A.stop_event,"duration":None})
         # tstop = Thread(target=stop_after, args=(A.stop_event, 3))
         T.start()
         # tstop.start()

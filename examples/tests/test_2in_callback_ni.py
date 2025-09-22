@@ -29,7 +29,7 @@ Plot data in Volt and PSD at the same time as measurment with ni card, with axis
 if __name__ == "__main__":
     # define a measurment
     fs = 5000
-    Nchannel = 2
+    Nchannel = 1
     dur = 150
     M = mp.Measurement(device_type="ni", in_sig=mp.Signal.pack([mp.Signal(fs=fs)]*Nchannel), dur=dur)
     filepath = "test.h5"
@@ -68,6 +68,8 @@ if __name__ == "__main__":
         Raw_output=[Qout, partial(M.in_sig.fill_from_queue,unit_in="V"),partial(save_data,save_event=A.save_event)]
     )
 
+    data_wait_time = 1.5 * n_values / fs
+    A.data_wait_time = data_wait_time
     # define the callback that fill up the queue
 
     def callback(buffer_in, n_values):
@@ -78,23 +80,23 @@ if __name__ == "__main__":
         NI.set_callback(callback, n_values)
 
         # put the measurment into a thread
-        def work(*args):
-            NI.run(*args)
+        def work(*args,**kwargs):
+            NI.run(*args,**kwargs)
             print("measurment done")
             # Don't forget end flag for the Queue
             Qin.put(None)
 
-        T = Thread(target=work, args=(A.stop_event,))
+        T = Thread(target=work, kwargs={"stop":A.stop_event,"pause":A.pause_event})
         # tstop = Thread(target=stop_after, args=(A.stop_event, 3))
         T.start()
         # tstop.start()
 
         try:
             # wait for first data chunk to arrive before starting process data
-            time.sleep(1.5 * n_values / fs)
+            time.sleep(data_wait_time)
             P.start()
             # wait for first data chunk to arrive before giving the queue to the plot instance
-            time.sleep(1.5 * n_values / fs)
+            time.sleep(data_wait_time)
             A.dataqueue = Qout
             # update the plot until end flag
             A.update_plot_until_empty()

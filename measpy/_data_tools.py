@@ -64,9 +64,9 @@ def setup_threads(queue_in, process_dict):
     :param queue_in: queue that contain datas
     :type queue_in: queue.Queue()
     :param process_dict: Dictionnary that contain methods and represent a pipeline
-    example : process_dict = {Method1(queue)->None:None, Method2(queue_in)->queue_out:process_dict2, Queue_out:None}
+    example : process_dict = {Method1(queue)->None:None, Method2(queue)->queue:process_dict2, Queue_out:None}
     apply Method1 and Method2 with argument queue_in; copy queue_in into Queue_out and 
-    use the queue_out from Method2 to continue a pipeline defined with process_dict2
+    use the queue producted by Method2 to continue a pipeline defined with process_dict2
     :type process_dict: dict
     :return: List of threading.Thread ordered according to process_dict structure
     :rtype: List
@@ -162,6 +162,10 @@ class Process_manager(Pipeline_manager):
             
     def Process_queue(self):
         return use_queues(self.min_chunksize_processed)(self.Data_process)
+
+@use_queues(0)
+def transpose(L):
+    return np.asarray(L).T
 
 def Queue2prealocated_array(q_in, array):
     datasize = array.shape[0]

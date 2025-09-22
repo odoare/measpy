@@ -179,6 +179,7 @@ class plot_data_from_queue(ABC):
         """
         for x in self.plot_attribute:
             setattr(self, x, None)
+        self.data_wait_time = 1
         self.timesincelastupdate = 0
         self.plotbuffersize = plotbuffersize
         self.updatetime = updatetime
@@ -270,6 +271,14 @@ class plot_data_from_queue(ABC):
         self.bm.update()
         self.timesincelastupdate = 0
 
+    def after_plot(self):
+        """
+        This method is called automatically when there is no more data to plot
+        By default, it does nothing.
+
+        """
+        pass
+
     def rescaling(self):
         """
         This method is called automatically to rescale the data after each plot
@@ -313,7 +322,7 @@ class plot_data_from_queue(ABC):
             if self.timesincelastupdate > 0:
                 self._plotting_buffer()
         except (Empty, AttributeError):
-            pass
+            self.after_plot()
 
     def close(self):
         plt.close(self.fig)
@@ -386,6 +395,7 @@ class basic_plot(plot_data_from_queue):
 
         # Define a Stop button
         self.stop_event = Event()
+        self.pause_event = Event()
 
         def fstop(event):
             self.stop_event.set()
@@ -393,6 +403,10 @@ class basic_plot(plot_data_from_queue):
         axs = self.fig.add_axes([0.3, 0.01, 0.2, 0.075])
         self.bstop = Button(axs, "Stop")
         self.bstop.on_clicked(fstop)
+
+        axs = self.fig.add_axes([0.5, 0.01, 0.2, 0.075])
+        self.bpause = Button(axs, "Pause")
+        self.cid_pause = self.bpause.on_clicked(self._fpause)
 
         # Define a Save button
         self.save_event = Event()
@@ -425,6 +439,7 @@ class basic_plot(plot_data_from_queue):
 
         # set Stop event to stop measurment when the figure is closed.
         self.fig.canvas.mpl_connect("close_event", fstop)
+        # self.bpause.disconnect(self.cid_pause)
 
     def rescaling(self):
         # defines method that rescale axis when a flag is set to True
@@ -441,10 +456,26 @@ class basic_plot(plot_data_from_queue):
             self.tamp_moins = False
             self.bm.changed_axe = True
 
+    def _fpause(self, event):
+        self.pause_event.set()
+        self.bpause.disconnect(self.cid_pause)
+
+    def after_plot(self):
+        self.fig.waitforbuttonpress()
+        self.restart()
+
+    def restart(self):
+        self.pause_event.clear()
+        self.cid_pause = self.bpause.on_clicked(self._fpause)
+        self.update_plot(self.data_wait_time)
+        self.update_plot_until_empty()
+
     def data_process(self):
         # Transfert data from data_buffer to plotbuffer
         for i, buff in enumerate(self.plotbuffer):
             buff[: -self.timesincelastupdate] = buff[self.timesincelastupdate :]
-            buff[-self.timesincelastupdate :] = self.data_buffer[
-                -self.timesincelastupdate :, i
-            ].copy()
+            try:
+                data = self.data_buffer[-self.timesincelastupdate :, i].copy()
+            except IndexError:
+                data = self.data_buffer[-self.timesincelastupdate :].copy()
+            buff[-self.timesincelastupdate :] = data
