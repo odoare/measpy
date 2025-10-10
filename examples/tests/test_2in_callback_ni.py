@@ -49,14 +49,16 @@ if __name__ == "__main__":
     # read data every refresh delay or time to fill the data buffer
     n_values = min(int(fs * refresh_delay), A.databuffersize)
 
-    # create the hdf5 file
-    funcsav = M.create_hdf5(filepath,chunck_size=n_values)
     #Method wait for save_event then save into hdf5file
     def save_data(queuesave, save_event):
+        #wait for button save push
         while not save_event.is_set():
-            D = queuesave.get(timeout=10)
+            D = queuesave.get()
+            #if no more data and button save never pushed, return
             if D is None:
                 return
+        # create the hdf5 file
+        funcsav = M.create_hdf5(filepath,chunck_size=n_values)
         funcsav(queuesave)
     # create a queue to read data
     Qin = Queue()
@@ -103,7 +105,7 @@ if __name__ == "__main__":
             # wait for measurement to finish (should be already finished here)
             T.join()
             P.join()
-        except Exception as e:
+        except (KeyboardInterrupt, Exception) as e:
             # stop measurment in case of exeption
             A.stop_event.set()
             raise e

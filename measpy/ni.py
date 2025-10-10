@@ -354,6 +354,7 @@ class ni_callback_measurement:
             ):
                 sleep(time_to_fill_buffer)
         except KeyboardInterrupt:
+            print("Measurement interupted by ctrl-c")
             pass
         if pause.is_set():
             self.pause(pause,stop,duration)

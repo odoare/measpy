@@ -8,7 +8,7 @@ from threading import Thread
 from queue import Queue
 import numpy as np
 
-maxtimeout = 10
+maxtimeout = None
 
 def use_queues(min_chunksize_processed):
     """
@@ -68,11 +68,11 @@ def setup_threads(queue_in, process_dict):
     apply Method1 and Method2 with argument queue_in; copy queue_in into Queue_out and 
     use the queue producted by Method2 to continue a pipeline defined with process_dict2
     :type process_dict: dict
-    :return: List of threading.Thread ordered according to process_dict structure
+    :return: List of queuees and list of threading.Thread ordered according to process_dict structure
     :rtype: List
     """
 
-    ret = []
+    process = []
     if len(process_dict)>1:
         queues = []
         for targ in process_dict.keys():
@@ -80,29 +80,29 @@ def setup_threads(queue_in, process_dict):
                 queues.append(targ)
             else:
                 queues.append(Queue())
-        ret.extend([Thread(target=dispatch,args=(queue_in, queues))])  
+        process.extend([Thread(target=dispatch,args=(queue_in, queues))])
     else:
         queues = [queue_in]
 
     for (targ, NEXT), Q in zip(process_dict.items(),queues):
         if NEXT is None:
             if callable(targ):
-                ret.extend([Thread(target=targ,args=(Q,))])
+                process.extend([Thread(target=targ,args=(Q,))])
         else:
             if not len(NEXT)>1 and isinstance((Next_targ := next(iter(NEXT))), Queue):
                 queue_out = Next_targ
             else:
                 queue_out = Queue()
-            ret.extend([Thread(target=targ,args=(Q,queue_out))])
-            ret.extend(setup_threads(queue_out, NEXT))
-    return ret
+            process.extend([Thread(target=targ,args=(Q,queue_out))])
+            process.extend(setup_threads(queue_out, NEXT))
+    return queues, process
 
 class Pipeline_manager(Thread):
     def __init__(self, queue_in, process_dict):
         super().__init__()
         self.queue_in = queue_in
         self.process_dict = process_dict
-        self.process = setup_threads(self.queue_in, process_dict)
+        self.queues, self.process = setup_threads(self.queue_in, process_dict)
 
     def run(self):
         for P in self.process:
@@ -111,6 +111,11 @@ class Pipeline_manager(Thread):
         for P in self.process:
             P.join()
         print("Data processing finished")
+
+    def kill(self):
+        "kill threads by putting the end condition None into all queues"
+        for queue in self.queues:
+            queue.put(None)
 
 
 class Process_manager(Pipeline_manager):
