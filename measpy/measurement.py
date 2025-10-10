@@ -199,6 +199,7 @@ class Measurement:
             self.in_range = params.setdefault("in_range",None)
             self.out_range = params.setdefault("out_range",None)
             self.in_iepe = params.setdefault("in_iepe",list(False for b in self.in_map))
+            self.in_sig_config = params.setdefault("in_sig_config", "DEFAULT")
         if type(self.out_sig)!=type(None):
             self.io_sync = params.setdefault('io_sync',0)
         elif 'io_sync' in params:

@@ -117,6 +117,10 @@ class ni_callback_measurement:
         self.callback_set = False
         self.Nchannel = len(M.in_map)
 
+        if M.in_sig_config not in ['RSE', 'NRSE', 'DIFF', 'PSEUDO_DIFF', 'DEFAULT']:
+            print(f"Warning invalid input config name {M.in_sig_config}, input config set to DEFAULT")
+            M.in_sig_config = "DEFAULT"
+
         if isinstance(M.in_sig, list) and len(M.in_sig) != self.Nchannel:
             raise ValueError(
                 f"in_sig property of measurement must be a multichannel signal or a list of {len(M.in_map)} single channel signals"
@@ -199,7 +203,7 @@ class ni_callback_measurement:
                     print(_n_to_ain(n))
                     self.intask.ai_channels.add_ai_voltage_chan(
                         physical_channel=self.M.in_device + "/" + _n_to_ain(n),
-                        terminal_config=niconst.TerminalConfiguration.DEFAULT,
+                        terminal_config=niconst.TerminalConfiguration[self.M.in_sig_config],
                         min_val=-self.M.in_range[i],
                         max_val=self.M.in_range[i],
                         units=niconst.VoltageUnits.VOLTS,
