@@ -173,7 +173,7 @@ class inline_plotting(plot_data_from_queue):
 
     def rescaling(self):
         # defines method that rescale axis when a flag is set to True
-        # the other flag : 'self.bm.change_axe = True' is needed because changing axis
+        # the other flag : 'self.bm.changed_axe = True' is needed because changing axis
         # is impossible with fast plot method, the axis are changed using slower plot method
 
         if self.tamp_plus:
@@ -246,8 +246,8 @@ if __name__ == "__main__":
     #     event.set()
 
     # define a measurment
-    fs = 10000
-    M = mp.Measurement(device_type="ni", in_sig=[mp.Signal(fs=fs)], dur=15)
+    fs = 1000
+    M = mp.Measurement(device_type="ni", in_sig=[mp.Signal(fs=fs)], dur=15,in_sig_config = "DIFF")
 
     # define plot parameter
     plot_time = 5
