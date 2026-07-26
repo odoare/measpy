@@ -101,7 +101,9 @@ def audio_run_measurement(M):
 
     if M.in_sig is not None:
         if in_multichannel:
-            M.in_sig[0].raw = np.array(y)
+            # M.in_sig[i] returns a copy of the channel i, the data has
+            # to be written in the multichannel signal itself
+            M.in_sig.raw = np.array(y)
             M.in_sig.t0 = tmin
         else:
             for i,s in enumerate(M.in_sig):

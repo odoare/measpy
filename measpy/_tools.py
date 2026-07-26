@@ -9,6 +9,7 @@
 # https://github.com/odoare/measpy
 
 import csv
+import warnings
 import numpy as np
 import h5py
 import numbers
@@ -16,6 +17,110 @@ from unyt import Unit
 from pathlib import Path
 
 from enum import Enum
+
+
+class MeaspyDeprecationWarning(DeprecationWarning):
+    """ Warning issued when a deprecated measpy argument is used.
+
+        It derives from DeprecationWarning, but measpy registers an
+        'always' filter for it (see measpy/__init__.py), so that the
+        message is always shown to the user.
+    """
+
+# Deprecation warnings of measpy are always shown
+warnings.simplefilter('always', MeaspyDeprecationWarning)
+
+
+def deprecated_argument(old_name, new_name, func_name=None):
+    """ Issue a deprecation warning for an obsolete argument name
+
+        :param old_name: Name of the deprecated argument
+        :type old_name: str
+        :param new_name: Name of the argument that replaces it
+        :type new_name: str
+        :param func_name: Name of the calling function (optional)
+        :type func_name: str or None
+    """
+    where = '' if func_name is None else f' of {func_name}'
+    warnings.warn(
+        f"Argument '{old_name}'{where} is deprecated and will be removed "
+        f"in a future release of measpy, use '{new_name}' instead.",
+        MeaspyDeprecationWarning,
+        stacklevel=3)
+
+
+def parse_freq_range(freqs_range=None,
+                     freq_min=None,
+                     freq_max=None,
+                     default=(None, None),
+                     deprecated=None,
+                     func_name=None):
+    """ Parse the frequency range arguments of a measpy function
+
+        All measpy functions that need a frequency range accept
+        the three following optional arguments:
+
+        - ``freqs_range`` : a tuple, list or numpy array of frequencies. Its lowest and highest values define the range.
+        - ``freq_min`` : the lowest frequency of the range (scalar)
+        - ``freq_max`` : the highest frequency of the range (scalar)
+
+        ``freq_min`` and ``freq_max`` take precedence over the
+        corresponding value of ``freqs_range``.
+
+        :param freqs_range: A tuple, list or array of frequencies, defaults to None
+        :type freqs_range: tuple, list, numpy.ndarray or None, optional
+        :param freq_min: Lowest frequency of the range, defaults to None
+        :type freq_min: float or None, optional
+        :param freq_max: Highest frequency of the range, defaults to None
+        :type freq_max: float or None, optional
+        :param default: Values used when nothing is specified, defaults to (None,None)
+        :type default: tuple, optional
+        :param deprecated: Dictionnary of deprecated arguments given as ``{'old_name': (value, 'new_name')}``. A deprecation warning is issued for each of them that is not None.
+        :type deprecated: dict or None, optional
+        :param func_name: Name of the calling function, used in the deprecation messages
+        :type func_name: str or None, optional
+        :return: The (freq_min, freq_max) tuple
+        :rtype: tuple
+    """
+
+    if deprecated is not None:
+        for old_name, (value, new_name) in deprecated.items():
+            if value is None:
+                continue
+            deprecated_argument(old_name, new_name, func_name=func_name)
+            if new_name == 'freqs_range':
+                freqs_range = freqs_range if freqs_range is not None else value
+            elif new_name == 'freq_min':
+                freq_min = freq_min if freq_min is not None else value
+            elif new_name == 'freq_max':
+                freq_max = freq_max if freq_max is not None else value
+            else:
+                raise ValueError(
+                    f"Unknown replacement argument name '{new_name}'")
+
+    fmin, fmax = default
+
+    if freqs_range is not None:
+        if isinstance(freqs_range, numbers.Number):
+            raise TypeError(
+                "freqs_range must be a tuple, a list or a numpy array of "
+                "frequencies. Use freq_min and/or freq_max for scalar values.")
+        frange = np.asarray(freqs_range, dtype=float).ravel()
+        if frange.size < 2:
+            raise ValueError(
+                'freqs_range must contain at least two frequency values')
+        fmin, fmax = float(np.min(frange)), float(np.max(frange))
+
+    if freq_min is not None:
+        fmin = float(freq_min)
+    if freq_max is not None:
+        fmax = float(freq_max)
+
+    if (fmin is not None) and (fmax is not None) and (fmin > fmax):
+        raise ValueError(
+            f'Lowest frequency ({fmin}Hz) is above highest frequency ({fmax}Hz)')
+
+    return fmin, fmax
 
 class SignalType(Enum):
     DIGITAL = "digital signal"
@@ -87,10 +192,96 @@ def smooth(in_array,l=20):
     else:
         raise ValueError('This smooth function manages array of dimension <= 2')
 
-def nth_octave_bands(n,fmin=5,fmax=20000):
+def nth_octave_band_edges(freqs,n):
+    """ Lower and upper edges of the 1/nth octave bands
+        centered on each given frequency
+
+        :param freqs: Center frequencies of the bands
+        :type freqs: numpy.ndarray or list
+        :param n: Bands are 1/nth octave wide
+        :type n: float, int
+        :return: A tuple of two arrays (lower edges, upper edges)
+        :rtype: tuple
+    """
+    fac = 2**(1/(2*n))
+    f = np.asarray(freqs,dtype=float)
+    return np.minimum(f/fac,f*fac), np.maximum(f/fac,f*fac)
+
+def band_moving_average(freqs,values,n=12,freqs_out=None,empty='interp'):
+    """ Moving average of a set of values over 1/nth octave wide bands
+
+        This is a true moving average: for each output frequency f, the
+        returned value is the arithmetic mean of all the input values
+        whose frequency falls in the band [f/2**(1/2n), f*2**(1/2n)].
+        The averaging bandwidth is hence proportional to the frequency
+        (constant width in a log-frequency scale), and the output is
+        computed at every requested frequency, not only at the center
+        frequencies of a set of contiguous bands.
+
+        The values can be real or complex. The computation is done with
+        cumulative sums, its cost is hence independent of the width
+        of the bands.
+
+        :param freqs: Frequencies of the input values (any order)
+        :type freqs: numpy.ndarray
+        :param values: Values to smooth (real or complex)
+        :type values: numpy.ndarray
+        :param n: Bands are 1/nth octave wide, defaults to 12
+        :type n: float, int, optional
+        :param freqs_out: Frequencies at which the moving average is computed. Defaults to None, meaning that the input frequencies are used.
+        :type freqs_out: numpy.ndarray or None, optional
+        :param empty: What to do when a band contains no input value (only possible if freqs_out is given): 'interp' to linearly interpolate the input values, 'nan' to return NaN. Defaults to 'interp'.
+        :type empty: str, optional
+        :return: The smoothed values, at the frequencies freqs_out (or freqs)
+        :rtype: numpy.ndarray
+    """
+    f = np.asarray(freqs,dtype=float)
+    v = np.asarray(values)
+    if f.shape != v.shape:
+        raise ValueError('freqs and values must have the same shape')
+    if empty not in ('interp','nan'):
+        raise ValueError("empty option must be 'interp' or 'nan'")
+
+    # Cumulative sums need frequencies sorted in ascending order
+    order = np.argsort(f)
+    fsorted = f[order]
+    vsorted = v[order]
+
+    if freqs_out is None:
+        fout = fsorted
+    else:
+        fout = np.asarray(freqs_out,dtype=float)
+
+    f1, f2 = nth_octave_band_edges(fout,n)
+    dtype = np.result_type(vsorted.dtype,float)
+    csum = np.concatenate((np.zeros(1,dtype=dtype),np.cumsum(vsorted,dtype=dtype)))
+    i1 = np.searchsorted(fsorted,f1,side='left')
+    i2 = np.searchsorted(fsorted,f2,side='right')
+    count = i2-i1
+
+    out = np.empty(fout.shape,dtype=dtype)
+    filled = count>0
+    out[filled] = (csum[i2[filled]]-csum[i1[filled]])/count[filled]
+
+    # Bands that contain no data point (typically at low frequencies,
+    # where the bands are narrower than the frequency resolution)
+    if not np.all(filled):
+        if empty=='interp':
+            out[~filled] = np.interp(fout[~filled],fsorted,vsorted)
+        else:
+            out[~filled] = np.nan
+
+    if freqs_out is None:
+        # Restore the order of the input frequencies
+        restored = np.empty_like(out)
+        restored[order] = out
+        return restored
+    return out
+
+def nth_octave_bands(n,freq_min=5,freq_max=20000):
     """ 1/nth octave band frequency range calculation """
-    nmin = int(np.ceil(n*np.log2(fmin*10**-3)))
-    nmax = int(np.ceil(n*np.log2(fmax*10**-3)))
+    nmin = int(np.ceil(n*np.log2(freq_min*10**-3)))
+    nmax = int(np.ceil(n*np.log2(freq_max*10**-3)))
     indices = range(nmin,nmax+1)
     f_centre = 1000 * (2**(np.array(indices)/n))
     f2 = 2**(1/n/2)
