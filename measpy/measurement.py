@@ -559,12 +559,12 @@ class Measurement:
         self.dur = self.dur-2*asp/self.fs
         if isinstance(self.out_sig,Signal):
             self.out_sig = self.out_sig.cut(pos=(asp,asp+round(self.dur*self.fs))).delay(asp/self.fs)
-            self.in_sig = self.in_sig.cut(pos=(asp+ds+1,asp+ds+1+self.out_sig[out_chan].length))
+            self.in_sig = self.in_sig.cut(pos=(asp+ds,asp+ds+self.out_sig[out_chan].length))
             self.in_sig.t0 = self.out_sig.t0
         else:
             self.out_sig[out_chan] = self.out_sig[out_chan].cut(pos=(asp,asp+round(self.dur*self.fs))).delay(asp/self.fs)
             for i,s in enumerate(self.in_sig):
-                self.in_sig[i] = s.cut(pos=(asp+ds+1,asp+ds+1+self.out_sig[out_chan].length))
+                self.in_sig[i] = s.cut(pos=(asp+ds,asp+ds+self.out_sig[out_chan].length))
                 self.in_sig[i].t0 = self.out_sig[out_chan].t0
         return d
 

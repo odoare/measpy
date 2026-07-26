@@ -107,6 +107,13 @@ class TestSignalRegressions(unittest.TestCase):
         self.assertAlmostEqual(time, self.s.time[-1])
         self.assertAlmostEqual(value, self.s.raw[-1])
 
+    def test_timelag_is_exact(self):
+        """ Signal.corr shifted the lag axis by half a sample, so that
+            timelag returned the delay minus half a sample """
+        for delay in (0, 1, 137):
+            shifted = self.s.similar(values=np.roll(self.s.values, delay))
+            self.assertAlmostEqual(shifted.timelag(self.s)*FS, delay, places=6)
+
     def test_from_csvwav_integer_data(self):
         """ min and max were swapped, integer wav data was read with a
             wrong scale and a wrong sign """
@@ -205,6 +212,25 @@ class TestMeasurementRegressions(unittest.TestCase):
         with self.assertRaises(Exception):
             mp.Measurement(in_sig=[self._sig(), self._sig(), self._sig()],
                            in_map=[1, 2], dur=1)
+
+    def test_sync_render(self):
+        """ sync_render cut the input signals one sample too late, which
+            compensated the half sample bias of timelag only for some
+            values of the delay """
+        for delay in (0, 1, 137, 138):
+            out = mp.Signal.noise(fs=FS, dur=1.0, freqs_range=(20, FS/2), unit='V')
+            meas = mp.Measurement(device_type='ni', fs=FS,
+                                  out_sig=[out], out_map=[1],
+                                  in_sig=[mp.Signal(fs=FS, unit='V')], in_map=[1],
+                                  dur=1.0, in_device='Dev1', out_device='Dev1')
+            meas.sync_prepare(out_chan=0)
+            # Simulate an acquisition delayed by 'delay' samples
+            meas.in_sig[0].raw = np.roll(meas.out_sig[0].raw, delay)
+            measured = meas.sync_render(out_chan=0, in_chan=0)
+            self.assertAlmostEqual(measured*FS, delay, places=6)
+            # After the synchronization the two signals are sample aligned
+            self.assertLess(
+                np.abs(meas.in_sig[0].raw-meas.out_sig[0].raw).max(), 1e-12)
 
     def test_pico_freq_stop(self):
         """ freq_stop was read from the freq_start parameter """

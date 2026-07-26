@@ -440,7 +440,7 @@ class Signal:
         return self.similar(
             values=correlate(self.values, x.values, **kwargs),
             desc=add_step(self.desc, 'correlation with '+x.desc),
-            t0=(correlation_lags(self.length, x.length)[0]-0.5)/self.fs)
+            t0=correlation_lags(self.length, x.length)[0]/self.fs)
 
     def cut(self, **kwargs):
         """ Cut signal between positions.
