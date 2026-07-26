@@ -47,6 +47,8 @@ from unyt.exceptions import UnitConversionError
 
 from ._tools import (add_step,
                            smooth,
+                           parse_freq_range,
+                           deprecated_argument,
                            nth_octave_bands,
                            create_time,
                            apply_fades,
@@ -124,7 +126,7 @@ class Signal:
     .. code-block:: python
     
         import measpy as mp
-        pa = mp.Signal.log_sweep(freq_min=20,freq_max=20,dur=5,unit='V)
+        pa = mp.Signal.log_sweep(freq_min=20,freq_max=20000,dur=5,unit='V')
         pa.plot()
 
     Other examples and tutorials are found in the example folder of measpy project.
@@ -517,15 +519,21 @@ class Signal:
                 np.zeros((samps[1],self.nchannels))))
             )
 
-    def iir(self, N=2, Wn=(20, 20000), rp=None, rs=None, btype='band',  ftype='butter'):
+    def iir(self, N=2, Wn=None, rp=None, rs=None, btype='band',  ftype='butter',
+            freqs_range=None, freq_min=None, freq_max=None):
         """Infinite impulse response filter of a signal.
 
         The signal is filtered accordingly to the parameters. This method is a wrapper around the scipy.signal iir functions, most of the parameters are hence the same.
 
+        The cutoff frequencies are given with the standard measpy frequency
+        range arguments ``freqs_range``, ``freq_min`` and ``freq_max``.
+        For lowpass filters, only ``freq_max`` is used, for highpass filters,
+        only ``freq_min`` is used.
+
         :param N: Filter order, defaults to 2
         :type N: int, optional
-        :param Wn: a cutoff frequency (if low or highpass) or a tuple of frequency (if bandpass/stop), defaults to (20,20000)
-        :type Wn: tuple, optional
+        :param Wn: Deprecated, use freqs_range, freq_min or freq_max instead. A cutoff frequency (if low or highpass) or a tuple of frequencies (if bandpass/stop).
+        :type Wn: float or tuple, optional
         :param rp: For Chebyshev and elliptic filters, provides the maximum ripple in the passband. (dB)
         :type rp: float, optional
         :param rs: For Chebyshev and elliptic filters, provides the minimum attenuation in the stop band. (dB)
@@ -534,9 +542,34 @@ class Signal:
         :type btype: str in {'bandpass', 'lowpass', 'highpass', 'bandstop'}, optional
         :param ftype: Type of filter (butter, elliptic, etc.), defaults to 'butter'
         :type ftype: str, optional
+        :param freqs_range: Tuple, list or array of frequencies whose lowest and highest values are the cutoff frequencies, defaults to None
+        :type freqs_range: tuple, list, numpy.ndarray, optional
+        :param freq_min: Lowest cutoff frequency, defaults to 20.0
+        :type freq_min: float, optional
+        :param freq_max: Highest cutoff frequency, defaults to 20000.0
+        :type freq_max: float, optional
         :return: A filtered signal
         :rtype: measpy.signal.Signal
         """
+
+        if Wn is not None:
+            deprecated_argument(
+                'Wn', 'freqs_range, freq_min or freq_max', func_name='Signal.iir')
+            if isinstance(Wn, numbers.Number):
+                if freq_min is None and freq_max is None and freqs_range is None:
+                    freq_min = freq_max = Wn
+            elif freqs_range is None:
+                freqs_range = Wn
+
+        fmin, fmax = parse_freq_range(freqs_range, freq_min, freq_max,
+                                      default=(20.0, 20000.0))
+
+        if btype.lower() in ('l', 'low', 'lowpass', 'lp'):
+            Wn = fmax
+        elif btype.lower() in ('h', 'high', 'highpass', 'hp'):
+            Wn = fmin
+        else:
+            Wn = (fmin, fmax)
 
         sos = iirfilter(N=N, Wn=Wn, rs=rs, rp=rp, btype=btype,
                         analog=False, ftype=ftype, fs=self.fs,
@@ -981,16 +1014,23 @@ class Signal:
             unit=self.unit**2*Unit('s')
         )
 
-    def tfe_farina(self, freqs, in_unit='V'):
+    def tfe_farina(self, freqs=None, in_unit='V',
+                   freqs_range=None, freq_min=None, freq_max=None):
         """
         Compute the transfer function between x and the actual signal
-        where x is was a logarithmic sweep of same duration between freqs[0] and freqs[1]
-        (i.e. created with measpy.signal.Signal.log_sweep)
+        where x is was a logarithmic sweep of same duration between
+        freq_min and freq_max (i.e. created with measpy.signal.Signal.log_sweep)
 
-        :param freqs: The start and stop frequencies of the input logarithmic sweep whose actual signal is the response
+        :param freqs: Deprecated, use freqs_range instead. The start and stop frequencies of the input logarithmic sweep whose actual signal is the response
         :type freqs: Tuple of floats
         :param in_unit: Unit of the input signal. Defaults to 'V'
         :type unit: str or unyt.Unit
+        :param freqs_range: Tuple, list or array of frequencies whose lowest and highest values are the start and stop frequencies of the input logarithmic sweep, defaults to None
+        :type freqs_range: tuple, list, numpy.ndarray, optional
+        :param freq_min: Start frequency of the input logarithmic sweep, defaults to 20.0
+        :type freq_min: float, optional
+        :param freq_max: Stop frequency of the input logarithmic sweep, defaults to 20000.0
+        :type freq_max: float, optional
         :return: The FRF calculated by the Farina's method (2000)
         :rtype: measpy.signal.Spectral
         """
@@ -998,12 +1038,18 @@ class Signal:
         if self.nchannels>1:
             raise NotImplementedError('Transfer function calculation not implemented for multichannels signals.')
 
+        fmin, fmax = parse_freq_range(
+            freqs_range, freq_min, freq_max,
+            default=(20.0, 20000.0),
+            deprecated={'freqs': (freqs, 'freqs_range')},
+            func_name='Signal.tfe_farina')
+
         leng = int(2**np.ceil(np.log2(self.length)))
         Y = np.fft.rfft(self.values, leng)/self.fs
         f = np.linspace(0, self.fs/2, num=round(leng/2)+1)  # frequency axis
-        L = (self.length-1)/self.fs/np.log(freqs[1]/freqs[0])
+        L = (self.length-1)/self.fs/np.log(fmax/fmin)
         S = 2*np.sqrt(f/L)*np.exp(-1j*2*np.pi*f*L *
-                                  (1-np.log(f/freqs[0])) + 1j*np.pi/4)
+                                  (1-np.log(f/fmin)) + 1j*np.pi/4)
         S[0] = 0j
         return Spectral(values=Y*S,
                         desc='Transfer function between input log sweep and '+self.desc,
@@ -1017,9 +1063,9 @@ class Signal:
     #####################################################################
 
     @classmethod
-    def noise(cls, fs=44100, dur=2.0, amp=1.0, freq_min = 20.0, freq_max=20000.0, unit=None, cal=None, dbfs=None, desc=None):
+    def noise(cls, fs=44100, dur=2.0, amp=1.0, freq_min = None, freq_max=None, unit=None, cal=None, dbfs=None, desc=None, freqs_range=None):
         """
-        Logarithmic sweep signal creation
+        Band limited noise signal creation
 
         :param fs: Sampling frequency. Defaults to 44100.
         :param dur: Duration in seconds. Defaults to 2.0.
@@ -1030,10 +1076,13 @@ class Signal:
         :param cal: Calibration. Defaults to None (->1).
         :param dbfs: Zero dB full scale value. Defaults to None (->1).
         :param desc: Description of the generated signal. Defaults to None, so that the default description is 'Noise freq_min-freq-max.
+        :param freqs_range: Tuple, list or array of frequencies whose lowest and highest values are the start and stop frequencies. Defaults to None.
 
         :return: A noise signal
         :rtype: measpy.signal.Signal
         """
+        freq_min, freq_max = parse_freq_range(
+            freqs_range, freq_min, freq_max, default=(20.0, 20000.0))
         if desc is None:
             desc = 'Noise '+str(freq_min)+'-'+str(freq_max)+'Hz'
         return cls(
@@ -1048,9 +1097,9 @@ class Signal:
         )
 
     @classmethod
-    def log_sweep(cls, fs=44100, dur=2.0, amp=1.0, freq_min = 20.0, freq_max=20000.0, unit=None, cal=None, dbfs=None, desc=None):
+    def log_sweep(cls, fs=44100, dur=2.0, amp=1.0, freq_min = None, freq_max=None, unit=None, cal=None, dbfs=None, desc=None, freqs_range=None):
         """
-        ogarithmic sweep signal creation
+        Logarithmic sweep signal creation
 
         :param fs: Sampling frequency. Defaults to 44100.
         :param dur: Duration in seconds. Defaults to 2.0.
@@ -1061,10 +1110,13 @@ class Signal:
         :param cal: Calibration. Defaults to None (->1).
         :param dbfs: Zero dB full scale value. Defaults to None (->1).
         :param desc: Description of the generated signal. Defaults to None, so that the default description is 'Logsweep freq_min-freq-max.
+        :param freqs_range: Tuple, list or array of frequencies whose lowest and highest values are the start and stop frequencies. Defaults to None.
 
         :return: A sweep signal
         :rtype: measpy.signal.Signal
         """
+        freq_min, freq_max = parse_freq_range(
+            freqs_range, freq_min, freq_max, default=(20.0, 20000.0))
         if desc is None:
             desc = 'Logsweep '+str(freq_min)+'-'+str(freq_max)+'Hz'
         return cls(
@@ -2148,7 +2200,7 @@ class Signal:
                 )
 
 
-    def harmonic_disto(self, nh=4, freq_min=20.0, freq_max=20000.0, delay=None, win_max_length=2**15, prop_before=0.25, nsmooth=24, debug_plot=False):
+    def harmonic_disto(self, nh=4, freq_min=None, freq_max=None, delay=None, win_max_length=2**15, prop_before=0.25, nsmooth=24, debug_plot=False, freqs_range=None):
         """Compute the harmonic distorsion of an in/out system
         using the method proposed by Farina (2000) and adapted by
         Novak et al. (2015) to correctly estimate the phase of the
@@ -2160,8 +2212,12 @@ class Signal:
 
         :param nh: number of harmonics, including harmonic 0 (the linear part of the response), defaults to 4
         :type nh: int, optional
-        :param freqs: frequencies between which the output signal that was used sweeps, defaults to [20,20000]
-        :type freqs: tuple, optional
+        :param freq_min: Start frequency of the logarithmic sweep that was sent, defaults to 20.0
+        :type freq_min: float, optional
+        :param freq_max: Stop frequency of the logarithmic sweep that was sent, defaults to 20000.0
+        :type freq_max: float, optional
+        :param freqs_range: Tuple, list or array of frequencies whose lowest and highest values are the start and stop frequencies of the logarithmic sweep that was sent, defaults to None
+        :type freqs_range: tuple, list, numpy.ndarray, optional
         :param delay: the mean delay between output and input, defaults to None. If None, the delay is estimated looking at the max value of the cross correlation of the signal with the input logarithmic sweep.
         :type delay: float, optional
         :param win_max_length: Maximum window length for each harmonic Fourier analysis in number of samples. Has to be even. Defaults to 2**15. When treating higher harmonics, the window can be shortened so that there is no overlapping with the next window.
@@ -2183,8 +2239,11 @@ class Signal:
         if self.nchannels>1:
             raise NotImplementedError('Transfer function calculation not implemented for multichannels signals.')
 
+        freq_min, freq_max = parse_freq_range(
+            freqs_range, freq_min, freq_max, default=(20.0, 20000.0))
+
         # Compute transfer function using Farina's method
-        sp = self.tfe_farina((freq_min,freq_max))
+        sp = self.tfe_farina(freqs_range=(freq_min,freq_max))
 
         l = win_max_length
 
@@ -2492,50 +2551,93 @@ class Spectral:
             out.values = spa(self.freqs)*np.exp(1j*spp(self.freqs))
         return out
 
-    def nth_oct_smooth(self, n, fmin=5, fmax=20000):
+    def nth_oct_smooth(self, n, fmin=None, fmax=None,
+                       freqs_range=None, freq_min=None, freq_max=None):
         """ Nth octave smoothing
             Works on real valued spectra. For complex values,
             use nth_oct_smooth_complex.
 
             :param n: Ratio of smoothing (1/nth smoothing), defaults to 3
             :type n: int, optionnal
-            :param fmin: Min value of the output frequencies, defaults to 5
+            :param fmin: Deprecated, use freq_min instead
             :type fmin: float, int, optionnal
-            :param fmax: Max value of the output frequencies, defaults to 20000
+            :param fmax: Deprecated, use freq_max instead
             :type fmax: float, int, optionnal
+            :param freqs_range: Tuple, list or array of frequencies whose lowest and highest values are the min and max of the output frequencies, defaults to None
+            :type freqs_range: tuple, list, numpy.ndarray, optionnal
+            :param freq_min: Min value of the output frequencies, defaults to 5
+            :type freq_min: float, int, optionnal
+            :param freq_max: Max value of the output frequencies, defaults to 20000
+            :type freq_max: float, int, optionnal
             :return: A smoothed spectral object
             :rtype: measpy.signal.Spectral
         """
+        freq_min, freq_max = parse_freq_range(
+            freqs_range, freq_min, freq_max,
+            default=(5.0, 20000.0),
+            deprecated={'fmin': (fmin, 'freq_min'), 'fmax': (fmax, 'freq_max')},
+            func_name='Spectral.nth_oct_smooth')
         return self.similar(
-            w=self.nth_oct_smooth_to_weight(n, fmin=fmin, fmax=fmax),
+            w=self.nth_oct_smooth_to_weight(
+                n, freq_min=freq_min, freq_max=freq_max),
             desc=add_step(self.desc, '1/'+str(n)+'th oct. smooth')
-        ).filterout((fmin, fmax))
+        ).filterout(freqs_range=(freq_min, freq_max))
 
-    def nth_oct_smooth_complex(self, n, fmin=5, fmax=20000):
+    def nth_oct_smooth_complex(self, n, fmin=None, fmax=None,
+                               freqs_range=None, freq_min=None, freq_max=None):
         """ Nth octave smoothing
-            Complex signal version 
+            Complex signal version
 
             :param n: Ratio of smoothing (1/nth smoothing), defaults to 3
             :type n: int, optionnal
-            :param fmin: Min value of the output frequencies, defaults to 5
+            :param fmin: Deprecated, use freq_min instead
             :type fmin: float, int, optionnal
-            :param fmax: Max value of the output frequencies, defaults to 20000
+            :param fmax: Deprecated, use freq_max instead
             :type fmax: float, int, optionnal
+            :param freqs_range: Tuple, list or array of frequencies whose lowest and highest values are the min and max of the output frequencies, defaults to None
+            :type freqs_range: tuple, list, numpy.ndarray, optionnal
+            :param freq_min: Min value of the output frequencies, defaults to 5
+            :type freq_min: float, int, optionnal
+            :param freq_max: Max value of the output frequencies, defaults to 20000
+            :type freq_max: float, int, optionnal
             :return: A smoothed spectral object
             :rtype: measpy.signal.Spectral
         """
+        freq_min, freq_max = parse_freq_range(
+            freqs_range, freq_min, freq_max,
+            default=(5.0, 20000.0),
+            deprecated={'fmin': (fmin, 'freq_min'), 'fmax': (fmax, 'freq_max')},
+            func_name='Spectral.nth_oct_smooth_complex')
         return self.similar(
-            w=self.nth_oct_smooth_to_weight_complex(n, fmin=fmin, fmax=fmax),
+            w=self.nth_oct_smooth_to_weight_complex(
+                n, freq_min=freq_min, freq_max=freq_max),
             desc=add_step(self.desc, '1/'+str(n)+'th oct. smooth')
-        ).filterout((fmin, fmax))
+        ).filterout(freqs_range=(freq_min, freq_max))
 
-    def filterout(self, freqsrange):
+    def filterout(self, freqsrange=None,
+                  freqs_range=None, freq_min=None, freq_max=None):
         """ Cancels values below and above a given frequency
-            Returns a Spectral class object
+
+            :param freqsrange: Deprecated, use freqs_range instead
+            :type freqsrange: tuple, list, numpy.ndarray, optionnal
+            :param freqs_range: Tuple, list or array of frequencies whose lowest and highest values are the limits of the frequency band that is kept, defaults to None
+            :type freqs_range: tuple, list, numpy.ndarray, optionnal
+            :param freq_min: Lowest frequency that is kept, defaults to the lowest frequency of the spectrum
+            :type freq_min: float, int, optionnal
+            :param freq_max: Highest frequency that is kept, defaults to the highest frequency of the spectrum
+            :type freq_max: float, int, optionnal
+            :return: A Spectral object
+            :rtype: measpy.signal.Spectral
         """
+        allfreqs = self.freqs
+        freq_min, freq_max = parse_freq_range(
+            freqs_range, freq_min, freq_max,
+            default=(float(np.min(allfreqs))-1, float(np.max(allfreqs))+1),
+            deprecated={'freqsrange': (freqsrange, 'freqs_range')},
+            func_name='Spectral.filterout')
         return self.similar(
             values=self._values*(
-                (self.freqs > freqsrange[0]) & (self.freqs < freqsrange[1]))
+                (allfreqs > freq_min) & (allfreqs < freq_max))
         )
 
     def apply_weighting(self, w, inverse=False):
@@ -2737,7 +2839,8 @@ class Spectral:
     # Mehtods returning a Weighting object
     #####################################################################
 
-    def nth_oct_smooth_to_weight(self, n=3, fmin=5, fmax=20000):
+    def nth_oct_smooth_to_weight(self, n=3, fmin=None, fmax=None,
+                                 freqs_range=None, freq_min=None, freq_max=None):
         """ Nth octave smoothing
             Works on real valued spectra. For complex values,
             use nth_oct_smooth_to_weight_complex.
@@ -2749,12 +2852,25 @@ class Spectral:
 
             :param n: Ratio of smoothing (1/nth smoothing), defaults to 3
             :type n: int, optionnal
-            :param fmin: Min value of the output frequencies, defaults to 5
+            :param fmin: Deprecated, use freq_min instead
             :type fmin: float, int, optionnal
-            :param fmax: Max value of the output frequencies, defaults to 20000
+            :param fmax: Deprecated, use freq_max instead
             :type fmax: float, int, optionnal
+            :param freqs_range: Tuple, list or array of frequencies whose lowest and highest values are the min and max of the output frequencies, defaults to None
+            :type freqs_range: tuple, list, numpy.ndarray, optionnal
+            :param freq_min: Min value of the output frequencies, defaults to 5
+            :type freq_min: float, int, optionnal
+            :param freq_max: Max value of the output frequencies, defaults to 20000
+            :type freq_max: float, int, optionnal
+            :return: A weighting object
+            :rtype: measpy.signal.Weighting
         """
-        fc, f1, f2 = nth_octave_bands(n, fmin=fmin, fmax=fmax)
+        freq_min, freq_max = parse_freq_range(
+            freqs_range, freq_min, freq_max,
+            default=(5.0, 20000.0),
+            deprecated={'fmin': (fmin, 'freq_min'), 'fmax': (fmax, 'freq_max')},
+            func_name='Spectral.nth_oct_smooth_to_weight')
+        fc, f1, f2 = nth_octave_bands(n, freq_min=freq_min, freq_max=freq_max)
         val = np.zeros_like(fc)
         for ii in range(len(fc)):
             val[ii] = np.mean(
@@ -2774,19 +2890,31 @@ class Spectral:
             desc=add_step(self.desc, '1/'+str(n)+'th oct. smooth')
         )
 
-    def nth_oct_smooth_to_weight_complex(self, n, fmin=5, fmax=20000):
+    def nth_oct_smooth_to_weight_complex(self, n, fmin=None, fmax=None,
+                                         freqs_range=None, freq_min=None, freq_max=None):
         """ Nth octave smoothing, complex version
 
             :param n: Ratio of smoothing (1/nth smoothing), defaults to 3
             :type n: int, optionnal
-            :param fmin: Min value of the output frequencies, defaults to 5
+            :param fmin: Deprecated, use freq_min instead
             :type fmin: float, int, optionnal
-            :param fmax: Max value of the output frequencies, defaults to 20000
+            :param fmax: Deprecated, use freq_max instead
             :type fmax: float, int, optionnal
+            :param freqs_range: Tuple, list or array of frequencies whose lowest and highest values are the min and max of the output frequencies, defaults to None
+            :type freqs_range: tuple, list, numpy.ndarray, optionnal
+            :param freq_min: Min value of the output frequencies, defaults to 5
+            :type freq_min: float, int, optionnal
+            :param freq_max: Max value of the output frequencies, defaults to 20000
+            :type freq_max: float, int, optionnal
             :return: A weighting object
             :rtype: measpy.signal.Weighting
         """
-        fc, f1, f2 = nth_octave_bands(n, fmin=fmin, fmax=fmax)
+        freq_min, freq_max = parse_freq_range(
+            freqs_range, freq_min, freq_max,
+            default=(5.0, 20000.0),
+            deprecated={'fmin': (fmin, 'freq_min'), 'fmax': (fmax, 'freq_max')},
+            func_name='Spectral.nth_oct_smooth_to_weight_complex')
+        fc, f1, f2 = nth_octave_bands(n, freq_min=freq_min, freq_max=freq_max)
         ampl = np.zeros_like(fc, dtype=float)
         phas = np.zeros_like(fc, dtype=float)
         angles = np.unwrap(np.angle(self.values))
