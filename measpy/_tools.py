@@ -192,6 +192,92 @@ def smooth(in_array,l=20):
     else:
         raise ValueError('This smooth function manages array of dimension <= 2')
 
+def nth_octave_band_edges(freqs,n):
+    """ Lower and upper edges of the 1/nth octave bands
+        centered on each given frequency
+
+        :param freqs: Center frequencies of the bands
+        :type freqs: numpy.ndarray or list
+        :param n: Bands are 1/nth octave wide
+        :type n: float, int
+        :return: A tuple of two arrays (lower edges, upper edges)
+        :rtype: tuple
+    """
+    fac = 2**(1/(2*n))
+    f = np.asarray(freqs,dtype=float)
+    return np.minimum(f/fac,f*fac), np.maximum(f/fac,f*fac)
+
+def band_moving_average(freqs,values,n=12,freqs_out=None,empty='interp'):
+    """ Moving average of a set of values over 1/nth octave wide bands
+
+        This is a true moving average: for each output frequency f, the
+        returned value is the arithmetic mean of all the input values
+        whose frequency falls in the band [f/2**(1/2n), f*2**(1/2n)].
+        The averaging bandwidth is hence proportional to the frequency
+        (constant width in a log-frequency scale), and the output is
+        computed at every requested frequency, not only at the center
+        frequencies of a set of contiguous bands.
+
+        The values can be real or complex. The computation is done with
+        cumulative sums, its cost is hence independent of the width
+        of the bands.
+
+        :param freqs: Frequencies of the input values (any order)
+        :type freqs: numpy.ndarray
+        :param values: Values to smooth (real or complex)
+        :type values: numpy.ndarray
+        :param n: Bands are 1/nth octave wide, defaults to 12
+        :type n: float, int, optional
+        :param freqs_out: Frequencies at which the moving average is computed. Defaults to None, meaning that the input frequencies are used.
+        :type freqs_out: numpy.ndarray or None, optional
+        :param empty: What to do when a band contains no input value (only possible if freqs_out is given): 'interp' to linearly interpolate the input values, 'nan' to return NaN. Defaults to 'interp'.
+        :type empty: str, optional
+        :return: The smoothed values, at the frequencies freqs_out (or freqs)
+        :rtype: numpy.ndarray
+    """
+    f = np.asarray(freqs,dtype=float)
+    v = np.asarray(values)
+    if f.shape != v.shape:
+        raise ValueError('freqs and values must have the same shape')
+    if empty not in ('interp','nan'):
+        raise ValueError("empty option must be 'interp' or 'nan'")
+
+    # Cumulative sums need frequencies sorted in ascending order
+    order = np.argsort(f)
+    fsorted = f[order]
+    vsorted = v[order]
+
+    if freqs_out is None:
+        fout = fsorted
+    else:
+        fout = np.asarray(freqs_out,dtype=float)
+
+    f1, f2 = nth_octave_band_edges(fout,n)
+    dtype = np.result_type(vsorted.dtype,float)
+    csum = np.concatenate((np.zeros(1,dtype=dtype),np.cumsum(vsorted,dtype=dtype)))
+    i1 = np.searchsorted(fsorted,f1,side='left')
+    i2 = np.searchsorted(fsorted,f2,side='right')
+    count = i2-i1
+
+    out = np.empty(fout.shape,dtype=dtype)
+    filled = count>0
+    out[filled] = (csum[i2[filled]]-csum[i1[filled]])/count[filled]
+
+    # Bands that contain no data point (typically at low frequencies,
+    # where the bands are narrower than the frequency resolution)
+    if not np.all(filled):
+        if empty=='interp':
+            out[~filled] = np.interp(fout[~filled],fsorted,vsorted)
+        else:
+            out[~filled] = np.nan
+
+    if freqs_out is None:
+        # Restore the order of the input frequencies
+        restored = np.empty_like(out)
+        restored[order] = out
+        return restored
+    return out
+
 def nth_octave_bands(n,freq_min=5,freq_max=20000):
     """ 1/nth octave band frequency range calculation """
     nmin = int(np.ceil(n*np.log2(freq_min*10**-3)))

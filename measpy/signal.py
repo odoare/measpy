@@ -36,8 +36,6 @@ from scipy.signal import (welch,
                           convolve,
                           get_window,
                           decimate)
-# from scipy.interpolate import InterpolatedUnivariateSpline
-from csaps import csaps
 import scipy.io.wavfile as wav
 import h5py
 
@@ -50,6 +48,7 @@ from ._tools import (add_step,
                            parse_freq_range,
                            deprecated_argument,
                            nth_octave_bands,
+                           band_moving_average,
                            create_time,
                            apply_fades,
                            sine,
@@ -2534,6 +2533,9 @@ class Spectral:
             :return: A Spectral object
             :rtype: measpy.signal.Spectral
 
+            The interpolation of a Weighting object is done on a
+            logarithmic frequency scale (see measpy.signal.Weighting.values_at_freqs)
+
         """
         values = kwargs.setdefault("values", self.values)
         fs = kwargs.setdefault("fs", self.fs)
@@ -2545,15 +2547,19 @@ class Spectral:
         out = Spectral(values=values, fs=fs, desc=desc,
                        unit=unit, full=full, norm=norm, odd=odd)
         if 'w' in kwargs:
-            w = kwargs['w']
-            spa = csaps(w.freqs, w.amp, smooth=0.9)
-            spp = csaps(w.freqs, w.phase, smooth=0.9)
-            out.values = spa(self.freqs)*np.exp(1j*spp(self.freqs))
+            out.values = kwargs['w'].values_at_freqs(self.freqs)
         return out
 
-    def nth_oct_smooth(self, n, fmin=None, fmax=None,
+    def nth_oct_smooth(self, n=3, fmin=None, fmax=None,
                        freqs_range=None, freq_min=None, freq_max=None):
         """ Nth octave smoothing
+
+            The smoothed value at a given frequency f is the mean of
+            all the values of the spectrum that are inside the 1/nth
+            octave band centered on f. This is a true moving average:
+            it is computed at every frequency of the spectrum, the
+            frequency resolution is hence preserved.
+
             Works on real valued spectra. For complex values,
             use nth_oct_smooth_complex.
 
@@ -2578,15 +2584,27 @@ class Spectral:
             deprecated={'fmin': (fmin, 'freq_min'), 'fmax': (fmax, 'freq_max')},
             func_name='Spectral.nth_oct_smooth')
         return self.similar(
-            w=self.nth_oct_smooth_to_weight(
-                n, freq_min=freq_min, freq_max=freq_max),
+            values=band_moving_average(self.freqs, self.values, n=n),
             desc=add_step(self.desc, '1/'+str(n)+'th oct. smooth')
         ).filterout(freqs_range=(freq_min, freq_max))
 
-    def nth_oct_smooth_complex(self, n, fmin=None, fmax=None,
-                               freqs_range=None, freq_min=None, freq_max=None):
-        """ Nth octave smoothing
-            Complex signal version
+    def nth_oct_smooth_complex(self, n=3, fmin=None, fmax=None,
+                               freqs_range=None, freq_min=None, freq_max=None,
+                               mode='amplitude_phase'):
+        """ Nth octave smoothing, complex version
+
+            The smoothed value at a given frequency f is computed from
+            all the values of the spectrum that are inside the 1/nth
+            octave band centered on f. This is a true moving average:
+            it is computed at every frequency of the spectrum, the
+            frequency resolution is hence preserved.
+
+            Three ways of averaging complex values are implemented,
+            selected with the mode argument:
+
+            - 'amplitude_phase' (default) : the modulus and the unwrapped phase are averaged separately. This preserves the amplitude of resonances, whatever the phase rotation inside the band.
+            - 'complex' : the complex values are directly averaged. This is a linear operation (the smoothing of a sum is the sum of the smoothings), but rapid phase rotations inside a band reduce the amplitude.
+            - 'power' : the modulus is averaged in the energetic sense (square root of the mean of the squared moduli), the unwrapped phase is averaged as above. This is the relevant choice for noisy data and power spectral densities.
 
             :param n: Ratio of smoothing (1/nth smoothing), defaults to 3
             :type n: int, optionnal
@@ -2600,6 +2618,8 @@ class Spectral:
             :type freq_min: float, int, optionnal
             :param freq_max: Max value of the output frequencies, defaults to 20000
             :type freq_max: float, int, optionnal
+            :param mode: Averaging method, 'amplitude_phase', 'complex' or 'power'. Defaults to 'amplitude_phase'
+            :type mode: str, optionnal
             :return: A smoothed spectral object
             :rtype: measpy.signal.Spectral
         """
@@ -2608,9 +2628,25 @@ class Spectral:
             default=(5.0, 20000.0),
             deprecated={'fmin': (fmin, 'freq_min'), 'fmax': (fmax, 'freq_max')},
             func_name='Spectral.nth_oct_smooth_complex')
+
+        if mode == 'complex':
+            values = band_moving_average(self.freqs, self.values, n=n)
+        elif mode in ('amplitude_phase', 'power'):
+            if mode == 'power':
+                ampl = np.sqrt(band_moving_average(
+                    self.freqs, np.abs(self.values)**2, n=n))
+            else:
+                ampl = band_moving_average(
+                    self.freqs, np.abs(self.values), n=n)
+            phas = band_moving_average(
+                self.freqs, np.unwrap(np.angle(self.values)), n=n)
+            values = ampl*np.exp(1j*phas)
+        else:
+            raise ValueError(
+                "mode must be 'amplitude_phase', 'complex' or 'power'")
+
         return self.similar(
-            w=self.nth_oct_smooth_to_weight_complex(
-                n, freq_min=freq_min, freq_max=freq_max),
+            values=values,
             desc=add_step(self.desc, '1/'+str(n)+'th oct. smooth')
         ).filterout(freqs_range=(freq_min, freq_max))
 
@@ -2870,29 +2906,30 @@ class Spectral:
             default=(5.0, 20000.0),
             deprecated={'fmin': (fmin, 'freq_min'), 'fmax': (fmax, 'freq_max')},
             func_name='Spectral.nth_oct_smooth_to_weight')
-        fc, f1, f2 = nth_octave_bands(n, freq_min=freq_min, freq_max=freq_max)
-        val = np.zeros_like(fc)
-        for ii in range(len(fc)):
-            val[ii] = np.mean(
-                self.values[(self.freqs > f1[ii]) & (self.freqs < f2[ii])]
-            )
-        # Check for NaN values (generally at low frequencies)
-        # and remove the values
-        itor = []
-        for ii in range(len(fc)):
-            if val[ii] != val[ii]:
-                itor += [ii]
-        fc = np.delete(fc, itor)
-        val = np.delete(val, itor)
+        fc, _, _ = nth_octave_bands(n, freq_min=freq_min, freq_max=freq_max)
+        val = band_moving_average(
+            self.freqs, self.values, n=n, freqs_out=fc, empty='nan')
+        # Remove the bands that contain no data
+        # (generally at low frequencies)
+        keep = ~np.isnan(val)
+        fc = fc[keep]
+        val = val[keep]
         return Weighting(
             freqs=fc,
             amp=val,
             desc=add_step(self.desc, '1/'+str(n)+'th oct. smooth')
         )
 
-    def nth_oct_smooth_to_weight_complex(self, n, fmin=None, fmax=None,
-                                         freqs_range=None, freq_min=None, freq_max=None):
+    def nth_oct_smooth_to_weight_complex(self, n=3, fmin=None, fmax=None,
+                                         freqs_range=None, freq_min=None, freq_max=None,
+                                         mode='amplitude_phase'):
         """ Nth octave smoothing, complex version
+
+            Converts a Spectral object into a Weighting object whose
+            frequencies are the center frequencies of the 1/nth octave
+            bands. The value of each band is the mean of the values of
+            the spectrum inside this band (see nth_oct_smooth_complex
+            for the description of the mode argument).
 
             :param n: Ratio of smoothing (1/nth smoothing), defaults to 3
             :type n: int, optionnal
@@ -2906,6 +2943,8 @@ class Spectral:
             :type freq_min: float, int, optionnal
             :param freq_max: Max value of the output frequencies, defaults to 20000
             :type freq_max: float, int, optionnal
+            :param mode: Averaging method, 'amplitude_phase', 'complex' or 'power'. Defaults to 'amplitude_phase'
+            :type mode: str, optionnal
             :return: A weighting object
             :rtype: measpy.signal.Weighting
         """
@@ -2914,28 +2953,35 @@ class Spectral:
             default=(5.0, 20000.0),
             deprecated={'fmin': (fmin, 'freq_min'), 'fmax': (fmax, 'freq_max')},
             func_name='Spectral.nth_oct_smooth_to_weight_complex')
-        fc, f1, f2 = nth_octave_bands(n, freq_min=freq_min, freq_max=freq_max)
-        ampl = np.zeros_like(fc, dtype=float)
-        phas = np.zeros_like(fc, dtype=float)
-        angles = np.unwrap(np.angle(self.values))
-        for ii in range(len(fc)):
-            ampl[ii] = np.mean(
-                np.abs(self.values[(self.freqs > f1[ii])
-                       & (self.freqs < f2[ii])])
-            )
-            phas[ii] = np.mean(
-                angles[(self.freqs > f1[ii]) & (self.freqs < f2[ii])]
-            )
+        fc, _, _ = nth_octave_bands(n, freq_min=freq_min, freq_max=freq_max)
 
-        # Check for NaN values (generally at low frequencies)
-        # and remove the values
-        itor = []
-        for ii in range(len(fc)):
-            if ampl[ii] != ampl[ii]:
-                itor += [ii]
-        fc = np.delete(fc, itor)
-        ampl = np.delete(ampl, itor)
-        phas = np.delete(phas, itor)
+        if mode == 'complex':
+            val = band_moving_average(
+                self.freqs, self.values, n=n, freqs_out=fc, empty='nan')
+            ampl = np.abs(val)
+            phas = np.unwrap(np.angle(val))
+        elif mode in ('amplitude_phase', 'power'):
+            if mode == 'power':
+                ampl = np.sqrt(band_moving_average(
+                    self.freqs, np.abs(self.values)**2, n=n,
+                    freqs_out=fc, empty='nan'))
+            else:
+                ampl = band_moving_average(
+                    self.freqs, np.abs(self.values), n=n,
+                    freqs_out=fc, empty='nan')
+            phas = band_moving_average(
+                self.freqs, np.unwrap(np.angle(self.values)), n=n,
+                freqs_out=fc, empty='nan')
+        else:
+            raise ValueError(
+                "mode must be 'amplitude_phase', 'complex' or 'power'")
+
+        # Remove the bands that contain no data
+        # (generally at low frequencies)
+        keep = ~np.isnan(ampl)
+        fc = fc[keep]
+        ampl = ampl[keep]
+        phas = phas[keep]
 
         return Weighting(
             freqs=fc,
@@ -3501,11 +3547,58 @@ class Weighting:
                      outphase[i]]
                 )
 
+    def values_at_freqs(self, freqlist):
+        """ Interpolate the weighting function at the given frequencies
+
+            The interpolation is done on a logarithmic frequency scale.
+            The amplitude is interpolated in the dB domain (i.e. the
+            logarithm of the amplitude is linearly interpolated), the
+            phase is linearly interpolated. Outside of the frequency
+            range of the weighting function, the values of the closest
+            end are used (no extrapolation).
+
+            Negative frequencies (as found in full spectra) are given
+            the conjugate value of the corresponding positive frequency.
+
+            :param freqlist: A frequency or a list of frequencies
+            :type freqlist: Number, list or numpy.ndarray
+            :return: A complex number or an array of complex numbers
+            :rtype: complex or numpy.ndarray
+        """
+        fw = np.asarray(self.freqs, dtype=float)
+        amp = np.asarray(self.amp, dtype=float)
+        phase = np.asarray(self.phase, dtype=float)
+
+        # Interpolation is done versus log of frequency,
+        # the DC and negative frequencies are dealt with below
+        valid = fw > 0
+        if not np.any(valid):
+            raise ValueError(
+                'Weighting object has no strictly positive frequency, interpolation is not possible')
+        order = np.argsort(fw[valid])
+        logfw = np.log10(fw[valid][order])
+        amp = amp[valid][order]
+        phase = phase[valid][order]
+
+        fq = np.asarray(freqlist, dtype=float)
+        with np.errstate(divide='ignore'):
+            # f=0 gives -inf, np.interp then returns the lowest frequency value
+            logfq = np.log10(np.abs(fq))
+
+        if np.all(amp > 0):
+            # Amplitudes are interpolated in the dB domain
+            outamp = 10**np.interp(logfq, logfw, np.log10(amp))
+        else:
+            outamp = np.interp(logfq, logfw, amp)
+        outphase = np.interp(logfq, logfw, phase)*np.sign(np.where(fq == 0, 1, fq))
+
+        return outamp*np.exp(1j*outphase)
+
     @property
     def adb(self):
         """
         Amplitude in dB
-        Computes 20 log10 of the modulus of the amplitude 
+        Computes 20 log10 of the modulus of the amplitude
         """
         return 20*np.log10(np.abs(self.amp))
 
