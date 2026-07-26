@@ -15,9 +15,15 @@ Welcome to measpy's documentation!
    Copyright <copyright.rst>
 
    Signal tutorial <1_signal_tutorial.md>
-   
+
    Spectral tutorial <2_spectral_tutorial.md>
-   
+
+   Measurement tutorial <3_measurements.md>
+
+   Smoothing and weighting tutorial <4_spectrum_smoothing_and_weighting.md>
+
+   Synchronized measurement tutorial <5_synced_measurement.md>
+
    measpy
 
 Indices and tables
