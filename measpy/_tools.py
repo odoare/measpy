@@ -15,6 +15,11 @@ import numbers
 from unyt import Unit
 from pathlib import Path
 
+from enum import Enum
+
+class SignalType(Enum):
+    DIGITAL = "digital signal"
+    ANALOG = "analog signal"
 
 def ensure_new_filename(filename):
     filename = Path(filename).resolve()
@@ -295,7 +300,7 @@ def all_equal(iterator):
     return all(first == x for x in iterator)
 
 def to_list(elt,n):
-    if isinstance(elt,(numbers.Number,str,Unit)):
+    if isinstance(elt,(numbers.Number,str,Unit,SignalType)):
         return [elt] * n
     if isinstance(elt,(list,np.ndarray)):
         return list(elt)

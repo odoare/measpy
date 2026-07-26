@@ -199,6 +199,7 @@ class Measurement:
             self.in_range = params.setdefault("in_range",None)
             self.out_range = params.setdefault("out_range",None)
             self.in_iepe = params.setdefault("in_iepe",list(False for b in self.in_map))
+            self.in_sig_config = params.setdefault("in_sig_config", "DEFAULT")
         if type(self.out_sig)!=type(None):
             self.io_sync = params.setdefault('io_sync',0)
         elif 'io_sync' in params:
@@ -317,11 +318,13 @@ class Measurement:
         self.filename = filename
 
     def create_hdf5(self, filename, chunck_size=0, datatype=None, dbfs=None):
+        maxchunsize = self.fs*self.dur
         filename = ensure_new_filename(filename)
         mesu = self._to_dict()
         in_sig = mesu.pop("in_sig",None)
         out_sig = mesu.pop("out_sig",None)
         data_type = mesu.pop("data_type",datatype)
+        chunck_size = min(maxchunsize,chunck_size) or maxchunsize
         with h5py.File(filename, "x") as H5file:
             for name, value in mesu.items():
                 if value is not None:

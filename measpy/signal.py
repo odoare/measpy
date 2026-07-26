@@ -789,28 +789,22 @@ class Signal:
         return out
 
     def fill_from_queue(self, q_in, unit_in, Ndata=None, upsampling_factor=1):
-        if (self.nchannels>1) and not isinstance(self.unit, list):
+        if not isinstance(self.unit, list):
             self.unit = to_list(self.unit,self.nchannels)
-        for i,u in enumerate(to_list(self.unit,self.nchannels)):
-            if u == Unit("1"):
-                self.unit[i] = Unit(unit_in)
-                conversion = 1.0
-            else:
-                try:
-                    conversion = (1.0 * Unit(unit_in)).to_value(self.unit[i])
-                except UnitConversionError:
-                    print(
-                        f"Signal unit ({self.unit[i]}) incompatible with {unit_in}, Signal unit set to {unit_in} without conversion"
-                    )
-                    self.unit[i] = Unit(unit_in)
-                    conversion = 1.0
+        conversion = [1.0]*self.nchannels
+        for i,u in enumerate(self.unit):
+            self.unit[i] = Unit(unit_in)
+            try:
+                conversion[i] = (1.0 * Unit(unit_in)).to_value(self.unit[i])
+            except UnitConversionError:
+                print(
+                    f"Signal unit ({self.unit[i]}) incompatible with {unit_in}, Signal unit set to {unit_in} without conversion"
+                )
         if Ndata:
             array = np.zeros((Ndata, self.nchannels)).squeeze()
             values = conversion * Queue2prealocated_array(q_in, array)
         else:
             values = conversion * Queue2array(q_in)
-
-        assert values.shape[1]==self.nchannels
 
         if upsampling_factor > 1:
             self.raw = decimate(
@@ -2081,19 +2075,21 @@ class Signal:
     def create_hdf5dataset(self,
                            hdf5_object,
                            datatranspose,
-                           chunck_size=0,
+                           chunck_size,
                            dataset_name="in_sigs",
                            data_type=None,
                            Channel_map=None,
                            dbfs = None
                            ):
-
-        """Create an empty dataset with attribute from a signal
+        """
+        Create an empty dataset with attribute from a signal
 
         :param hdf5_object: The file or hdf5 object where to save the data
         :type hdf5_object: str, Path or opened h5file handle
-        :param chunck_size: Size of chunk of the dataset, defaults to 0
-        :type chunck_size: int, optional
+        :param datatranspose: if true data from queue are transposed (for picoscope)
+        :type datatranspose: bool
+        :param chunck_size: Size of chunk of the dataset
+        :type chunck_size: int
         :param dataset_name: Name of the hdf5 dataset, defaults to "in_sigs"
         :type dataset_name: str, optional
         :param data_type: Data format (Numpy dtype)
@@ -2123,12 +2119,14 @@ class Signal:
             itemsize = np.dtype(data_type).itemsize
             if self.nchannels>1:
                 itemsize *= self.nchannels
-                chunksize = chunck_size or 2**(power_two_chunck_size-(itemsize-1).bit_length())
+                maxchunksize = 2**(power_two_chunck_size-(itemsize-1).bit_length())
+                chunksize = min(maxchunksize, chunck_size)
                 dataset = H5file.create_dataset(
                     dataset_name, (0,self.nchannels), maxshape=(None,self.nchannels), dtype=data_type, chunks=(chunksize,self.nchannels)
                 )
             else:
-                chunksize = chunck_size or 2**(power_two_chunck_size-(itemsize-1).bit_length())
+                maxchunksize = 2**(power_two_chunck_size-(itemsize-1).bit_length())
+                chunksize = min(maxchunksize, chunck_size)
                 dataset = H5file.create_dataset(
                     dataset_name, (0,), maxshape=(None,), dtype=data_type, chunks=(chunksize,)
                 )

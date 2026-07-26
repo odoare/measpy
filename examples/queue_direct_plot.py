@@ -173,7 +173,7 @@ class inline_plotting(plot_data_from_queue):
 
     def rescaling(self):
         # defines method that rescale axis when a flag is set to True
-        # the other flag : 'self.bm.change_axe = True' is needed because changing axis
+        # the other flag : 'self.bm.changed_axe = True' is needed because changing axis
         # is impossible with fast plot method, the axis are changed using slower plot method
 
         if self.tamp_plus:
@@ -246,8 +246,8 @@ if __name__ == "__main__":
     #     event.set()
 
     # define a measurment
-    fs = 10000
-    M = mp.Measurement(device_type="ni", in_sig=[mp.Signal(fs=fs)], dur=15)
+    fs = 1000
+    M = mp.Measurement(device_type="ni", in_sig=[mp.Signal(fs=fs)], dur=15,in_sig_config = "DIFF")
 
     # define plot parameter
     plot_time = 5
@@ -277,13 +277,13 @@ if __name__ == "__main__":
         NI.set_callback(callback, n_values)
 
         # put the measurment into a thread
-        def work(*args):
-            NI.run(*args)
+        def work(*args,**kwargs):
+            NI.run(*args,**kwargs)
             print("measurment done")
             # Don't forget end flag for the Queue
             Q.put(None)
 
-        T = Thread(target=work, args=(A.stop_event, None))
+        T = Thread(target=work, kwargs={"stop":A.stop_event,"duration":None})
         # tstop = Thread(target=stop_after, args=(A.stop_event, 3))
         T.start()
         # tstop.start()

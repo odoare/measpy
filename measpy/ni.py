@@ -117,6 +117,10 @@ class ni_callback_measurement:
         self.callback_set = False
         self.Nchannel = len(M.in_map)
 
+        if M.in_sig_config not in ['RSE', 'NRSE', 'DIFF', 'PSEUDO_DIFF', 'DEFAULT']:
+            print(f"Warning invalid input config name {M.in_sig_config}, input config set to DEFAULT")
+            M.in_sig_config = "DEFAULT"
+
         if isinstance(M.in_sig, list) and len(M.in_sig) != self.Nchannel:
             raise ValueError(
                 f"in_sig property of measurement must be a multichannel signal or a list of {len(M.in_map)} single channel signals"
@@ -197,14 +201,14 @@ class ni_callback_measurement:
                 self.intask = nidaqmx.Task(new_task_name="in")  # read task
                 for i, n in enumerate(self.M.in_map):
                     print(_n_to_ain(n))
+
                     self.intask.ai_channels.add_ai_voltage_chan(
                         physical_channel=self.M.in_device + "/" + _n_to_ain(n),
-                        terminal_config=niconst.TerminalConfiguration.DEFAULT,
+                        terminal_config=niconst.TerminalConfiguration[self.M.in_sig_config],
                         min_val=-self.M.in_range[i],
                         max_val=self.M.in_range[i],
                         units=niconst.VoltageUnits.VOLTS,
                     )
-
                 self.intask.timing.cfg_samp_clk_timing(
                     rate=self.M.fs,
                     sample_mode=niconst.AcquisitionType.CONTINUOUS,
@@ -312,11 +316,13 @@ class ni_callback_measurement:
             self.outtask.close()
         print("ni tasks closed")
 
-    def run(self, stop=Event(), duration="default"):
+    def run(self, stop=Event(), pause=Event(), duration="default"):
         """
         Run the measurment
         :param stop: Trigger to stop the measurment, defaults to Event()
         :type stop: threading.Event, optional
+        :param pause: Trigger to pause the measurment, and restart is when this trigger is cleared, defaults to Event()
+        :type pause: threading.Event, optional
         :param duration: Duration of measurment in seconds if default it use the duration in M, defaults to "default"
         :type duration: float, optional
         :return: Nothing
@@ -350,12 +356,17 @@ class ni_callback_measurement:
         try:
             print("Start measurement")
             while (
-                not stop.is_set() and self.buffer_captured < numBuffersToCapture
+                not (stop.is_set() or pause.is_set()) and self.buffer_captured < numBuffersToCapture
             ):
                 sleep(time_to_fill_buffer)
         except KeyboardInterrupt:
+            print("Measurement interupted by ctrl-c")
             pass
-        self.stop()
+        if pause.is_set():
+            self.pause(pause,stop,duration)
+        else:
+            self.stop()
+            print("measurment done")
 
     def stop(self):
         #stop all task
@@ -363,7 +374,16 @@ class ni_callback_measurement:
             self.intask.stop()
         if self.M.out_sig != None:
             self.outtask.stop()
-        print("ni tasks stopped")
+
+    def pause(self, pause_event,stop_event,duration):
+        print("Pause measurement...")
+        self.stop()
+        try:
+            while pause_event.is_set():
+                sleep(0.1)
+            self.run(stop_event,pause_event,duration)
+        except KeyboardInterrupt:
+            pass
 
     def set_callback(self, callback_method, n_values):
         """
@@ -412,6 +432,21 @@ class ni_callback_measurement:
             self.n_values, None
         )
         self.set_callback(callback_method, n_values)
+
+    @property
+    def ai_channels_range(self):
+        """
+        Get range of input channels in volt
+        """
+        return [(A.ai_rng_low,A.ai_rng_high) for A in self.intask.ai_channels]
+
+    @property
+    def ai_channels_bits_resolution(self):
+        """
+        Get resolution of input channels in bits
+
+        """
+        return [A.ai_resolution for A in self.intask.ai_channels]
 
 def ni_run_synced_measurement(M,in_chan=0,out_chan=0):
     """
