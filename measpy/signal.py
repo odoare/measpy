@@ -239,6 +239,8 @@ class Signal:
                 self.dbfs = val
             elif arg == 'cal':
                 self.cal = val
+            elif arg == 'invcal':
+                self.invcal = val
             elif arg == 'dur':
                 raise AttributeError("Property 'dur' cannot be set")
             elif arg == 'type':
@@ -248,13 +250,14 @@ class Signal:
 
         self.raw = np.array([])
 
-        for arg,val in kwargs.items():
-            if arg == 'values':
-                self.values = val
-            elif arg == 'volts':
-                self.volts = val
-            elif arg == 'raw':
-                self.raw = val
+        # Only one of values, volts and raw is taken into account,
+        # with the precedence values > volts > raw
+        if 'values' in kwargs:
+            self.values = kwargs['values']
+        elif 'volts' in kwargs:
+            self.volts = kwargs['volts']
+        elif 'raw' in kwargs:
+            self.raw = kwargs['raw']
 
     def similar(self, **kwargs):
         """ Returns a copy of the Signal object
@@ -312,15 +315,19 @@ class Signal:
                 out.dbfs = val
             elif arg == 'cal':
                 out.cal = val
+            elif arg == 'invcal':
+                out.invcal = val
             else:
                 out.__dict__[arg] = val
-        for arg,val in kwargs.items():
-            if arg == 'values':
-                out.values = val
-            elif arg == 'volts':
-                out.volts = val
-            elif arg == 'raw':
-                out.raw = val
+
+        # Only one of values, volts and raw is taken into account,
+        # with the precedence values > volts > raw
+        if 'values' in kwargs:
+            out.values = kwargs['values']
+        elif 'volts' in kwargs:
+            out.volts = kwargs['volts']
+        elif 'raw' in kwargs:
+            out.raw = kwargs['raw']
         return out
 
     def rms_smooth(self, nperseg=512):
@@ -372,15 +379,18 @@ class Signal:
             raise TypeError('ref is not a unyt quantity')
         if not self.unit.same_dimensions_as(ref.units):
             raise ValueError('ref has an incompatible unit')
-        ref.convert_to_units(self.unit)
+        # in_units returns a converted copy: the quantity given as
+        # argument must not be modified (it can be a global constant
+        # such as measpy.PREF)
+        refc = ref.in_units(self.unit)
         return self.similar(
-            raw=20*np.log10(self.values*self.unit/ref),
+            raw=20*np.log10(self.values*self.unit/refc),
             dbfs=None,
             cal=None,
             unit=Unit('decibel'),
             desc=add_step(
                 self.desc,
-                'dB ref '+'{:.2e}'.format(ref.v)+str(ref.units)
+                'dB ref '+'{:.2e}'.format(refc.v)+str(refc.units)
             )
         )
 
@@ -435,7 +445,7 @@ class Signal:
     def cut(self, **kwargs):
         """ Cut signal between positions.
 
-            :param pos: Start and stop positions of the new signal, given as indices, defaults to (0,-1)
+            :param pos: Start and stop positions of the new signal, given as indices, defaults to the whole signal
             :type pos: tuple of int, optional
             :param dur: Start and stop positions of the new signal, given as time values
             :type dur: tuple of float, optional
@@ -459,10 +469,12 @@ class Signal:
         elif ('pos' in kwargs):
             pos = (kwargs['pos'][0], kwargs['pos'][1])
         else:
-            pos = (0, -1)
+            pos = (0, self.length)
+        # The signal is reversed if pos[1]<pos[0], and empty if they are equal
+        step = -1 if pos[1] < pos[0] else 1
         return self.similar(
             #raw=np.take(self.raw, np.tile(range(pos[0], pos[1], np.sign(pos[1]-pos[0])),(2,1)).T, mode='wrap'),
-            raw=np.take(self.raw, range(pos[0], pos[1], np.sign(pos[1]-pos[0])), mode='wrap', axis=0),
+            raw=np.take(self.raw, range(pos[0], pos[1], step), mode='wrap', axis=0),
             desc=add_step(self.desc, "Cut between " +
                           str(pos[0])+" and "+str(pos[1]))
         )
@@ -481,7 +493,7 @@ class Signal:
         """
 
         if self.nchannels>1:
-            raise NotImplementedError('Transfer function calculation not implemented for multichannels signals.')
+            raise NotImplementedError('Fades are not implemented for multichannel signals.')
 
         return self.similar(
             raw=apply_fades(self.raw, fades),
@@ -505,6 +517,8 @@ class Signal:
                    int(round(kwargs['extrat'][1]*self.fs)))
         elif ('extras' in kwargs):
             samps = (kwargs['extras'][0], kwargs['extras'][1])
+        else:
+            samps = (0, 0)
         if self.nchannels==1:
             return self.similar(raw=np.hstack(
                 (np.zeros(samps[0]),
@@ -660,7 +674,7 @@ class Signal:
         """
 
         if self.nchannels>1:
-            raise NotImplementedError('Transfer function calculation not implemented for multichannels signals.')
+            raise NotImplementedError('Unit conversion is not implemented for multichannel signals.')
 
         return self.unit_to(self.unit.get_base_equivalent())
 
@@ -699,10 +713,10 @@ class Signal:
         """ Imaginary part of the signal, calibrations applied
 
         :return: The imaginary part of the signal
-        :rtype: measpy.signal.Signal    
+        :rtype: measpy.signal.Signal
         """
         return self.similar(
-            values=np.real(self.values),
+            values=np.imag(self.values),
             desc=add_step(self.desc, "Imaginary part")
         )
 
@@ -786,7 +800,7 @@ class Signal:
         """
     
         if self.nchannels>1:
-            raise NotImplementedError('Transfer function calculation not implemented for multichannels signals.')
+            raise NotImplementedError('Windowing is not implemented for multichannel signals.')
 
         return self.similar(values=self.values*get_window(window=win, Nx=self.length))
     
@@ -854,7 +868,7 @@ class Signal:
             Returns a Spectral object. Unit is preserved during the process.
         """
         if self.nchannels>1:
-            raise NotImplementedError('Transfer function calculation not implemented for multichannels signals.')
+            raise NotImplementedError('FFT is not implemented for multichannel signals.')
 
         return Spectral(values=np.fft.fft(self.values, norm=norm),
                         fs=self.fs,
@@ -868,7 +882,7 @@ class Signal:
             Returns a Spectral object. Unit is preserved during the process.
         """
         if self.nchannels>1:
-            raise NotImplementedError('Transfer function calculation not implemented for multichannels signals.')
+            raise NotImplementedError('RFFT is not implemented for multichannel signals.')
 
         odd = np.mod(self.length, 2) == 1
         return Spectral(values=np.fft.rfft(self.values, norm=norm),
@@ -905,7 +919,7 @@ class Signal:
         """
 
         if self.nchannels>1 or x.nchannels>1:
-            raise NotImplementedError('Transfer function calculation not implemented for multichannel signals.')
+            raise NotImplementedError('Transfer function calculation is not implemented for multichannel signals.')
 
         if self.fs != x.fs:
             raise ValueError('Sampling frequencies have to be the same')
@@ -1035,7 +1049,7 @@ class Signal:
         """
 
         if self.nchannels>1:
-            raise NotImplementedError('Transfer function calculation not implemented for multichannels signals.')
+            raise NotImplementedError('Transfer function calculation is not implemented for multichannel signals.')
 
         fmin, fmax = parse_freq_range(
             freqs_range, freq_min, freq_max,
@@ -1047,8 +1061,10 @@ class Signal:
         Y = np.fft.rfft(self.values, leng)/self.fs
         f = np.linspace(0, self.fs/2, num=round(leng/2)+1)  # frequency axis
         L = (self.length-1)/self.fs/np.log(fmax/fmin)
-        S = 2*np.sqrt(f/L)*np.exp(-1j*2*np.pi*f*L *
-                                  (1-np.log(f/fmin)) + 1j*np.pi/4)
+        # The zero frequency is dealt with below, log(0) is expected here
+        with np.errstate(divide='ignore', invalid='ignore'):
+            S = 2*np.sqrt(f/L)*np.exp(-1j*2*np.pi*f*L *
+                                      (1-np.log(f/fmin)) + 1j*np.pi/4)
         S[0] = 0j
         return Spectral(values=Y*S,
                         desc='Transfer function between input log sweep and '+self.desc,
@@ -1236,9 +1252,9 @@ class Signal:
                             out.__dict__[row[0]] += [None if e=='' else e]
         _, y = wav.read(filename+'.wav')
         if (convert_to_fp and np.issubdtype(y.dtype, np.integer)):
-            minval = float(np.iinfo(y.dtype).max)
-            maxval = float(np.iinfo(y.dtype).min)
-            middle = (maxval-minval)/2
+            minval = float(np.iinfo(y.dtype).min)
+            maxval = float(np.iinfo(y.dtype).max)
+            middle = np.ceil((maxval+minval)/2)
             amp = maxval-middle
             out._rawvalues = (y.astype(dtype=float)-middle)/amp
         else:
@@ -1535,7 +1551,7 @@ class Signal:
         if isinstance(self.cal, (int, float, np.ndarray)) and isinstance(self.dbfs, (int, float, np.ndarray)):
             self._rawvalues = val*self.cal/self.dbfs
         elif isinstance(self.cal,str):
-            if hasattr(self, 'invcal'):
+            if hasattr(self, '_invcal'):
                 d = {'np': np, 'y': val}
                 exec('x='+self.invcal, d)
                 self._rawvalues = d['x']/self.dbfs
@@ -1769,7 +1785,7 @@ class Signal:
         if isinstance(other, np.ndarray):
             return self._add(
                 self.similar(
-                    value=other,
+                    values=other,
                     desc='array'
                 )
             )
@@ -2042,14 +2058,18 @@ class Signal:
                     else:
                         writer.writerow([arg]+[val])
         if datatype == 'raw':
-            outdata = self.raw[:, None]
+            outdata = self.raw
         elif datatype == 'volts':
-            outdata = self.volts[:, None]
+            outdata = self.volts
         elif datatype == 'values':
-            outdata = self.values[:, None]
+            outdata = self.values
         else:
             raise ValueError("'"+str(datatype) +
                             "' is not a possible choice for datatype option")
+        # One column per channel
+        outdata = np.asarray(outdata)
+        if outdata.ndim == 1:
+            outdata = outdata[:, None]
         if includetime:
             outdata = np.concatenate((self.time[:, None], outdata), 1)
         np.savetxt(filename+'_'+datatype+'.txt', outdata)
@@ -2068,14 +2088,18 @@ class Signal:
 
         """
         if datatype == 'raw':
-            outdata = self.raw[:, None]
+            outdata = self.raw
         elif datatype == 'volts':
-            outdata = self.volts[:, None]
+            outdata = self.volts
         elif datatype == 'values':
-            outdata = self.values[:, None]
+            outdata = self.values
         else:
             raise ValueError("'"+str(datatype) +
                             "' is not a possible choice for datatype option")
+        # One column per channel
+        outdata = np.asarray(outdata)
+        if outdata.ndim == 1:
+            outdata = outdata[:, None]
         if includetime:
             outdata = np.concatenate((self.time[:, None], outdata), 1)
         with open(filename+'.csv', 'w', newline='', encoding="utf-8") as file:
@@ -2089,10 +2113,9 @@ class Signal:
                         writer.writerow([arg]+[val])
             if includetime:
                 writer.writerow(['First column is time in seconds'])
-            writer.writerow([f'Below are data in the {datatype} format'])    
+            writer.writerow([f'Below are data in the {datatype} format'])
             for r in outdata:
-                # print(r.tolist()[0])
-                writer.writerow(r.tolist()[0])
+                writer.writerow(r.tolist())
 
 
     def to_hdf5(self, hdf5_object, dataset_name="in_sigs"):
@@ -2236,7 +2259,7 @@ class Signal:
         """
 
         if self.nchannels>1:
-            raise NotImplementedError('Transfer function calculation not implemented for multichannels signals.')
+            raise NotImplementedError('Harmonic distorsion calculation is not implemented for multichannel signals.')
 
         freq_min, freq_max = parse_freq_range(
             freqs_range, freq_min, freq_max, default=(20.0, 20000.0))
@@ -2380,7 +2403,7 @@ class Signal:
         """
 
         if self.nchannels>1:
-            raise NotImplementedError('Transfer function calculation not implemented for multichannels signals.')
+            raise NotImplementedError('Timelag calculation is not implemented for multichannel signals.')
 
         c = self.corr(x)
         return c.time[np.argmax(c.values)]
@@ -2433,7 +2456,7 @@ class Signal:
         """
 
         if self.nchannels>1:
-            raise NotImplementedError('Transfer function calculation not implemented for multichannels signals.')
+            raise NotImplementedError('Spectrogram is not implemented for multichannel signals.')
 
         f, t, Sxx = spectrogram(self.values, self.fs, **kwargs)
         if ax is None:
@@ -2485,6 +2508,7 @@ class Spectral:
     def __init__(self, **kwargs):
         if ('values' in kwargs) and ('dur' in kwargs):
             raise ValueError('Error: values and dur cannot be both specified.')
+        odd_given = 'odd' in kwargs
         values = kwargs.setdefault("values", None)
         fs = kwargs.setdefault("fs", 1)
         desc = kwargs.setdefault("desc", 'Spectral data')
@@ -2493,12 +2517,14 @@ class Spectral:
         norm = kwargs.setdefault("norm", "backward")
         odd = kwargs.setdefault("odd", False)
         if 'dur' in kwargs:
+            # Number of samples of the corresponding time domain signal
+            nsamples = int(round(fs*kwargs['dur']))
             if full:
-                self._values = np.zeros(
-                    int(round(fs*kwargs['dur'])), dtype=complex)
+                self._values = np.zeros(nsamples, dtype=complex)
             else:
-                self._values = np.zeros(
-                    int(round(fs*kwargs['dur']/2)+1), dtype=complex)
+                self._values = np.zeros(nsamples//2+1, dtype=complex)
+                if not odd_given:
+                    odd = (nsamples % 2) == 1
         else:
             self._values = values
         self.desc = desc
@@ -2693,12 +2719,14 @@ class Spectral:
     def unit_to(self, newunit):
         """ Converts to a new compatible unit
 
+        :param newunit: Unit to convert to (has to be compatible)
+        :type newunit: str or unyt.Unit
         :return: New spectral object (with new unit)
         :rtype: measpy.signal.Spectral
         """
 
-        # if isinstance(unit,str):
-        #     unit = Unit(unit)
+        if isinstance(newunit, str):
+            newunit = Unit(newunit)
         if not self.unit.same_dimensions_as(newunit):
             raise ValueError('Incompatible units')
         a = self.unit.get_conversion_factor(newunit)[0]
@@ -2728,57 +2756,67 @@ class Spectral:
         # w = Weighting.from_csv('measpy/data/dBC.csv')
         return self.apply_weighting(WDBC)
 
+    def _dB_ref(self, ref, step):
+        """ Convert to dB relative to the reference quantity ref
+
+        :param ref: Reference quantity, of a unit compatible with that of the spectrum
+        :type ref: unyt.array.unyt_quantity
+        :param step: String added to the description
+        :type step: str
+        :return: Spectrum in dB
+        :rtype: measpy.signal.Spectral
+        """
+        if not self.unit.same_dimensions_as(ref.units):
+            raise ValueError(
+                f'Spectral unit ({self.unit}) is incompatible with the {step} reference ({ref.units})')
+        # The values are converted to the unit of the reference before
+        # the dB calculation
+        converted = self.unit_to(ref.units)
+        return converted.similar(
+            values=20*np.log10(np.abs(converted.values)/ref.v),
+            unit='decibel',
+            desc=add_step(self.desc, step)
+        )
+
     def dB_SPL(self):
         """
         Convert to dB SPL (20 log10 ||P||/P0)
         Signal unit has to be compatible with Pa
 
-        :return: Weighted spectrum
-        :rtype: measpy.signal.Spectral        
+        :return: Spectrum in dB SPL
+        :rtype: measpy.signal.Spectral
         """
-        return self.unit_to(Unit(PREF)).similar(
-            values=20*np.log10(np.abs(self._values)/PREF.v),
-            desc=add_step(self.desc, 'dB SPL')
-        )
+        return self._dB_ref(PREF, 'dB SPL')
 
     def dB_SVL(self):
         """
         Convert to dB SVL (20 log10 ||V||/V0)
         Signal unit has to be compatible with m/s
 
-        :return: Weighted spectrum
-        :rtype: measpy.signal.Spectral        
+        :return: Spectrum in dB SVL
+        :rtype: measpy.signal.Spectral
         """
-        return self.unit_to(Unit(VREF)).similar(
-            values=20*np.log10(np.abs(self._values)/VREF.v),
-            desc=add_step(self.desc, 'dB SVL')
-        )
+        return self._dB_ref(VREF, 'dB SVL')
 
     def dBV(self):
         """
-        Convert to dB dBV
+        Convert to dBV (20 log10 ||V||/1V)
         Signal unit has to be compatible with Volts
 
-        :return: Weighted spectrum
-        :rtype: measpy.signal.Spectral        
+        :return: Spectrum in dBV
+        :rtype: measpy.signal.Spectral
         """
-        return self.unit_to(Unit(PREF)).similar(
-            values=20*np.log10(np.abs(self._values)/DBVREF.v),
-            desc=add_step(self.desc, 'dBV')
-        )
+        return self._dB_ref(DBVREF, 'dBV')
 
     def dBu(self):
         """
-        Convert to dB dBu
+        Convert to dBu (20 log10 ||V||/0.7746V)
         Signal unit has to be compatible with Volts
 
-        :return: Weighted spectrum
-        :rtype: measpy.signal.Spectral        
+        :return: Spectrum in dBu
+        :rtype: measpy.signal.Spectral
         """
-        return self.unit_to(Unit(PREF)).similar(
-            values=20*np.log10(np.abs(self._values)/DBUREF.v),
-            desc=add_step(self.desc, 'dBu')
-        )
+        return self._dB_ref(DBUREF, 'dBu')
 
     def diff(self):
         """ Compute frequency derivative
@@ -2814,11 +2852,11 @@ class Spectral:
     def imag(self):
         """ Imaginary part
 
-        :return: Real part (same unit)
+        :return: Imaginary part (same unit)
         :rtype: measpy.signal.Spectral
         """
         return self.similar(
-            values=np.real(self.values),
+            values=np.imag(self.values),
             desc=add_step(self.desc, "Imaginary part")
         )
 
@@ -3374,7 +3412,11 @@ class Spectral:
                 if unwrap_around==0:
                     phase_to_plot = np.unwrap(phase_to_plot)
                 else:
-                    phase_to_plot = unwrap_around_index(phase_to_plot,get_index(self.freqs,unwrap_around))
+                    # The index must refer to the frequencies that are
+                    # actually plotted, not to the whole frequency vector
+                    phase_to_plot = unwrap_around_index(
+                        phase_to_plot,
+                        get_index(frequencies_to_plot,unwrap_around))
 
         else:
             modulus_to_plot = np.abs(self.values)
@@ -3389,7 +3431,11 @@ class Spectral:
                 if unwrap_around==0:
                     phase_to_plot = np.unwrap(phase_to_plot)
                 else:
-                    phase_to_plot = unwrap_around_index(phase_to_plot,get_index(self.freqs,unwrap_around))
+                    # The index must refer to the frequencies that are
+                    # actually plotted, not to the whole frequency vector
+                    phase_to_plot = unwrap_around_index(
+                        phase_to_plot,
+                        get_index(frequencies_to_plot,unwrap_around))
             label = r'$|$H$|$'
 
         ax_0.plot(frequencies_to_plot, modulus_to_plot, **kwargs)
@@ -3478,7 +3524,7 @@ class Weighting:
         :returns: A Weighting object
         :rtype: measpy.weighting.Weighting
         """
-        out = cls([], [], 'Weighting')
+        out = cls(freqs=[], amp=[], desc='Weighting')
         out.phase = []
         with open(filename, 'r', encoding='utf-8') as file:
             reader = csv.reader(file)
@@ -3616,8 +3662,8 @@ class Weighting:
 
 PREF = 20e-6*Unit('Pa')  # Acoustic pressure reference level
 VREF = 5e-8*Unit('m/s')  # Reference particle velocity
-DBUREF = 1*Unit('V')
-DBVREF = np.sqrt(2)*Unit('V')
+DBVREF = 1*Unit('V')  # 0 dBV = 1V RMS
+DBUREF = np.sqrt(0.6)*Unit('V')  # 0 dBu = sqrt(600 ohms x 1mW) = 0.7746V RMS
 
 WDBA = [
     [6.3, -85.4],

@@ -105,16 +105,19 @@ def mic_calibration_freq(sig, sigref, Wref=None, noct=3, nperseg=None):
             - Calibration curve is then the returned measpy.Weighting object
 
     """
-    if Wref==None:
-        if nperseg==None:
-            return abs(sig.tfe_welch(sigref)).nth_oct_smooth_to_weight(noct)
-        else:
-            return abs(sig.tfe_welch(sigref, nperseg)).nth_oct_smooth_to_weight(noct)
+    if Wref is None:
+        ref = sigref
     else:
-        if nperseg==None:
-            return abs(sig.tfe_welch(sigref.rfft().apply_weighting(Wref,inverse=True).irfft())).nth_oct_smooth_to_weight(noct)
-        else:
-            return abs(sig.tfe_welch(sigref.apply_weighting(Wref,inverse=True), nperseg)).nth_oct_smooth_to_weight(noct)
+        # The response of the reference microphone is removed
+        # from the signal it has recorded
+        ref = sigref.rfft().apply_weighting(Wref, inverse=True).irfft()
+
+    if nperseg is None:
+        tfe = sig.tfe_welch(ref)
+    else:
+        tfe = sig.tfe_welch(ref, nperseg=nperseg)
+
+    return abs(tfe).nth_oct_smooth_to_weight(noct)
 
 def siglist_to_wav(sigl,filename):
     """ Takes a list of signals and export it to a multichannel wave file.

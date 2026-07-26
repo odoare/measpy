@@ -117,6 +117,15 @@ class ni_callback_measurement:
         self.callback_set = False
         self.Nchannel = len(M.in_map)
 
+        # The ni specific properties are only set by the Measurement
+        # constructor when device_type='ni'. They are given their
+        # default value here if the measurement was created otherwise
+        # (a wrong device_type is corrected a few lines below)
+        M.in_sig_config = getattr(M, 'in_sig_config', 'DEFAULT')
+        M.in_iepe = getattr(M, 'in_iepe', None)
+        if M.in_iepe is None:
+            M.in_iepe = list(False for b in M.in_map)
+
         if M.in_sig_config not in ['RSE', 'NRSE', 'DIFF', 'PSEUDO_DIFF', 'DEFAULT']:
             print(f"Warning invalid input config name {M.in_sig_config}, input config set to DEFAULT")
             M.in_sig_config = "DEFAULT"

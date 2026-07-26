@@ -33,59 +33,41 @@ del get_versions
 
 class Measurement:
     # ---------------------------
+    @staticmethod
+    def _check_siglist(sigs, name):
+        """ Check the in_sig/out_sig parameter given at Measurement creation
+
+            :param sigs: The signal, list of signals, or None, given as parameter
+            :type sigs: measpy.signal.Signal, list or None
+            :param name: Name of the parameter ('in_sig' or 'out_sig'), used in the error messages
+            :type name: str
+            :return: The checked signal or list of signals (None if nothing was given)
+            :rtype: measpy.signal.Signal, list or None
+        """
+        if sigs is None:
+            return None
+        if isinstance(sigs, Signal):
+            return sigs
+        if not isinstance(sigs, list):
+            raise TypeError(
+                f"{name} must be a Signal, a list of measpy.signal.Signal or None")
+        if not all(isinstance(s, Signal) for s in sigs):
+            raise TypeError(
+                f"Some elements of the {name} list are not Signals")
+        if len(sigs) == 0:
+            raise ValueError(f"{name} list is empty")
+        if not all(s.fs == sigs[0].fs for s in sigs):
+            raise ValueError(
+                f"Signals in {name} list have different sampling frequencies")
+        return sigs
+
+    # ---------------------------
     def __init__(self, **params):
-        # Check out_sig contents
-        if 'out_sig' in params:
-
-            non=params['out_sig'] is not None
-
-            # print(type(params['in_sig']))
-
-            if non & (not isinstance(params['out_sig'],(Signal,list))):
-                raise TypeError("out_sig must but be a Signal, a list of measpy.signal.Signal or None")
-
-            if isinstance(params['out_sig'],Signal):
-                self.out_sig = params['out_sig']
-            elif isinstance(params['out_sig'],list):
-                if len(params['out_sig']) != len(params['out_map']):
-                    raise ValueError('Measurement out_map has not the same number of values than the number of signals in out_sig list')
-                #print(list((type(s)==Signal for s in params['out_sig'])))
-                if all((isinstance(s,Signal) for s in params['out_sig'])):
-                    # print('These are all signals')
-                    if all(s.fs==params['out_sig'][0].fs for s in params['out_sig']):
-                        # print('Same fs for all signals')
-                        self.out_sig = params['out_sig']
-                    else:
-                        raise ValueError("Signals in out_sig list have different sampling frequencies")                     
-            else:
-                raise TypeError("Some elements of out_sig list are not Signals")
-        else:
-            self.out_sig = None
-
-        # Check in_sig contents
-        if 'in_sig' in params:
-
-            non=params['in_sig'] is not None
-            
-            if non & (not isinstance(params['in_sig'],(Signal,list))):
-                raise TypeError("in_sig must but be a Signal or a list of measpy.signal.Signal or None")
-            
-            if isinstance(params['in_sig'],Signal):
-                self.in_sig = params['in_sig']
-            elif isinstance(params['in_sig'],list):
-                if len(params['in_sig']) != len(params['in_sig']):
-                    raise ValueError('Measurement in_map has not the same number of values than the number of signals in in_sig list')
-                if all((isinstance(s,Signal) for s in params['in_sig'])):
-                    # print('These are all signals')
-                    if all(s.fs==params['in_sig'][0].fs for s in params['in_sig']):
-                        # print('Same fs for all signals')
-                        self.in_sig = params['in_sig']
-                    else:
-                        raise ValueError("Signals in in_sig list have different sampling frequencies")                     
-                else:
-                    raise TypeError("Some elements of in_sig list are not Signals")
-        else:
-            self.in_sig = None
+        # Check out_sig and in_sig contents
+        # (the lengths of the lists are checked against out_map and
+        # in_map further below, once these are known)
+        self.out_sig = self._check_siglist(params.get('out_sig', None), 'out_sig')
+        self.in_sig = self._check_siglist(params.get('in_sig', None), 'in_sig')
 
         #Check sampling frequencies
         if isinstance(self.out_sig,type(None)):
@@ -190,7 +172,7 @@ class Measurement:
                 self.wave = params.setdefault("wave",0)
                 self.amp = params.setdefault("amp",1.0)
                 self.freq_start = params.setdefault("freq_start",20)
-                self.freq_stop = params.setdefault("freq_start",20_000)
+                self.freq_stop = params.setdefault("freq_stop",20_000)
                 self.freq_change = params.setdefault("freq_change",10)
                 self.freq_int = params.setdefault("freq_int",0.01)
                 self.sweep_dir = params.setdefault("sweep_dir",0)
@@ -298,6 +280,9 @@ class Measurement:
         filename = ensure_new_filename(filename)
         mesu = self._to_dict()
         in_sig = mesu.pop("in_sig",None)
+        if in_sig is None:
+            print("There is no input signal in this measurement, nothing to save")
+            return
         if not any([s.dur>0 for s in in_sig]):
             print("There is no data in this measurement, use 'create_hdf5' instead")
             return
