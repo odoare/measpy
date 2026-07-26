@@ -1,0 +1,375 @@
+ 
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorial 5: Synchronized measurements &mdash; measpy  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="copyright" title="Copyright" href="copyright.html" />
+    <link rel="next" title="measpy package" href="measpy.html" />
+    <link rel="prev" title="Tutorial 4: Spectrum smoothing and weighting" href="4_spectrum_smoothing_and_weighting.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            measpy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+    
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="README.html">Readme</a></li>
+<li class="toctree-l1"><a class="reference internal" href="copyright.html">Copyright</a></li>
+<li class="toctree-l1"><a class="reference internal" href="1_signal_tutorial.html">Signal tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="2_spectral_tutorial.html">Spectral tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="3_measurements.html">Measurement tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="4_spectrum_smoothing_and_weighting.html">Smoothing and weighting tutorial</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Synchronized measurement tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#hardware-synchronization">1. Hardware synchronization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#software-synchronization-by-cross-correlation">2. Software synchronization by cross-correlation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#a-complete-example">3. A complete example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#checking-the-result">4. Checking the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#using-an-extra-input-channel-as-the-synchronization-reference">5. Using an extra input channel as the synchronization reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#doing-it-by-hand">6. Doing it by hand</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#practical-remarks">7. Practical remarks</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="measpy.html">measpy package</a></li>
+</ul>
+
+    <a href="genindex.html">Index</a>
+  
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">measpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Tutorial 5: Synchronized measurements</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/5_synced_measurement.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tutorial-5-synchronized-measurements">
+<h1>Tutorial 5: Synchronized measurements<a class="headerlink" href="#tutorial-5-synchronized-measurements" title="Link to this heading"></a></h1>
+<p>When a signal is sent to an output of a card and recorded at one of its inputs,
+the recorded signal is <strong>late</strong>. The delay comes from several sources:</p>
+<ul class="simple">
+<li><p>the buffers of the output and input streams of the driver,</p></li>
+<li><p>the anti-aliasing and reconstruction filters of the converters,</p></li>
+<li><p>the propagation time in the system under test itself (the time the sound takes
+to travel from the loudspeaker to the microphone, for instance).</p></li>
+</ul>
+<p>The first two are properties of the acquisition chain, they have nothing to do
+with the system being measured, and they must be removed before the measurement
+is interpreted. They are often of the order of several milliseconds, which is
+already a lot: 5 ms is a full turn of phase at 200 Hz.</p>
+<p>This delay matters for anything that uses the phase:</p>
+<ul class="simple">
+<li><p>the phase of a transfer function,</p></li>
+<li><p>the impulse response obtained by inverse Fourier transform,</p></li>
+<li><p>the complex smoothing of a spectrum (see the previous tutorial),</p></li>
+<li><p>the estimation of a harmonic distortion.</p></li>
+</ul>
+<p>This tutorial shows the two ways measpy deals with the problem.</p>
+<p><strong>Note:</strong> the code cells of this tutorial need a real acquisition device to be
+run, they are therefore not executed in this document.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1">#This is here in case we want to use the local measpy directory</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">)</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">measpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+</pre></div>
+</div>
+<section id="hardware-synchronization">
+<h2>1. Hardware synchronization<a class="headerlink" href="#hardware-synchronization" title="Link to this heading"></a></h2>
+<p>The best solution is to have no delay to correct at all, by driving the outputs
+and the inputs of the card from the same sample clock.</p>
+<p>With NI cards, measpy tries to do this automatically: when the output task is
+configured, the sample clock of the analog input (<code class="docutils literal notranslate"><span class="pre">/Dev1/ai/SampleClock</span></code>) is
+used as the clock source of the output. A message is printed when this succeeds:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Use of /Dev1/ai/SampleClock as output clock : success !
+</pre></div>
+</div>
+<p>If the device does not support it, measpy falls back to the onboard clock and
+prints a message. The inputs and the outputs then drift with respect to each
+other, and the delay has to be measured.</p>
+<p>Audio cards do not offer this, and the delay between <code class="docutils literal notranslate"><span class="pre">sd.playrec</span></code> output and
+input is not guaranteed to be constant from one run to the next: it has to be
+measured every time.</p>
+</section>
+<section id="software-synchronization-by-cross-correlation">
+<h2>2. Software synchronization by cross-correlation<a class="headerlink" href="#software-synchronization-by-cross-correlation" title="Link to this heading"></a></h2>
+<p>The general solution implemented in measpy consists in measuring the delay on
+the data itself. This is done by the two methods <code class="docutils literal notranslate"><span class="pre">sync_prepare</span></code> and
+<code class="docutils literal notranslate"><span class="pre">sync_render</span></code> of the <code class="docutils literal notranslate"><span class="pre">Measurement</span></code> class:</p>
+<ol class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">sync_prepare</span></code> adds a duration of silence (one second by default) before
+and after the selected output signal. The task is made longer accordingly, so
+that the whole output signal is recorded even if the input is late.</p></li>
+<li><p>The measurement is run as usual.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sync_render</span></code> computes the time lag between one selected input signal and
+the output signal by looking for the maximum of their cross-correlation
+(the <code class="docutils literal notranslate"><span class="pre">Signal.timelag</span></code> method), then cuts all the input signals so that
+they are aligned with the output signal, and removes the added silences.</p></li>
+</ol>
+<p>The measured delay is returned in seconds.</p>
+<p>The three steps are wrapped in one function per device type:</p>
+<p>| Device | Function |
+| — | — |
+| Audio card | <code class="docutils literal notranslate"><span class="pre">measpy.audio.audio_run_synced_measurement</span></code> |
+| NI DAQ card | <code class="docutils literal notranslate"><span class="pre">measpy.ni.ni_run_synced_measurement</span></code> |</p>
+<p>Both take the measurement object, and optionally <code class="docutils literal notranslate"><span class="pre">out_chan</span></code> and
+<code class="docutils literal notranslate"><span class="pre">in_chan</span></code>, the indices (in <code class="docutils literal notranslate"><span class="pre">M.out_sig</span></code> and <code class="docutils literal notranslate"><span class="pre">M.in_sig</span></code>) of the signals
+used to compute the delay. They return the measured delay.</p>
+</section>
+<section id="a-complete-example">
+<h2>3. A complete example<a class="headerlink" href="#a-complete-example" title="Link to this heading"></a></h2>
+<p>To measure the delay of an acquisition chain, the simplest setup is a <strong>loopback
+cable</strong>: connect the first output of the card directly to its first input. What
+is then measured is the latency of the card alone.</p>
+<p>The measurement below sends a five second noise, records it back, and re-syncs
+the input.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">measpy.ni</span><span class="w"> </span><span class="kn">import</span> <span class="n">ni_run_synced_measurement</span><span class="p">,</span> <span class="n">ni_get_devices</span>
+
+<span class="n">sysdevs</span> <span class="o">=</span> <span class="n">ni_get_devices</span><span class="p">()</span><span class="o">.</span><span class="n">device_names</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">sysdevs</span><span class="p">)</span>
+<span class="n">indev</span> <span class="o">=</span> <span class="n">outdev</span> <span class="o">=</span> <span class="n">sysdevs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">FS</span> <span class="o">=</span> <span class="mi">44100</span>
+<span class="n">DUR</span> <span class="o">=</span> <span class="mi">5</span>
+
+<span class="c1"># The signal that is sent</span>
+<span class="n">s_out</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="o">.</span><span class="n">noise</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span> <span class="n">dur</span><span class="o">=</span><span class="n">DUR</span><span class="p">,</span> <span class="n">freqs_range</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20000</span><span class="p">),</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;V&#39;</span><span class="p">)</span>
+
+<span class="c1"># The empty signal that will receive the loopback</span>
+<span class="n">s_in</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;V&#39;</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;Input voltage&#39;</span><span class="p">)</span>
+
+<span class="n">M</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Measurement</span><span class="p">(</span><span class="n">device_type</span><span class="o">=</span><span class="s1">&#39;ni&#39;</span><span class="p">,</span>
+                   <span class="n">fs</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span>
+                   <span class="n">out_sig</span><span class="o">=</span><span class="p">[</span><span class="n">s_out</span><span class="p">],</span>
+                   <span class="n">out_map</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                   <span class="n">in_sig</span><span class="o">=</span><span class="p">[</span><span class="n">s_in</span><span class="p">],</span>
+                   <span class="n">in_map</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                   <span class="n">dur</span><span class="o">=</span><span class="n">DUR</span><span class="p">,</span>
+                   <span class="n">in_device</span><span class="o">=</span><span class="n">indev</span><span class="p">,</span>
+                   <span class="n">out_device</span><span class="o">=</span><span class="n">outdev</span><span class="p">)</span>
+
+<span class="c1"># Run the measurement, and re-sync the acquired signals</span>
+<span class="n">d</span> <span class="o">=</span> <span class="n">ni_run_synced_measurement</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Measured delay: </span><span class="si">{</span><span class="n">d</span><span class="o">*</span><span class="mi">1000</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1"> ms (</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">d</span><span class="o">*</span><span class="n">FS</span><span class="p">)</span><span class="si">}</span><span class="s1"> samples)&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The same measurement with an audio card only differs by the device type and by
+the function that is called. Note the <code class="docutils literal notranslate"><span class="pre">dbfs</span></code> property of the input signal,
+which converts the [-1,1] samples of the card into volts.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">measpy.audio</span><span class="w"> </span><span class="kn">import</span> <span class="n">audio_run_synced_measurement</span><span class="p">,</span> <span class="n">audio_get_devices</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">audio_get_devices</span><span class="p">())</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">s_in_audio</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;V&#39;</span><span class="p">,</span> <span class="n">dbfs</span><span class="o">=</span><span class="mf">1.4</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;Input voltage&#39;</span><span class="p">)</span>
+
+<span class="n">Ma</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Measurement</span><span class="p">(</span><span class="n">device_type</span><span class="o">=</span><span class="s1">&#39;audio&#39;</span><span class="p">,</span>
+                    <span class="n">fs</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span>
+                    <span class="n">out_sig</span><span class="o">=</span><span class="p">[</span><span class="n">s_out</span><span class="p">],</span>
+                    <span class="n">out_map</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="n">in_sig</span><span class="o">=</span><span class="p">[</span><span class="n">s_in_audio</span><span class="p">],</span>
+                    <span class="n">in_map</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="n">dur</span><span class="o">=</span><span class="n">DUR</span><span class="p">,</span>
+                    <span class="n">in_device</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">,</span>
+                    <span class="n">out_device</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">)</span>
+
+<span class="n">d</span> <span class="o">=</span> <span class="n">audio_run_synced_measurement</span><span class="p">(</span><span class="n">Ma</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Measured delay: </span><span class="si">{</span><span class="n">d</span><span class="o">*</span><span class="mi">1000</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1"> ms (</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">d</span><span class="o">*</span><span class="n">FS</span><span class="p">)</span><span class="si">}</span><span class="s1"> samples)&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="checking-the-result">
+<h2>4. Checking the result<a class="headerlink" href="#checking-the-result" title="Link to this heading"></a></h2>
+<p>After a successful synchronization on a loopback cable, the transfer function
+between the output and the input is that of the card itself: a flat magnitude
+close to 0 dB, and a phase close to zero over the whole bandwidth. A residual
+phase that grows linearly with the frequency means that a delay is left, of
+value $\tau = -\frac{1}{2\pi}\frac{d\varphi}{df}$ (which is what the
+<code class="docutils literal notranslate"><span class="pre">group_delay</span></code> method computes).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># The two signals are now aligned in time</span>
+<span class="n">a</span> <span class="o">=</span> <span class="n">M</span><span class="o">.</span><span class="n">in_sig</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<span class="n">M</span><span class="o">.</span><span class="n">out_sig</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">a</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Transfer function of the acquisition chain</span>
+<span class="n">G</span> <span class="o">=</span> <span class="n">M</span><span class="o">.</span><span class="n">in_sig</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tfe_welch</span><span class="p">(</span><span class="n">M</span><span class="o">.</span><span class="n">out_sig</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">nperseg</span><span class="o">=</span><span class="mi">2</span><span class="o">**</span><span class="mi">14</span><span class="p">)</span>
+<span class="n">G</span><span class="o">.</span><span class="n">nth_oct_smooth_complex</span><span class="p">(</span><span class="mi">24</span><span class="p">,</span> <span class="n">freqs_range</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20000</span><span class="p">))</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+
+<span class="c1"># The remaining delay, in seconds, should be a small fraction of a sample</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Residual time lag: </span><span class="si">{</span><span class="n">M</span><span class="o">.</span><span class="n">in_sig</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">timelag</span><span class="p">(</span><span class="n">M</span><span class="o">.</span><span class="n">out_sig</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">*</span><span class="mf">1e6</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> us&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="using-an-extra-input-channel-as-the-synchronization-reference">
+<h2>5. Using an extra input channel as the synchronization reference<a class="headerlink" href="#using-an-extra-input-channel-as-the-synchronization-reference" title="Link to this heading"></a></h2>
+<p>The loopback cable is also the way to synchronize a measurement whose system
+under test has its own delay, and whose input signals cannot be used as a
+reference. In that case:</p>
+<ul class="simple">
+<li><p>one output channel drives both the system under test and, through a cable, one
+of the inputs of the card,</p></li>
+<li><p>this extra input is used as the synchronization channel (<code class="docutils literal notranslate"><span class="pre">in_chan</span></code>),</p></li>
+<li><p>the other inputs measure the system.</p></li>
+</ul>
+<p>After the synchronization, the remaining delay in the measured signals is the
+one of the system itself (propagation time), which is usually what is being
+measured.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Channel 1: loopback cable, used for the synchronization</span>
+<span class="c1"># Channel 2: the microphone that measures the system</span>
+<span class="n">s_loop</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;V&#39;</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;Loopback&#39;</span><span class="p">)</span>
+<span class="n">s_mic</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;Pa&#39;</span><span class="p">,</span> <span class="n">cal</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;Microphone&#39;</span><span class="p">)</span>
+
+<span class="n">M2</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Measurement</span><span class="p">(</span><span class="n">device_type</span><span class="o">=</span><span class="s1">&#39;ni&#39;</span><span class="p">,</span>
+                    <span class="n">fs</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span>
+                    <span class="n">out_sig</span><span class="o">=</span><span class="p">[</span><span class="n">s_out</span><span class="p">],</span>
+                    <span class="n">out_map</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="n">in_sig</span><span class="o">=</span><span class="p">[</span><span class="n">s_loop</span><span class="p">,</span> <span class="n">s_mic</span><span class="p">],</span>
+                    <span class="n">in_map</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+                    <span class="n">dur</span><span class="o">=</span><span class="n">DUR</span><span class="p">,</span>
+                    <span class="n">in_device</span><span class="o">=</span><span class="n">indev</span><span class="p">,</span>
+                    <span class="n">out_device</span><span class="o">=</span><span class="n">outdev</span><span class="p">)</span>
+
+<span class="c1"># in_chan=0 selects s_loop as the synchronization reference.</span>
+<span class="c1"># All the input signals, including the microphone, are shifted by the</span>
+<span class="c1"># same amount.</span>
+<span class="n">d</span> <span class="o">=</span> <span class="n">ni_run_synced_measurement</span><span class="p">(</span><span class="n">M2</span><span class="p">,</span> <span class="n">in_chan</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">out_chan</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Latency of the acquisition chain: </span><span class="si">{</span><span class="n">d</span><span class="o">*</span><span class="mi">1000</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1"> ms&#39;</span><span class="p">)</span>
+
+<span class="c1"># What is left between the output and the microphone is the propagation</span>
+<span class="c1"># time in the system under test</span>
+<span class="n">tof</span> <span class="o">=</span> <span class="n">M2</span><span class="o">.</span><span class="n">in_sig</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">timelag</span><span class="p">(</span><span class="n">M2</span><span class="o">.</span><span class="n">out_sig</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Time of flight: </span><span class="si">{</span><span class="n">tof</span><span class="o">*</span><span class="mi">1000</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1"> ms, i.e. </span><span class="si">{</span><span class="n">tof</span><span class="o">*</span><span class="mi">343</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1"> m of air&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="doing-it-by-hand">
+<h2>6. Doing it by hand<a class="headerlink" href="#doing-it-by-hand" title="Link to this heading"></a></h2>
+<p>The wrapper functions are only three lines, and it is sometimes useful to run
+the steps separately, for instance to run several measurements with the same
+added silence, or to keep the non-synchronized data:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">measpy.ni</span><span class="w"> </span><span class="kn">import</span> <span class="n">ni_run_measurement</span>
+
+<span class="n">M</span><span class="o">.</span><span class="n">sync_prepare</span><span class="p">(</span><span class="n">out_chan</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">added_samples</span><span class="o">=</span><span class="mi">2</span><span class="o">*</span><span class="n">FS</span><span class="p">)</span>  <span class="c1"># 2 seconds of silence</span>
+<span class="n">ni_run_measurement</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+<span class="n">d</span> <span class="o">=</span> <span class="n">M</span><span class="o">.</span><span class="n">sync_render</span><span class="p">(</span><span class="n">out_chan</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">in_chan</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">added_samples</span><span class="o">=</span><span class="mi">2</span><span class="o">*</span><span class="n">FS</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">added_samples</span></code> is the number of samples of silence added before and after
+the output signal, it defaults to <code class="docutils literal notranslate"><span class="pre">M.fs</span></code> (one second). <strong>The same value must
+be given to both methods.</strong> Increase it if the latency of the system is larger
+than one second, decrease it to shorten the measurement.</p>
+<p>The delay itself can also be obtained on any pair of signals with the
+<code class="docutils literal notranslate"><span class="pre">timelag</span></code> method, which returns the time at which their cross-correlation is
+maximum:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">d</span> <span class="o">=</span> <span class="n">M</span><span class="o">.</span><span class="n">in_sig</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">timelag</span><span class="p">(</span><span class="n">M</span><span class="o">.</span><span class="n">out_sig</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>and a signal can be shifted in time without touching its samples, by changing
+its <code class="docutils literal notranslate"><span class="pre">t0</span></code> property:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">shifted</span> <span class="o">=</span> <span class="n">M</span><span class="o">.</span><span class="n">in_sig</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="o">-</span><span class="n">d</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="practical-remarks">
+<h2>7. Practical remarks<a class="headerlink" href="#practical-remarks" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>The cross-correlation needs the input and the output to be <strong>correlated</strong>. A
+noise or a sweep works well. A pure sine does not: the cross-correlation is
+periodic and the delay is only known modulo the period.</p></li>
+<li><p>The delay is estimated to the nearest sample. At 44100 Hz, one sample is
+23 microseconds, which is a phase error of 0.16 degrees at 20 Hz but 165
+degrees at 20 kHz. For a high frequency phase measurement, use a high
+sampling frequency.</p></li>
+<li><p>If the measured delay is close to the added silence duration, the input signal
+is truncated: increase <code class="docutils literal notranslate"><span class="pre">added_samples</span></code>.</p></li>
+<li><p>The synchronization is done once for a given card, a given sampling frequency
+and a given buffer size. If none of these change, the delay measured with a
+loopback can be reused, but it costs little to measure it every time.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="4_spectrum_smoothing_and_weighting.html" class="btn btn-neutral float-left" title="Tutorial 4: Spectrum smoothing and weighting" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="measpy.html" class="btn btn-neutral float-right" title="measpy package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; <a href="copyright.html">Copyright</a> 2021-2023, Olivier Doaré.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -20,7 +20,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="copyright" title="Copyright" href="copyright.html" />
-    <link rel="prev" title="Tutorial 2: Spectral class" href="2_spectral_tutorial.html" /> 
+    <link rel="prev" title="Tutorial 5: Synchronized measurements" href="5_synced_measurement.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -49,6 +49,9 @@
 <li class="toctree-l1"><a class="reference internal" href="copyright.html">Copyright</a></li>
 <li class="toctree-l1"><a class="reference internal" href="1_signal_tutorial.html">Signal tutorial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="2_spectral_tutorial.html">Spectral tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="3_measurements.html">Measurement tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="4_spectrum_smoothing_and_weighting.html">Smoothing and weighting tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="5_synced_measurement.html">Synchronized measurement tutorial</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">measpy package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#module-measpy.audio">measpy.audio module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#measpy.audio.audio_get_devices"><code class="docutils literal notranslate"><span class="pre">audio_get_devices()</span></code></a></li>
@@ -241,6 +244,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Weighting.adb"><code class="docutils literal notranslate"><span class="pre">Weighting.adb</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Weighting.from_csv"><code class="docutils literal notranslate"><span class="pre">Weighting.from_csv()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Weighting.to_csv"><code class="docutils literal notranslate"><span class="pre">Weighting.to_csv()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#measpy.signal.Weighting.values_at_freqs"><code class="docutils literal notranslate"><span class="pre">Weighting.values_at_freqs()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -446,7 +450,7 @@ Using nidaqmx.Task.register_every_n_samples_acquired_into_buffer_event</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.ni.ni_callback_measurement.run">
-<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;threading.Event</span> <span class="pre">at</span> <span class="pre">0x7f9b3ac0cad0:</span> <span class="pre">unset&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pause</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;threading.Event</span> <span class="pre">at</span> <span class="pre">0x7f9b3b06e490:</span> <span class="pre">unset&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">duration</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.ni.ni_callback_measurement.run" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;threading.Event</span> <span class="pre">at</span> <span class="pre">0x7f8ee615bb50:</span> <span class="pre">unset&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pause</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;threading.Event</span> <span class="pre">at</span> <span class="pre">0x7f8ee6558fd0:</span> <span class="pre">unset&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">duration</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.ni.ni_callback_measurement.run" title="Link to this definition"></a></dt>
 <dd><p>Run the measurment
 :param stop: Trigger to stop the measurment, defaults to Event()
 :type stop: threading.Event, optional
@@ -548,7 +552,7 @@ All the acquired signals are then re-synced from the time lag value.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="measpy.pico.Pico_thread">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">measpy.pico.</span></span><span class="sig-name descname"><span class="pre">Pico_thread</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_queue</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pre_process</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">picosdk.functions.adc2mV</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_into_Signal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_chunksize_processed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffersize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">serial</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop_event</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;threading.Event</span> <span class="pre">at</span> <span class="pre">0x7f9b3aa8fbd0:</span> <span class="pre">unset&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.pico.Pico_thread" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">measpy.pico.</span></span><span class="sig-name descname"><span class="pre">Pico_thread</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_queue</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pre_process</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">picosdk.functions.adc2mV</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_into_Signal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_chunksize_processed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffersize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">serial</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop_event</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;threading.Event</span> <span class="pre">at</span> <span class="pre">0x7f8ee5f90ed0:</span> <span class="pre">unset&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.pico.Pico_thread" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Thread</span></code></p>
 <dl class="simple">
 <dt>This needs M to contain the following properties:</dt><dd><ul class="simple">
@@ -800,7 +804,7 @@ filled with 1000 random values, followed by a plot:</p></li>
 For example a five seconds logarithmic sweep from 20Hz to 20kHz, of dimension volts:</p></li>
 </ul>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">measpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mp</span>
-<span class="n">pa</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="o">.</span><span class="n">log_sweep</span><span class="p">(</span><span class="n">freq_min</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span><span class="n">freq_max</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span><span class="n">dur</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span><span class="n">unit</span><span class="o">=</span><span class="s1">&#39;V)</span>
+<span class="n">pa</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="o">.</span><span class="n">log_sweep</span><span class="p">(</span><span class="n">freq_min</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span><span class="n">freq_max</span><span class="o">=</span><span class="mi">20000</span><span class="p">,</span><span class="n">dur</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span><span class="n">unit</span><span class="o">=</span><span class="s1">&#39;V&#39;</span><span class="p">)</span>
 <span class="n">pa</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -1031,7 +1035,7 @@ For example a five seconds logarithmic sweep from 20Hz to 20kHz, of dimension vo
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>pos</strong> (<em>tuple</em><em> of </em><em>int</em><em>, </em><em>optional</em>) – Start and stop positions of the new signal, given as indices, defaults to (0,-1)</p></li>
+<li><p><strong>pos</strong> (<em>tuple</em><em> of </em><em>int</em><em>, </em><em>optional</em>) – Start and stop positions of the new signal, given as indices, defaults to the whole signal</p></li>
 <li><p><strong>dur</strong> (<em>tuple</em><em> of </em><em>float</em><em>, </em><em>optional</em>) – Start and stop positions of the new signal, given as time values</p></li>
 </ul>
 </dd>
@@ -1236,7 +1240,7 @@ Returns a Spectral object. Unit is preserved during the process.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Signal.harmonic_disto">
-<span class="sig-name descname"><span class="pre">harmonic_disto</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">win_max_length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32768</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prop_before</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nsmooth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.harmonic_disto" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">harmonic_disto</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">win_max_length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32768</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prop_before</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nsmooth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freqs_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.harmonic_disto" title="Link to this definition"></a></dt>
 <dd><p>Compute the harmonic distorsion of an in/out system
 using the method proposed by Farina (2000) and adapted by
 Novak et al. (2015) to correctly estimate the phase of the
@@ -1248,7 +1252,9 @@ nonlinear system to a logarithmic sweep created with the
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>nh</strong> (<em>int</em><em>, </em><em>optional</em>) – number of harmonics, including harmonic 0 (the linear part of the response), defaults to 4</p></li>
-<li><p><strong>freqs</strong> (<em>tuple</em><em>, </em><em>optional</em>) – frequencies between which the output signal that was used sweeps, defaults to [20,20000]</p></li>
+<li><p><strong>freq_min</strong> (<em>float</em><em>, </em><em>optional</em>) – Start frequency of the logarithmic sweep that was sent, defaults to 20.0</p></li>
+<li><p><strong>freq_max</strong> (<em>float</em><em>, </em><em>optional</em>) – Stop frequency of the logarithmic sweep that was sent, defaults to 20000.0</p></li>
+<li><p><strong>freqs_range</strong> (<em>tuple</em><em>, </em><em>list</em><em>, </em><em>numpy.ndarray</em><em>, </em><em>optional</em>) – Tuple, list or array of frequencies whose lowest and highest values are the start and stop frequencies of the logarithmic sweep that was sent, defaults to None</p></li>
 <li><p><strong>delay</strong> (<em>float</em><em>, </em><em>optional</em>) – the mean delay between output and input, defaults to None. If None, the delay is estimated looking at the max value of the cross correlation of the signal with the input logarithmic sweep.</p></li>
 <li><p><strong>win_max_length</strong> – Maximum window length for each harmonic Fourier analysis in number of samples. Has to be even. Defaults to 2**15. When treating higher harmonics, the window can be shortened so that there is no overlapping with the next window.</p></li>
 <li><p><strong>prop_before</strong> (<em>float</em><em>, </em><em>optionnal</em>) – Proportion of the window that is before the peak center for each harmonic content. Defaults to 0.25 (1/4th of the window is before the harmonic peak)</p></li>
@@ -1301,18 +1307,25 @@ Note: This method is exactly the hilbert function of the scipy module.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Signal.iir">
-<span class="sig-name descname"><span class="pre">iir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Wn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(20,</span> <span class="pre">20000)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">btype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'band'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ftype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'butter'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.iir" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">iir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Wn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">btype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'band'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ftype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'butter'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freqs_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.iir" title="Link to this definition"></a></dt>
 <dd><p>Infinite impulse response filter of a signal.</p>
 <p>The signal is filtered accordingly to the parameters. This method is a wrapper around the scipy.signal iir functions, most of the parameters are hence the same.</p>
+<p>The cutoff frequencies are given with the standard measpy frequency
+range arguments <code class="docutils literal notranslate"><span class="pre">freqs_range</span></code>, <code class="docutils literal notranslate"><span class="pre">freq_min</span></code> and <code class="docutils literal notranslate"><span class="pre">freq_max</span></code>.
+For lowpass filters, only <code class="docutils literal notranslate"><span class="pre">freq_max</span></code> is used, for highpass filters,
+only <code class="docutils literal notranslate"><span class="pre">freq_min</span></code> is used.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>N</strong> (<em>int</em><em>, </em><em>optional</em>) – Filter order, defaults to 2</p></li>
-<li><p><strong>Wn</strong> (<em>tuple</em><em>, </em><em>optional</em>) – a cutoff frequency (if low or highpass) or a tuple of frequency (if bandpass/stop), defaults to (20,20000)</p></li>
+<li><p><strong>Wn</strong> (<em>float</em><em> or </em><em>tuple</em><em>, </em><em>optional</em>) – Deprecated, use freqs_range, freq_min or freq_max instead. A cutoff frequency (if low or highpass) or a tuple of frequencies (if bandpass/stop).</p></li>
 <li><p><strong>rp</strong> (<em>float</em><em>, </em><em>optional</em>) – For Chebyshev and elliptic filters, provides the maximum ripple in the passband. (dB)</p></li>
 <li><p><strong>rs</strong> (<em>float</em><em>, </em><em>optional</em>) – For Chebyshev and elliptic filters, provides the minimum attenuation in the stop band. (dB)</p></li>
 <li><p><strong>btype</strong> (<em>str in {'bandpass'</em><em>, </em><em>'lowpass'</em><em>, </em><em>'highpass'</em><em>, </em><em>'bandstop'}</em><em>, </em><em>optional</em>) – Type of filter (band, hp, lp), defaults to ‘band’</p></li>
 <li><p><strong>ftype</strong> (<em>str</em><em>, </em><em>optional</em>) – Type of filter (butter, elliptic, etc.), defaults to ‘butter’</p></li>
+<li><p><strong>freqs_range</strong> (<em>tuple</em><em>, </em><em>list</em><em>, </em><em>numpy.ndarray</em><em>, </em><em>optional</em>) – Tuple, list or array of frequencies whose lowest and highest values are the cutoff frequencies, defaults to None</p></li>
+<li><p><strong>freq_min</strong> (<em>float</em><em>, </em><em>optional</em>) – Lowest cutoff frequency, defaults to 20.0</p></li>
+<li><p><strong>freq_max</strong> (<em>float</em><em>, </em><em>optional</em>) – Highest cutoff frequency, defaults to 20000.0</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1352,8 +1365,8 @@ Note: This method is exactly the hilbert function of the scipy module.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Signal.log_sweep">
-<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">log_sweep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">44100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dur</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dbfs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">desc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.log_sweep" title="Link to this definition"></a></dt>
-<dd><p>ogarithmic sweep signal creation</p>
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">log_sweep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">44100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dur</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dbfs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">desc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freqs_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.log_sweep" title="Link to this definition"></a></dt>
+<dd><p>Logarithmic sweep signal creation</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -1366,6 +1379,7 @@ Note: This method is exactly the hilbert function of the scipy module.</p>
 <li><p><strong>cal</strong> – Calibration. Defaults to None (-&gt;1).</p></li>
 <li><p><strong>dbfs</strong> – Zero dB full scale value. Defaults to None (-&gt;1).</p></li>
 <li><p><strong>desc</strong> – Description of the generated signal. Defaults to None, so that the default description is ‘Logsweep freq_min-freq-max.</p></li>
+<li><p><strong>freqs_range</strong> – Tuple, list or array of frequencies whose lowest and highest values are the start and stop frequencies. Defaults to None.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1419,8 +1433,8 @@ Note: This method is exactly the hilbert function of the scipy module.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Signal.noise">
-<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">noise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">44100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dur</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dbfs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">desc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.noise" title="Link to this definition"></a></dt>
-<dd><p>Logarithmic sweep signal creation</p>
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">noise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">44100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dur</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dbfs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">desc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freqs_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.noise" title="Link to this definition"></a></dt>
+<dd><p>Band limited noise signal creation</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -1433,6 +1447,7 @@ Note: This method is exactly the hilbert function of the scipy module.</p>
 <li><p><strong>cal</strong> – Calibration. Defaults to None (-&gt;1).</p></li>
 <li><p><strong>dbfs</strong> – Zero dB full scale value. Defaults to None (-&gt;1).</p></li>
 <li><p><strong>desc</strong> – Description of the generated signal. Defaults to None, so that the default description is ‘Noise freq_min-freq-max.</p></li>
+<li><p><strong>freqs_range</strong> – Tuple, list or array of frequencies whose lowest and highest values are the start and stop frequencies. Defaults to None.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1687,15 +1702,18 @@ of width nperseg samples</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Signal.tfe_farina">
-<span class="sig-name descname"><span class="pre">tfe_farina</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">freqs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'V'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.tfe_farina" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">tfe_farina</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">freqs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'V'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freqs_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Signal.tfe_farina" title="Link to this definition"></a></dt>
 <dd><p>Compute the transfer function between x and the actual signal
-where x is was a logarithmic sweep of same duration between freqs[0] and freqs[1]
-(i.e. created with measpy.signal.Signal.log_sweep)</p>
+where x is was a logarithmic sweep of same duration between
+freq_min and freq_max (i.e. created with measpy.signal.Signal.log_sweep)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>freqs</strong> (<em>Tuple</em><em> of </em><em>floats</em>) – The start and stop frequencies of the input logarithmic sweep whose actual signal is the response</p></li>
+<li><p><strong>freqs</strong> (<em>Tuple</em><em> of </em><em>floats</em>) – Deprecated, use freqs_range instead. The start and stop frequencies of the input logarithmic sweep whose actual signal is the response</p></li>
 <li><p><strong>in_unit</strong> – Unit of the input signal. Defaults to ‘V’</p></li>
+<li><p><strong>freqs_range</strong> (<em>tuple</em><em>, </em><em>list</em><em>, </em><em>numpy.ndarray</em><em>, </em><em>optional</em>) – Tuple, list or array of frequencies whose lowest and highest values are the start and stop frequencies of the input logarithmic sweep, defaults to None</p></li>
+<li><p><strong>freq_min</strong> (<em>float</em><em>, </em><em>optional</em>) – Start frequency of the input logarithmic sweep, defaults to 20.0</p></li>
+<li><p><strong>freq_max</strong> (<em>float</em><em>, </em><em>optional</em>) – Stop frequency of the input logarithmic sweep, defaults to 20000.0</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -2019,11 +2037,11 @@ If dur is given, values are initialised at 0</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Spectral.dBV">
 <span class="sig-name descname"><span class="pre">dBV</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Spectral.dBV" title="Link to this definition"></a></dt>
-<dd><p>Convert to dB dBV
+<dd><p>Convert to dBV (20 log10 ||V||/1V)
 Signal unit has to be compatible with Volts</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Weighted spectrum</p>
+<dd class="field-odd"><p>Spectrum in dBV</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="#measpy.signal.Spectral" title="measpy.signal.Spectral">measpy.signal.Spectral</a></p>
@@ -2038,7 +2056,7 @@ Signal unit has to be compatible with Volts</p>
 Signal unit has to be compatible with Pa</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Weighted spectrum</p>
+<dd class="field-odd"><p>Spectrum in dB SPL</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="#measpy.signal.Spectral" title="measpy.signal.Spectral">measpy.signal.Spectral</a></p>
@@ -2053,7 +2071,7 @@ Signal unit has to be compatible with Pa</p>
 Signal unit has to be compatible with m/s</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Weighted spectrum</p>
+<dd class="field-odd"><p>Spectrum in dB SVL</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="#measpy.signal.Spectral" title="measpy.signal.Spectral">measpy.signal.Spectral</a></p>
@@ -2064,11 +2082,11 @@ Signal unit has to be compatible with m/s</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Spectral.dBu">
 <span class="sig-name descname"><span class="pre">dBu</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Spectral.dBu" title="Link to this definition"></a></dt>
-<dd><p>Convert to dB dBu
+<dd><p>Convert to dBu (20 log10 ||V||/0.7746V)
 Signal unit has to be compatible with Volts</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Weighted spectrum</p>
+<dd class="field-odd"><p>Spectrum in dBu</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="#measpy.signal.Spectral" title="measpy.signal.Spectral">measpy.signal.Spectral</a></p>
@@ -2098,9 +2116,24 @@ Signal unit has to be compatible with Volts</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Spectral.filterout">
-<span class="sig-name descname"><span class="pre">filterout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">freqsrange</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Spectral.filterout" title="Link to this definition"></a></dt>
-<dd><p>Cancels values below and above a given frequency
-Returns a Spectral class object</p>
+<span class="sig-name descname"><span class="pre">filterout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">freqsrange</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freqs_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Spectral.filterout" title="Link to this definition"></a></dt>
+<dd><p>Cancels values below and above a given frequency</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>freqsrange</strong> (<em>tuple</em><em>, </em><em>list</em><em>, </em><em>numpy.ndarray</em><em>, </em><em>optionnal</em>) – Deprecated, use freqs_range instead</p></li>
+<li><p><strong>freqs_range</strong> (<em>tuple</em><em>, </em><em>list</em><em>, </em><em>numpy.ndarray</em><em>, </em><em>optionnal</em>) – Tuple, list or array of frequencies whose lowest and highest values are the limits of the frequency band that is kept, defaults to None</p></li>
+<li><p><strong>freq_min</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>optionnal</em>) – Lowest frequency that is kept, defaults to the lowest frequency of the spectrum</p></li>
+<li><p><strong>freq_max</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>optionnal</em>) – Highest frequency that is kept, defaults to the highest frequency of the spectrum</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A Spectral object</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#measpy.signal.Spectral" title="measpy.signal.Spectral">measpy.signal.Spectral</a></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py property">
@@ -2136,7 +2169,7 @@ of the spectral data set</p>
 <dd><p>Imaginary part</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Real part (same unit)</p>
+<dd class="field-odd"><p>Imaginary part (same unit)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="#measpy.signal.Spectral" title="measpy.signal.Spectral">measpy.signal.Spectral</a></p>
@@ -2159,16 +2192,24 @@ of the spectral data set</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Spectral.nth_oct_smooth">
-<span class="sig-name descname"><span class="pre">nth_oct_smooth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20000</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Spectral.nth_oct_smooth" title="Link to this definition"></a></dt>
-<dd><p>Nth octave smoothing
-Works on real valued spectra. For complex values,
+<span class="sig-name descname"><span class="pre">nth_oct_smooth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freqs_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Spectral.nth_oct_smooth" title="Link to this definition"></a></dt>
+<dd><p>Nth octave smoothing</p>
+<p>The smoothed value at a given frequency f is the mean of
+all the values of the spectrum that are inside the 1/nth
+octave band centered on f. This is a true moving average:
+it is computed at every frequency of the spectrum, the
+frequency resolution is hence preserved.</p>
+<p>Works on real valued spectra. For complex values,
 use nth_oct_smooth_complex.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>n</strong> (<em>int</em><em>, </em><em>optionnal</em>) – Ratio of smoothing (1/nth smoothing), defaults to 3</p></li>
-<li><p><strong>fmin</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>optionnal</em>) – Min value of the output frequencies, defaults to 5</p></li>
-<li><p><strong>fmax</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>optionnal</em>) – Max value of the output frequencies, defaults to 20000</p></li>
+<li><p><strong>fmin</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>optionnal</em>) – Deprecated, use freq_min instead</p></li>
+<li><p><strong>fmax</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>optionnal</em>) – Deprecated, use freq_max instead</p></li>
+<li><p><strong>freqs_range</strong> (<em>tuple</em><em>, </em><em>list</em><em>, </em><em>numpy.ndarray</em><em>, </em><em>optionnal</em>) – Tuple, list or array of frequencies whose lowest and highest values are the min and max of the output frequencies, defaults to None</p></li>
+<li><p><strong>freq_min</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>optionnal</em>) – Min value of the output frequencies, defaults to 5</p></li>
+<li><p><strong>freq_max</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>optionnal</em>) – Max value of the output frequencies, defaults to 20000</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -2182,15 +2223,30 @@ use nth_oct_smooth_complex.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Spectral.nth_oct_smooth_complex">
-<span class="sig-name descname"><span class="pre">nth_oct_smooth_complex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20000</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Spectral.nth_oct_smooth_complex" title="Link to this definition"></a></dt>
-<dd><p>Nth octave smoothing
-Complex signal version</p>
+<span class="sig-name descname"><span class="pre">nth_oct_smooth_complex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freqs_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'amplitude_phase'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Spectral.nth_oct_smooth_complex" title="Link to this definition"></a></dt>
+<dd><p>Nth octave smoothing, complex version</p>
+<p>The smoothed value at a given frequency f is computed from
+all the values of the spectrum that are inside the 1/nth
+octave band centered on f. This is a true moving average:
+it is computed at every frequency of the spectrum, the
+frequency resolution is hence preserved.</p>
+<p>Three ways of averaging complex values are implemented,
+selected with the mode argument:</p>
+<ul class="simple">
+<li><p>‘amplitude_phase’ (default) : the modulus and the unwrapped phase are averaged separately. This preserves the amplitude of resonances, whatever the phase rotation inside the band.</p></li>
+<li><p>‘complex’ : the complex values are directly averaged. This is a linear operation (the smoothing of a sum is the sum of the smoothings), but rapid phase rotations inside a band reduce the amplitude.</p></li>
+<li><p>‘power’ : the modulus is averaged in the energetic sense (square root of the mean of the squared moduli), the unwrapped phase is averaged as above. This is the relevant choice for noisy data and power spectral densities.</p></li>
+</ul>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>n</strong> (<em>int</em><em>, </em><em>optionnal</em>) – Ratio of smoothing (1/nth smoothing), defaults to 3</p></li>
-<li><p><strong>fmin</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>optionnal</em>) – Min value of the output frequencies, defaults to 5</p></li>
-<li><p><strong>fmax</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>optionnal</em>) – Max value of the output frequencies, defaults to 20000</p></li>
+<li><p><strong>fmin</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>optionnal</em>) – Deprecated, use freq_min instead</p></li>
+<li><p><strong>fmax</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>optionnal</em>) – Deprecated, use freq_max instead</p></li>
+<li><p><strong>freqs_range</strong> (<em>tuple</em><em>, </em><em>list</em><em>, </em><em>numpy.ndarray</em><em>, </em><em>optionnal</em>) – Tuple, list or array of frequencies whose lowest and highest values are the min and max of the output frequencies, defaults to None</p></li>
+<li><p><strong>freq_min</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>optionnal</em>) – Min value of the output frequencies, defaults to 5</p></li>
+<li><p><strong>freq_max</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>optionnal</em>) – Max value of the output frequencies, defaults to 20000</p></li>
+<li><p><strong>mode</strong> (<em>str</em><em>, </em><em>optionnal</em>) – Averaging method, ‘amplitude_phase’, ‘complex’ or ‘power’. Defaults to ‘amplitude_phase’</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -2204,7 +2260,7 @@ Complex signal version</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Spectral.nth_oct_smooth_to_weight">
-<span class="sig-name descname"><span class="pre">nth_oct_smooth_to_weight</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20000</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Spectral.nth_oct_smooth_to_weight" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">nth_oct_smooth_to_weight</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freqs_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Spectral.nth_oct_smooth_to_weight" title="Link to this definition"></a></dt>
 <dd><p>Nth octave smoothing
 Works on real valued spectra. For complex values,
 use nth_oct_smooth_to_weight_complex.</p>
@@ -2216,23 +2272,41 @@ amplitude and phase)</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>n</strong> (<em>int</em><em>, </em><em>optionnal</em>) – Ratio of smoothing (1/nth smoothing), defaults to 3</p></li>
-<li><p><strong>fmin</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>optionnal</em>) – Min value of the output frequencies, defaults to 5</p></li>
-<li><p><strong>fmax</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>optionnal</em>) – Max value of the output frequencies, defaults to 20000</p></li>
+<li><p><strong>fmin</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>optionnal</em>) – Deprecated, use freq_min instead</p></li>
+<li><p><strong>fmax</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>optionnal</em>) – Deprecated, use freq_max instead</p></li>
+<li><p><strong>freqs_range</strong> (<em>tuple</em><em>, </em><em>list</em><em>, </em><em>numpy.ndarray</em><em>, </em><em>optionnal</em>) – Tuple, list or array of frequencies whose lowest and highest values are the min and max of the output frequencies, defaults to None</p></li>
+<li><p><strong>freq_min</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>optionnal</em>) – Min value of the output frequencies, defaults to 5</p></li>
+<li><p><strong>freq_max</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>optionnal</em>) – Max value of the output frequencies, defaults to 20000</p></li>
 </ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A weighting object</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#measpy.signal.Weighting" title="measpy.signal.Weighting">measpy.signal.Weighting</a></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="measpy.signal.Spectral.nth_oct_smooth_to_weight_complex">
-<span class="sig-name descname"><span class="pre">nth_oct_smooth_to_weight_complex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20000</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Spectral.nth_oct_smooth_to_weight_complex" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">nth_oct_smooth_to_weight_complex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freqs_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'amplitude_phase'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Spectral.nth_oct_smooth_to_weight_complex" title="Link to this definition"></a></dt>
 <dd><p>Nth octave smoothing, complex version</p>
+<p>Converts a Spectral object into a Weighting object whose
+frequencies are the center frequencies of the 1/nth octave
+bands. The value of each band is the mean of the values of
+the spectrum inside this band (see nth_oct_smooth_complex
+for the description of the mode argument).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>n</strong> (<em>int</em><em>, </em><em>optionnal</em>) – Ratio of smoothing (1/nth smoothing), defaults to 3</p></li>
-<li><p><strong>fmin</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>optionnal</em>) – Min value of the output frequencies, defaults to 5</p></li>
-<li><p><strong>fmax</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>optionnal</em>) – Max value of the output frequencies, defaults to 20000</p></li>
+<li><p><strong>fmin</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>optionnal</em>) – Deprecated, use freq_min instead</p></li>
+<li><p><strong>fmax</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>optionnal</em>) – Deprecated, use freq_max instead</p></li>
+<li><p><strong>freqs_range</strong> (<em>tuple</em><em>, </em><em>list</em><em>, </em><em>numpy.ndarray</em><em>, </em><em>optionnal</em>) – Tuple, list or array of frequencies whose lowest and highest values are the min and max of the output frequencies, defaults to None</p></li>
+<li><p><strong>freq_min</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>optionnal</em>) – Min value of the output frequencies, defaults to 5</p></li>
+<li><p><strong>freq_max</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>optionnal</em>) – Max value of the output frequencies, defaults to 20000</p></li>
+<li><p><strong>mode</strong> (<em>str</em><em>, </em><em>optionnal</em>) – Averaging method, ‘amplitude_phase’, ‘complex’ or ‘power’. Defaults to ‘amplitude_phase’</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -2313,6 +2387,8 @@ by interpolating a Weighting object (parameter w)</p>
 <dd class="field-odd"><p><a class="reference internal" href="#measpy.signal.Spectral" title="measpy.signal.Spectral">measpy.signal.Spectral</a></p>
 </dd>
 </dl>
+<p>The interpolation of a Weighting object is done on a
+logarithmic frequency scale (see measpy.signal.Weighting.values_at_freqs)</p>
 </dd></dl>
 
 <dl class="py method">
@@ -2345,11 +2421,14 @@ by interpolating a Weighting object (parameter w)</p>
 <span class="sig-name descname"><span class="pre">unit_to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">newunit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Spectral.unit_to" title="Link to this definition"></a></dt>
 <dd><p>Converts to a new compatible unit</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>New spectral object (with new unit)</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>newunit</strong> (<em>str</em><em> or </em><em>unyt.Unit</em>) – Unit to convert to (has to be compatible)</p>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="#measpy.signal.Spectral" title="measpy.signal.Spectral">measpy.signal.Spectral</a></p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>New spectral object (with new unit)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#measpy.signal.Spectral" title="measpy.signal.Spectral">measpy.signal.Spectral</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -2442,6 +2521,31 @@ The file then contains three columns:</p>
 <li><p><strong>asdB</strong> (<em>bool</em>) – Specifies if the amplitude is given in dB or not</p></li>
 <li><p><strong>asradians</strong> (<em>bool</em>) – Specifies if the phase is given in radians or degrees</p></li>
 </ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="measpy.signal.Weighting.values_at_freqs">
+<span class="sig-name descname"><span class="pre">values_at_freqs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">freqlist</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#measpy.signal.Weighting.values_at_freqs" title="Link to this definition"></a></dt>
+<dd><p>Interpolate the weighting function at the given frequencies</p>
+<p>The interpolation is done on a logarithmic frequency scale.
+The amplitude is interpolated in the dB domain (i.e. the
+logarithm of the amplitude is linearly interpolated), the
+phase is linearly interpolated. Outside of the frequency
+range of the weighting function, the values of the closest
+end are used (no extrapolation).</p>
+<p>Negative frequencies (as found in full spectra) are given
+the conjugate value of the corresponding positive frequency.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>freqlist</strong> (<em>Number</em><em>, </em><em>list</em><em> or </em><em>numpy.ndarray</em>) – A frequency or a list of frequencies</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A complex number or an array of complex numbers</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>complex or numpy.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
@@ -2581,7 +2685,7 @@ Sampling frequencies have to match. Use the resample method if necessary.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="2_spectral_tutorial.html" class="btn btn-neutral float-left" title="Tutorial 2: Spectral class" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="5_synced_measurement.html" class="btn btn-neutral float-left" title="Tutorial 5: Synchronized measurements" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>

@@ -49,6 +49,9 @@
 <li class="toctree-l1"><a class="reference internal" href="copyright.html">Copyright</a></li>
 <li class="toctree-l1"><a class="reference internal" href="1_signal_tutorial.html">Signal tutorial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="2_spectral_tutorial.html">Spectral tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="3_measurements.html">Measurement tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="4_spectrum_smoothing_and_weighting.html">Smoothing and weighting tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="5_synced_measurement.html">Synchronized measurement tutorial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="measpy.html">measpy package</a></li>
 </ul>
 
@@ -101,6 +104,50 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="2_spectral_tutorial.html">Spectral tutorial</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="2_spectral_tutorial.html#units">Units</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="3_measurements.html">Measurement tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="3_measurements.html#preparing-the-signals">1. Preparing the signals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="3_measurements.html#creating-the-measurement-object">2. Creating the Measurement object</a></li>
+<li class="toctree-l2"><a class="reference internal" href="3_measurements.html#running-the-measurement">3. Running the measurement</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="3_measurements.html#with-an-audio-card">With an audio card</a></li>
+<li class="toctree-l3"><a class="reference internal" href="3_measurements.html#with-a-ni-daq-card">With a NI DAQ card</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="3_measurements.html#using-the-acquired-signals">4. Using the acquired signals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="3_measurements.html#saving-and-restoring-a-measurement">5. Saving and restoring a measurement</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="3_measurements.html#a-directory-of-csv-and-wav-files">A directory of csv and wav files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="3_measurements.html#a-single-hdf5-file">A single HDF5 file</a></li>
+<li class="toctree-l3"><a class="reference internal" href="3_measurements.html#writing-to-disk-during-the-acquisition">Writing to disk during the acquisition</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="3_measurements.html#multichannel-input-signals">6. Multichannel input signals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="3_measurements.html#what-comes-next">7. What comes next</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="4_spectrum_smoothing_and_weighting.html">Smoothing and weighting tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="4_spectrum_smoothing_and_weighting.html#a-noisy-transfer-function">1. A noisy transfer function</a></li>
+<li class="toctree-l2"><a class="reference internal" href="4_spectrum_smoothing_and_weighting.html#nth-octave-smoothing">2. 1/nth octave smoothing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="4_spectrum_smoothing_and_weighting.html#how-the-complex-values-are-averaged">3. How the complex values are averaged</a></li>
+<li class="toctree-l2"><a class="reference internal" href="4_spectrum_smoothing_and_weighting.html#smoothing-a-power-spectral-density">4. Smoothing a power spectral density</a></li>
+<li class="toctree-l2"><a class="reference internal" href="4_spectrum_smoothing_and_weighting.html#weighting-objects">5. Weighting objects</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="4_spectrum_smoothing_and_weighting.html#interpolating-a-weighting">Interpolating a weighting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="4_spectrum_smoothing_and_weighting.html#applying-a-weighting-to-a-spectrum">Applying a weighting to a spectrum</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="4_spectrum_smoothing_and_weighting.html#from-a-spectrum-to-a-weighting-and-back">6. From a spectrum to a weighting, and back</a></li>
+<li class="toctree-l2"><a class="reference internal" href="4_spectrum_smoothing_and_weighting.html#a-practical-use-microphone-response-calibration">7. A practical use: microphone response calibration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="4_spectrum_smoothing_and_weighting.html#summary">8. Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="5_synced_measurement.html">Synchronized measurement tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="5_synced_measurement.html#hardware-synchronization">1. Hardware synchronization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="5_synced_measurement.html#software-synchronization-by-cross-correlation">2. Software synchronization by cross-correlation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="5_synced_measurement.html#a-complete-example">3. A complete example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="5_synced_measurement.html#checking-the-result">4. Checking the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="5_synced_measurement.html#using-an-extra-input-channel-as-the-synchronization-reference">5. Using an extra input channel as the synchronization reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="5_synced_measurement.html#doing-it-by-hand">6. Doing it by hand</a></li>
+<li class="toctree-l2"><a class="reference internal" href="5_synced_measurement.html#practical-remarks">7. Practical remarks</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="measpy.html">measpy package</a><ul>
@@ -295,6 +342,7 @@
 <li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Weighting.adb"><code class="docutils literal notranslate"><span class="pre">Weighting.adb</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Weighting.from_csv"><code class="docutils literal notranslate"><span class="pre">Weighting.from_csv()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Weighting.to_csv"><code class="docutils literal notranslate"><span class="pre">Weighting.to_csv()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="measpy.html#measpy.signal.Weighting.values_at_freqs"><code class="docutils literal notranslate"><span class="pre">Weighting.values_at_freqs()</span></code></a></li>
 </ul>
 </li>
 </ul>

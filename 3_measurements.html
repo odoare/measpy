@@ -1,0 +1,398 @@
+ 
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorial 3: The Measurement class &mdash; measpy  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="copyright" title="Copyright" href="copyright.html" />
+    <link rel="next" title="Tutorial 4: Spectrum smoothing and weighting" href="4_spectrum_smoothing_and_weighting.html" />
+    <link rel="prev" title="Tutorial 2: Spectral class" href="2_spectral_tutorial.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            measpy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+    
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="README.html">Readme</a></li>
+<li class="toctree-l1"><a class="reference internal" href="copyright.html">Copyright</a></li>
+<li class="toctree-l1"><a class="reference internal" href="1_signal_tutorial.html">Signal tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="2_spectral_tutorial.html">Spectral tutorial</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Measurement tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#preparing-the-signals">1. Preparing the signals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#creating-the-measurement-object">2. Creating the Measurement object</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#running-the-measurement">3. Running the measurement</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#with-an-audio-card">With an audio card</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#with-a-ni-daq-card">With a NI DAQ card</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#using-the-acquired-signals">4. Using the acquired signals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#saving-and-restoring-a-measurement">5. Saving and restoring a measurement</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#a-directory-of-csv-and-wav-files">A directory of csv and wav files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#a-single-hdf5-file">A single HDF5 file</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#writing-to-disk-during-the-acquisition">Writing to disk during the acquisition</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#multichannel-input-signals">6. Multichannel input signals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#what-comes-next">7. What comes next</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="4_spectrum_smoothing_and_weighting.html">Smoothing and weighting tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="5_synced_measurement.html">Synchronized measurement tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="measpy.html">measpy package</a></li>
+</ul>
+
+    <a href="genindex.html">Index</a>
+  
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">measpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Tutorial 3: The Measurement class</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/3_measurements.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tutorial-3-the-measurement-class">
+<h1>Tutorial 3: The Measurement class<a class="headerlink" href="#tutorial-3-the-measurement-class" title="Link to this heading"></a></h1>
+<p>The <code class="docutils literal notranslate"><span class="pre">measpy.Measurement</span></code> class describes a data acquisition task: which
+signals are sent to the outputs of a device, which signals are recorded at its
+inputs, at which sampling frequency, for how long, and with which device.</p>
+<p>A <code class="docutils literal notranslate"><span class="pre">Measurement</span></code> object is basically a container that gathers:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">measpy.Signal</span></code> objects for the outputs (<code class="docutils literal notranslate"><span class="pre">out_sig</span></code>) and the inputs (<code class="docutils literal notranslate"><span class="pre">in_sig</span></code>),</p></li>
+<li><p>the channel numbers on which they are sent and recorded (<code class="docutils literal notranslate"><span class="pre">out_map</span></code> and <code class="docutils literal notranslate"><span class="pre">in_map</span></code>),</p></li>
+<li><p>the description of the acquisition device (<code class="docutils literal notranslate"><span class="pre">device_type</span></code>, <code class="docutils literal notranslate"><span class="pre">in_device</span></code>, <code class="docutils literal notranslate"><span class="pre">out_device</span></code>),</p></li>
+<li><p>the parameters of the task itself (<code class="docutils literal notranslate"><span class="pre">fs</span></code>, <code class="docutils literal notranslate"><span class="pre">dur</span></code>).</p></li>
+</ul>
+<p>The <code class="docutils literal notranslate"><span class="pre">Measurement</span></code> object does not perform the acquisition by itself. It is
+given as argument to a function that is specific to the hardware in use:</p>
+<p>| Device | Module | Function |
+| — | — | — |
+| Audio card | <code class="docutils literal notranslate"><span class="pre">measpy.audio</span></code> | <code class="docutils literal notranslate"><span class="pre">audio_run_measurement</span></code> |
+| NI DAQ card | <code class="docutils literal notranslate"><span class="pre">measpy.ni</span></code> | <code class="docutils literal notranslate"><span class="pre">ni_run_measurement</span></code> |
+| Picoscope 2000 | <code class="docutils literal notranslate"><span class="pre">measpy.pico</span></code> | <code class="docutils literal notranslate"><span class="pre">ps2000_run_measurement</span></code> |
+| Picoscope 4000 | <code class="docutils literal notranslate"><span class="pre">measpy.pico</span></code> | <code class="docutils literal notranslate"><span class="pre">ps4000_run_measurement</span></code> |</p>
+<p>These functions modify the measurement <strong>in place</strong>: once the task is done, the
+input signals that were empty contain the acquired samples.</p>
+<p><strong>Note:</strong> the code cells of this tutorial need a real acquisition device to be
+run, they are therefore not executed in this document.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1">#This is here in case we want to use the local measpy directory</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">)</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">measpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+</pre></div>
+</div>
+<section id="preparing-the-signals">
+<h2>1. Preparing the signals<a class="headerlink" href="#preparing-the-signals" title="Link to this heading"></a></h2>
+<p>Before creating a measurement, we create the signals that describe what is sent
+and what is measured.</p>
+<p>The <strong>output signals</strong> contain the data that will be sent to the DAC. They are
+usually created with one of the waveform creation methods of the <code class="docutils literal notranslate"><span class="pre">Signal</span></code>
+class (<code class="docutils literal notranslate"><span class="pre">log_sweep</span></code>, <code class="docutils literal notranslate"><span class="pre">noise</span></code>, <code class="docutils literal notranslate"><span class="pre">sine</span></code>, …).</p>
+<p>The <strong>input signals</strong> are created empty: only the properties that describe how
+the acquired voltage has to be interpreted are given, that is:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">unit</span></code> : the physical unit of the measured quantity,</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cal</span></code> : the calibration of the sensor, in volts per unit,</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dbfs</span></code> : the voltage that corresponds to a sample value of one. This is
+needed for audio cards, whose samples are given in the [-1,1] range. For most
+DAQ cards (NI for instance) the samples are given in volts and <code class="docutils literal notranslate"><span class="pre">dbfs</span></code>
+stays at its default value of 1.0.</p></li>
+</ul>
+<p>In the example below, we prepare a five seconds logarithmic sweep, and two input
+signals: a pressure measured with a microphone of sensitivity 2V/Pa, and an
+acceleration measured with an accelerometer of sensitivity 0.1V/(m/s²), both
+connected to a sound card whose full scale is 1.4V.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">FS</span> <span class="o">=</span> <span class="mi">44100</span>
+<span class="n">DUR</span> <span class="o">=</span> <span class="mi">5</span>
+
+<span class="c1"># The signal that will be sent to the output</span>
+<span class="n">s_out</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="o">.</span><span class="n">log_sweep</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span> <span class="n">dur</span><span class="o">=</span><span class="n">DUR</span><span class="p">,</span> <span class="n">freqs_range</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20000</span><span class="p">),</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;V&#39;</span><span class="p">)</span>
+
+<span class="c1"># The empty signals that will receive the acquired data</span>
+<span class="n">s_press</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;Pa&#39;</span><span class="p">,</span> <span class="n">cal</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">dbfs</span><span class="o">=</span><span class="mf">1.4</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;Pressure here&#39;</span><span class="p">)</span>
+<span class="n">s_acc</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;m/s**2&#39;</span><span class="p">,</span> <span class="n">cal</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">dbfs</span><span class="o">=</span><span class="mf">1.4</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;Acceleration there&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="creating-the-measurement-object">
+<h2>2. Creating the Measurement object<a class="headerlink" href="#creating-the-measurement-object" title="Link to this heading"></a></h2>
+<p>The signals are then gathered in a <code class="docutils literal notranslate"><span class="pre">Measurement</span></code> object. The main parameters
+are:</p>
+<p>| Parameter | Description |
+| — | — |
+| <code class="docutils literal notranslate"><span class="pre">device_type</span></code> | <code class="docutils literal notranslate"><span class="pre">'audio'</span></code>, <code class="docutils literal notranslate"><span class="pre">'ni'</span></code> or <code class="docutils literal notranslate"><span class="pre">'pico'</span></code> |
+| <code class="docutils literal notranslate"><span class="pre">in_device</span></code>, <code class="docutils literal notranslate"><span class="pre">out_device</span></code> | Identifiers of the devices (strings) |
+| <code class="docutils literal notranslate"><span class="pre">fs</span></code> | Sampling frequency |
+| <code class="docutils literal notranslate"><span class="pre">dur</span></code> | Duration of the task in seconds |
+| <code class="docutils literal notranslate"><span class="pre">in_sig</span></code>, <code class="docutils literal notranslate"><span class="pre">out_sig</span></code> | A list of <code class="docutils literal notranslate"><span class="pre">Signal</span></code>, or one multichannel <code class="docutils literal notranslate"><span class="pre">Signal</span></code>, or None |
+| <code class="docutils literal notranslate"><span class="pre">in_map</span></code>, <code class="docutils literal notranslate"><span class="pre">out_map</span></code> | The channel numbers, starting at 1 |
+| <code class="docutils literal notranslate"><span class="pre">desc</span></code> | A description of the measurement |</p>
+<p>Some rules are applied at creation, and messages are printed when a parameter is
+adjusted:</p>
+<ul class="simple">
+<li><p>if <code class="docutils literal notranslate"><span class="pre">dur</span></code> is not given, it is deduced from the duration of the output signals,</p></li>
+<li><p>if <code class="docutils literal notranslate"><span class="pre">dur</span></code> differs from the duration of the output signals, it is rounded up
+to an integer number of repetitions of these signals,</p></li>
+<li><p>if <code class="docutils literal notranslate"><span class="pre">fs</span></code> differs from the sampling frequency of the signals, the sampling
+frequency of the output signals wins,</p></li>
+<li><p>if <code class="docutils literal notranslate"><span class="pre">in_map</span></code> or <code class="docutils literal notranslate"><span class="pre">out_map</span></code> is not given, channels are numbered from 1,</p></li>
+<li><p>a measurement can have no output (<code class="docutils literal notranslate"><span class="pre">out_sig=None</span></code>): it is then a pure
+recording task, and <code class="docutils literal notranslate"><span class="pre">dur</span></code> has to be given.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">M</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Measurement</span><span class="p">(</span><span class="n">device_type</span><span class="o">=</span><span class="s1">&#39;audio&#39;</span><span class="p">,</span>
+                   <span class="n">fs</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span>
+                   <span class="n">out_sig</span><span class="o">=</span><span class="p">[</span><span class="n">s_out</span><span class="p">],</span>
+                   <span class="n">out_map</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                   <span class="n">in_sig</span><span class="o">=</span><span class="p">[</span><span class="n">s_press</span><span class="p">,</span> <span class="n">s_acc</span><span class="p">],</span>
+                   <span class="n">in_map</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+                   <span class="n">dur</span><span class="o">=</span><span class="n">DUR</span><span class="p">,</span>
+                   <span class="n">in_device</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">,</span>
+                   <span class="n">out_device</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">,</span>
+                   <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;Sweep response of the system&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="running-the-measurement">
+<h2>3. Running the measurement<a class="headerlink" href="#running-the-measurement" title="Link to this heading"></a></h2>
+<section id="with-an-audio-card">
+<h3>With an audio card<a class="headerlink" href="#with-an-audio-card" title="Link to this heading"></a></h3>
+<p>The list of the audio devices present in the system is obtained with
+<code class="docutils literal notranslate"><span class="pre">audio_get_devices</span></code>. The strings that identify the input and output devices
+are then passed to the measurement as <code class="docutils literal notranslate"><span class="pre">in_device</span></code> and <code class="docutils literal notranslate"><span class="pre">out_device</span></code>.
+On Linux, <code class="docutils literal notranslate"><span class="pre">'default'</span></code> usually corresponds to the main input and output.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">measpy.audio</span><span class="w"> </span><span class="kn">import</span> <span class="n">audio_run_measurement</span><span class="p">,</span> <span class="n">audio_get_devices</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">audio_get_devices</span><span class="p">())</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">audio_run_measurement</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="with-a-ni-daq-card">
+<h3>With a NI DAQ card<a class="headerlink" href="#with-a-ni-daq-card" title="Link to this heading"></a></h3>
+<p>The devices are listed with <code class="docutils literal notranslate"><span class="pre">ni_get_devices</span></code>. Contrary to audio cards, there
+is a one to one correspondence between the input volts and the sample values,
+so that <code class="docutils literal notranslate"><span class="pre">dbfs</span></code> is not needed.</p>
+<p>Two additional parameters can be given to a NI measurement:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">in_range</span></code>, <code class="docutils literal notranslate"><span class="pre">out_range</span></code> : the voltage ranges of the channels. If not
+given, the maximum range of the device is selected.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">in_iepe</span></code> : a list of booleans that selects the IEPE conditioning of each
+input channel (for ICP microphones and accelerometers).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">in_sig_config</span></code> : the terminal configuration, one of <code class="docutils literal notranslate"><span class="pre">'DEFAULT'</span></code>,
+<code class="docutils literal notranslate"><span class="pre">'RSE'</span></code>, <code class="docutils literal notranslate"><span class="pre">'NRSE'</span></code>, <code class="docutils literal notranslate"><span class="pre">'DIFF'</span></code>, <code class="docutils literal notranslate"><span class="pre">'PSEUDO_DIFF'</span></code>.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">measpy.ni</span><span class="w"> </span><span class="kn">import</span> <span class="n">ni_run_measurement</span><span class="p">,</span> <span class="n">ni_get_devices</span>
+
+<span class="n">sysdevs</span> <span class="o">=</span> <span class="n">ni_get_devices</span><span class="p">()</span><span class="o">.</span><span class="n">device_names</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">sysdevs</span><span class="p">)</span>
+<span class="n">indev</span> <span class="o">=</span> <span class="n">outdev</span> <span class="o">=</span> <span class="n">sysdevs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">s_in</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;V&#39;</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;Input voltage&#39;</span><span class="p">)</span>
+
+<span class="n">Mni</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Measurement</span><span class="p">(</span><span class="n">device_type</span><span class="o">=</span><span class="s1">&#39;ni&#39;</span><span class="p">,</span>
+                     <span class="n">fs</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span>
+                     <span class="n">out_sig</span><span class="o">=</span><span class="p">[</span><span class="n">s_out</span><span class="p">],</span>
+                     <span class="n">out_map</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                     <span class="n">in_sig</span><span class="o">=</span><span class="p">[</span><span class="n">s_in</span><span class="p">],</span>
+                     <span class="n">in_map</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                     <span class="n">dur</span><span class="o">=</span><span class="n">DUR</span><span class="p">,</span>
+                     <span class="n">in_device</span><span class="o">=</span><span class="n">indev</span><span class="p">,</span>
+                     <span class="n">out_device</span><span class="o">=</span><span class="n">outdev</span><span class="p">,</span>
+                     <span class="n">in_range</span><span class="o">=</span><span class="p">[</span><span class="mf">10.0</span><span class="p">],</span>
+                     <span class="n">out_range</span><span class="o">=</span><span class="p">[</span><span class="mf">10.0</span><span class="p">],</span>
+                     <span class="n">in_iepe</span><span class="o">=</span><span class="p">[</span><span class="kc">False</span><span class="p">])</span>
+
+<span class="n">ni_run_measurement</span><span class="p">(</span><span class="n">Mni</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="using-the-acquired-signals">
+<h2>4. Using the acquired signals<a class="headerlink" href="#using-the-acquired-signals" title="Link to this heading"></a></h2>
+<p>Once the acquisition is done, the signals given in <code class="docutils literal notranslate"><span class="pre">in_sig</span></code> are filled with
+the measured data. They are regular <code class="docutils literal notranslate"><span class="pre">measpy.Signal</span></code> objects: all the methods
+presented in the first two tutorials apply (see the Signal and Spectral
+tutorials for more details).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Plot the two input signals on the same graph</span>
+<span class="n">a</span> <span class="o">=</span> <span class="n">M</span><span class="o">.</span><span class="n">in_sig</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<span class="n">M</span><span class="o">.</span><span class="n">in_sig</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">a</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Power spectral density of the first input</span>
+<span class="n">M</span><span class="o">.</span><span class="n">in_sig</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">psd</span><span class="p">(</span><span class="n">nperseg</span><span class="o">=</span><span class="mi">2</span><span class="o">**</span><span class="mi">14</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+
+<span class="c1"># Transfer function between the output and the first input</span>
+<span class="n">M</span><span class="o">.</span><span class="n">in_sig</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tfe_welch</span><span class="p">(</span><span class="n">M</span><span class="o">.</span><span class="n">out_sig</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">nperseg</span><span class="o">=</span><span class="mi">2</span><span class="o">**</span><span class="mi">14</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+
+<span class="c1"># Same transfer function, using the fact that the output is a logarithmic sweep</span>
+<span class="c1"># (Farina&#39;s method), smoothed on 1/12th octave bands</span>
+<span class="n">M</span><span class="o">.</span><span class="n">in_sig</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tfe_farina</span><span class="p">(</span><span class="n">freqs_range</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20000</span><span class="p">))</span> \
+           <span class="o">.</span><span class="n">nth_oct_smooth_complex</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="n">freqs_range</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20000</span><span class="p">))</span> \
+           <span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="saving-and-restoring-a-measurement">
+<h2>5. Saving and restoring a measurement<a class="headerlink" href="#saving-and-restoring-a-measurement" title="Link to this heading"></a></h2>
+<p>Three storage formats are available.</p>
+<section id="a-directory-of-csv-and-wav-files">
+<h3>A directory of csv and wav files<a class="headerlink" href="#a-directory-of-csv-and-wav-files" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">to_dir</span></code> creates a directory that contains a <code class="docutils literal notranslate"><span class="pre">params.csv</span></code> file with the
+measurement parameters, a pair of csv/wav files per signal, and a README file
+that indicates the measpy version. If the directory exists, a <code class="docutils literal notranslate"><span class="pre">(1)</span></code>,
+<code class="docutils literal notranslate"><span class="pre">(2)</span></code>… suffix is added and the actual name is returned.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dirname</span> <span class="o">=</span> <span class="n">M</span><span class="o">.</span><span class="n">to_dir</span><span class="p">(</span><span class="s1">&#39;my_measurement&#39;</span><span class="p">)</span>
+<span class="n">M1</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Measurement</span><span class="o">.</span><span class="n">from_dir</span><span class="p">(</span><span class="n">dirname</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">M1</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="a-single-hdf5-file">
+<h3>A single HDF5 file<a class="headerlink" href="#a-single-hdf5-file" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">to_hdf5</span></code> saves the whole measurement (parameters and data) in one file.
+This is the recommended format for large measurements.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">M</span><span class="o">.</span><span class="n">to_hdf5</span><span class="p">(</span><span class="s1">&#39;my_measurement.h5&#39;</span><span class="p">)</span>
+<span class="n">M2</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Measurement</span><span class="o">.</span><span class="n">from_hdf5</span><span class="p">(</span><span class="s1">&#39;my_measurement.h5&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="writing-to-disk-during-the-acquisition">
+<h3>Writing to disk during the acquisition<a class="headerlink" href="#writing-to-disk-during-the-acquisition" title="Link to this heading"></a></h3>
+<p>For long acquisitions, the data can be written to an HDF5 file while it is
+acquired, instead of being kept in memory. With a NI card, this is done by
+giving a file name to <code class="docutils literal notranslate"><span class="pre">ni_run_measurement</span></code>. The dataset is created before
+the task starts, and filled chunk by chunk during the acquisition. At the end,
+the data is loaded back into the measurement object.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ni_run_measurement</span><span class="p">(</span><span class="n">Mni</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s1">&#39;long_measurement.h5&#39;</span><span class="p">)</span>
+
+<span class="c1"># The data can be reloaded later with</span>
+<span class="c1"># M3 = mp.Measurement.from_hdf5(&#39;long_measurement.h5&#39;)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="multichannel-input-signals">
+<h2>6. Multichannel input signals<a class="headerlink" href="#multichannel-input-signals" title="Link to this heading"></a></h2>
+<p>Instead of a list of single channel signals, <code class="docutils literal notranslate"><span class="pre">in_sig</span></code> can be one
+multichannel <code class="docutils literal notranslate"><span class="pre">Signal</span></code>. The acquired data is then stored as a 2D numpy array,
+one column per channel. This is more efficient for a large number of channels.</p>
+<p>The properties (<code class="docutils literal notranslate"><span class="pre">unit</span></code>, <code class="docutils literal notranslate"><span class="pre">cal</span></code>, <code class="docutils literal notranslate"><span class="pre">desc</span></code>…) can then be given as
+lists, one value per channel.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">s_multi</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span>
+                    <span class="n">unit</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Pa&#39;</span><span class="p">,</span> <span class="s1">&#39;m/s**2&#39;</span><span class="p">],</span>
+                    <span class="n">cal</span><span class="o">=</span><span class="p">[</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span>
+                    <span class="n">dbfs</span><span class="o">=</span><span class="mf">1.4</span><span class="p">,</span>
+                    <span class="n">desc</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Pressure here&#39;</span><span class="p">,</span> <span class="s1">&#39;Acceleration there&#39;</span><span class="p">])</span>
+
+<span class="n">Mmulti</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Measurement</span><span class="p">(</span><span class="n">device_type</span><span class="o">=</span><span class="s1">&#39;audio&#39;</span><span class="p">,</span>
+                        <span class="n">fs</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span>
+                        <span class="n">in_sig</span><span class="o">=</span><span class="n">s_multi</span><span class="p">,</span>
+                        <span class="n">in_map</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+                        <span class="n">dur</span><span class="o">=</span><span class="n">DUR</span><span class="p">,</span>
+                        <span class="n">in_device</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">)</span>
+
+<span class="n">audio_run_measurement</span><span class="p">(</span><span class="n">Mmulti</span><span class="p">)</span>
+
+<span class="c1"># The channels are then accessed by indexing, or with unpack()</span>
+<span class="n">Mmulti</span><span class="o">.</span><span class="n">in_sig</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<span class="n">sig_list</span> <span class="o">=</span> <span class="n">Mmulti</span><span class="o">.</span><span class="n">in_sig</span><span class="o">.</span><span class="n">unpack</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="what-comes-next">
+<h2>7. What comes next<a class="headerlink" href="#what-comes-next" title="Link to this heading"></a></h2>
+<p>An acquisition made with a card that has no hardware synchronization between its
+inputs and its outputs has an unknown delay between the sent and the recorded
+signals. The next tutorial shows how measpy measures and compensates this
+delay.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="2_spectral_tutorial.html" class="btn btn-neutral float-left" title="Tutorial 2: Spectral class" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="4_spectrum_smoothing_and_weighting.html" class="btn btn-neutral float-right" title="Tutorial 4: Spectrum smoothing and weighting" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; <a href="copyright.html">Copyright</a> 2021-2023, Olivier Doaré.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

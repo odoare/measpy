@@ -1,0 +1,487 @@
+ 
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorial 4: Spectrum smoothing and weighting &mdash; measpy  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="copyright" title="Copyright" href="copyright.html" />
+    <link rel="next" title="Tutorial 5: Synchronized measurements" href="5_synced_measurement.html" />
+    <link rel="prev" title="Tutorial 3: The Measurement class" href="3_measurements.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            measpy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+    
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="README.html">Readme</a></li>
+<li class="toctree-l1"><a class="reference internal" href="copyright.html">Copyright</a></li>
+<li class="toctree-l1"><a class="reference internal" href="1_signal_tutorial.html">Signal tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="2_spectral_tutorial.html">Spectral tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="3_measurements.html">Measurement tutorial</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Smoothing and weighting tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#a-noisy-transfer-function">1. A noisy transfer function</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nth-octave-smoothing">2. 1/nth octave smoothing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#how-the-complex-values-are-averaged">3. How the complex values are averaged</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#smoothing-a-power-spectral-density">4. Smoothing a power spectral density</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#weighting-objects">5. Weighting objects</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#interpolating-a-weighting">Interpolating a weighting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#applying-a-weighting-to-a-spectrum">Applying a weighting to a spectrum</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#from-a-spectrum-to-a-weighting-and-back">6. From a spectrum to a weighting, and back</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#a-practical-use-microphone-response-calibration">7. A practical use: microphone response calibration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#summary">8. Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="5_synced_measurement.html">Synchronized measurement tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="measpy.html">measpy package</a></li>
+</ul>
+
+    <a href="genindex.html">Index</a>
+  
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">measpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Tutorial 4: Spectrum smoothing and weighting</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/4_spectrum_smoothing_and_weighting.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tutorial-4-spectrum-smoothing-and-weighting">
+<h1>Tutorial 4: Spectrum smoothing and weighting<a class="headerlink" href="#tutorial-4-spectrum-smoothing-and-weighting" title="Link to this heading"></a></h1>
+<p>Measured spectra are noisy. Transfer functions estimated from a single sweep or
+from a noise excitation show a lot of details that are not relevant, especially
+at high frequencies where the frequency resolution of the FFT is much finer than
+what the ear, or the physics of the problem, actually distinguishes.</p>
+<p>This tutorial presents the two related tools that measpy provides:</p>
+<ul class="simple">
+<li><p><strong>smoothing</strong>, which averages a spectrum over frequency bands whose width is
+proportional to the frequency (1/nth octave bands),</p></li>
+<li><p><strong>weighting</strong> (<code class="docutils literal notranslate"><span class="pre">measpy.Weighting</span></code> objects), which describes a gain and a
+phase as a function of frequency, given on a small number of frequencies.
+Weightings are used for dBA/dBC curves, for microphone response corrections,
+and as a compact representation of a smoothed spectrum.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1">#This is here in case we want to use the local measpy directory</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">)</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">measpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;figure.figsize&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
+</pre></div>
+</div>
+<section id="a-noisy-transfer-function">
+<h2>1. A noisy transfer function<a class="headerlink" href="#a-noisy-transfer-function" title="Link to this heading"></a></h2>
+<p>To have something to smooth, let us build a synthetic system with two
+resonances, measure it with a white noise, and estimate its transfer function
+with Welch’s method. The result is the kind of noisy spectrum that a real
+measurement produces.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">FS</span> <span class="o">=</span> <span class="mi">48000</span>
+<span class="n">DUR</span> <span class="o">=</span> <span class="mf">5.0</span>
+
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># The excitation signal. It covers the whole frequency range of the card,</span>
+<span class="c1"># so that the transfer function is defined everywhere</span>
+<span class="n">s_out</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="o">.</span><span class="n">noise</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span> <span class="n">dur</span><span class="o">=</span><span class="n">DUR</span><span class="p">,</span> <span class="n">freqs_range</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">FS</span><span class="o">/</span><span class="mi">2</span><span class="p">),</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;V&#39;</span><span class="p">)</span>
+
+<span class="c1"># A system with two resonances, applied in the frequency domain</span>
+<span class="n">sp_out</span> <span class="o">=</span> <span class="n">s_out</span><span class="o">.</span><span class="n">rfft</span><span class="p">()</span>
+<span class="n">f</span> <span class="o">=</span> <span class="n">sp_out</span><span class="o">.</span><span class="n">freqs</span>
+<span class="n">H</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="p">(</span><span class="n">f</span><span class="o">/</span><span class="mi">300</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">-</span><span class="mf">0.05</span><span class="n">j</span><span class="o">*</span><span class="p">(</span><span class="n">f</span><span class="o">/</span><span class="mi">300</span><span class="p">))</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="p">(</span><span class="n">f</span><span class="o">/</span><span class="mi">3000</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">-</span><span class="mf">0.02</span><span class="n">j</span><span class="o">*</span><span class="p">(</span><span class="n">f</span><span class="o">/</span><span class="mi">3000</span><span class="p">))</span>
+
+<span class="c1"># The response, with some measurement noise added</span>
+<span class="n">s_in</span> <span class="o">=</span> <span class="n">sp_out</span><span class="o">.</span><span class="n">similar</span><span class="p">(</span><span class="n">values</span><span class="o">=</span><span class="n">sp_out</span><span class="o">.</span><span class="n">values</span><span class="o">*</span><span class="n">H</span><span class="p">)</span><span class="o">.</span><span class="n">irfft</span><span class="p">()</span><span class="o">.</span><span class="n">similar</span><span class="p">(</span>
+    <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;Pa&#39;</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;Measured pressure&#39;</span><span class="p">)</span>
+<span class="n">s_in</span> <span class="o">=</span> <span class="n">s_in</span> <span class="o">+</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span>
+                        <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;Pa&#39;</span><span class="p">,</span>
+                        <span class="n">values</span><span class="o">=</span><span class="mf">0.02</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">s_in</span><span class="o">.</span><span class="n">length</span><span class="p">),</span>
+                        <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;Measurement noise&#39;</span><span class="p">)</span>
+
+<span class="c1"># The measured transfer function</span>
+<span class="n">G</span> <span class="o">=</span> <span class="n">s_in</span><span class="o">.</span><span class="n">tfe_welch</span><span class="p">(</span><span class="n">s_out</span><span class="p">,</span> <span class="n">nperseg</span><span class="o">=</span><span class="mi">2</span><span class="o">**</span><span class="mi">13</span><span class="p">)</span>
+<span class="n">G</span><span class="o">.</span><span class="n">desc</span> <span class="o">=</span> <span class="s1">&#39;Measured transfer function&#39;</span>
+<span class="n">G</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">array</span><span class="p">([</span><span class="o">&lt;</span><span class="n">Axes</span><span class="p">:</span> <span class="n">xlabel</span><span class="o">=</span><span class="s1">&#39;Freq (Hz)&#39;</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="s1">&#39;20 Log $|$H$|$ (-)&#39;</span><span class="o">&gt;</span><span class="p">,</span>
+       <span class="o">&lt;</span><span class="n">Axes</span><span class="p">:</span> <span class="n">xlabel</span><span class="o">=</span><span class="s1">&#39;Freq (Hz)&#39;</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="s1">&#39;Phase (rad)&#39;</span><span class="o">&gt;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><img alt="png" src="_images/4_spectrum_smoothing_and_weighting_3_1.png" /></p>
+</section>
+<section id="nth-octave-smoothing">
+<h2>2. 1/nth octave smoothing<a class="headerlink" href="#nth-octave-smoothing" title="Link to this heading"></a></h2>
+<p>The smoothing methods of the <code class="docutils literal notranslate"><span class="pre">Spectral</span></code> class replace the value at each
+frequency $f$ by the mean of all the values contained in the frequency band</p>
+<p>$$\left[\frac{f}{2^{1/2n}},\ f,2^{1/2n}\right]$$</p>
+<p>that is, a band of width 1/n octave centered on $f$. This is a true moving
+average: it is computed at <strong>every</strong> frequency of the spectrum, so the frequency
+resolution of the result is the same as that of the original spectrum. The
+averaging bandwidth grows with the frequency, which is why the result looks
+equally smooth on a logarithmic frequency axis.</p>
+<p>Two methods are available:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">nth_oct_smooth</span></code> for real valued spectra (a PSD for instance),</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">nth_oct_smooth_complex</span></code> for complex valued spectra (a transfer function).</p></li>
+</ul>
+<p>The frequency range of the result is given with the standard measpy arguments
+<code class="docutils literal notranslate"><span class="pre">freqs_range</span></code>, <code class="docutils literal notranslate"><span class="pre">freq_min</span></code> and <code class="docutils literal notranslate"><span class="pre">freq_max</span></code>. Outside of this range, the
+values are set to zero.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">a</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">plot_phase</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;0.7&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Not smoothed&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">color</span> <span class="ow">in</span> <span class="p">((</span><span class="mi">24</span><span class="p">,</span> <span class="s1">&#39;tab:blue&#39;</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="s1">&#39;tab:red&#39;</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;tab:green&#39;</span><span class="p">)):</span>
+    <span class="n">G</span><span class="o">.</span><span class="n">nth_oct_smooth_complex</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">freqs_range</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20000</span><span class="p">))</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+        <span class="n">ax</span><span class="o">=</span><span class="n">a</span><span class="p">,</span> <span class="n">plot_phase</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;1/</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s1"> octave&#39;</span><span class="p">)</span>
+<span class="n">a</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20000</span><span class="p">)</span>
+<span class="n">a</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mi">40</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span>
+<span class="n">a</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">doare</span><span class="o">/</span><span class="n">src</span><span class="o">/</span><span class="n">measpy</span><span class="o">/</span><span class="n">examples</span><span class="o">/../</span><span class="n">measpy</span><span class="o">/</span><span class="n">signal</span><span class="o">.</span><span class="n">py</span><span class="p">:</span><span class="mi">3402</span><span class="p">:</span> <span class="ne">RuntimeWarning</span><span class="p">:</span> <span class="n">divide</span> <span class="n">by</span> <span class="n">zero</span> <span class="n">encountered</span> <span class="ow">in</span> <span class="n">log10</span>
+  <span class="n">modulus_to_plot</span> <span class="o">=</span> <span class="mi">20</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">))</span>
+
+
+
+
+
+<span class="o">&lt;</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">legend</span><span class="o">.</span><span class="n">Legend</span> <span class="n">at</span> <span class="mh">0x787d9a228b00</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p><img alt="png" src="_images/4_spectrum_smoothing_and_weighting_5_2.png" /></p>
+<p>The smaller <code class="docutils literal notranslate"><span class="pre">n</span></code>, the wider the averaging band, and the more the details
+disappear. A 1/3 octave smoothing is a common choice in room acoustics, 1/12 or
+1/24 octave keeps the shape of the resonances while removing most of the noise.</p>
+<p>Note that smoothing lowers the peaks and fills the dips: it is an average, not a
+peak detector. If the amplitude of a sharp resonance matters, use a large <code class="docutils literal notranslate"><span class="pre">n</span></code>
+(or no smoothing at all).</p>
+</section>
+<section id="how-the-complex-values-are-averaged">
+<h2>3. How the complex values are averaged<a class="headerlink" href="#how-the-complex-values-are-averaged" title="Link to this heading"></a></h2>
+<p>Averaging complex numbers can be done in several ways, and the result is not the
+same. The <code class="docutils literal notranslate"><span class="pre">mode</span></code> argument of <code class="docutils literal notranslate"><span class="pre">nth_oct_smooth_complex</span></code> selects the method:</p>
+<p>| <code class="docutils literal notranslate"><span class="pre">mode</span></code> | What is averaged |
+| — | — |
+| <code class="docutils literal notranslate"><span class="pre">'amplitude_phase'</span></code> (default) | The modulus and the unwrapped phase, separately |
+| <code class="docutils literal notranslate"><span class="pre">'complex'</span></code> | The complex values themselves |
+| <code class="docutils literal notranslate"><span class="pre">'power'</span></code> | The squared modulus (energetic average), and the unwrapped phase |</p>
+<p>The difference only shows up when the phase rotates quickly inside an averaging
+band. To make it visible, we add a propagation delay of 5 ms to the measured
+transfer function, which is what a microphone placed 1.7 m away from a
+loudspeaker would give.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">tau</span> <span class="o">=</span> <span class="mf">5e-3</span>
+<span class="n">Gd</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">similar</span><span class="p">(</span><span class="n">values</span><span class="o">=</span><span class="n">G</span><span class="o">.</span><span class="n">values</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="n">j</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">G</span><span class="o">.</span><span class="n">freqs</span><span class="o">*</span><span class="n">tau</span><span class="p">),</span>
+               <span class="n">desc</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Transfer function with a </span><span class="si">{</span><span class="mi">1000</span><span class="o">*</span><span class="n">tau</span><span class="si">:</span><span class="s1">.0f</span><span class="si">}</span><span class="s1">ms delay&#39;</span><span class="p">)</span>
+
+<span class="n">a</span> <span class="o">=</span> <span class="n">Gd</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">plot_phase</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;0.85&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Not smoothed&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">mode</span><span class="p">,</span> <span class="n">color</span> <span class="ow">in</span> <span class="p">((</span><span class="s1">&#39;amplitude_phase&#39;</span><span class="p">,</span> <span class="s1">&#39;tab:blue&#39;</span><span class="p">),</span>
+                    <span class="p">(</span><span class="s1">&#39;power&#39;</span><span class="p">,</span> <span class="s1">&#39;tab:orange&#39;</span><span class="p">),</span>
+                    <span class="p">(</span><span class="s1">&#39;complex&#39;</span><span class="p">,</span> <span class="s1">&#39;tab:red&#39;</span><span class="p">)):</span>
+    <span class="n">Gd</span><span class="o">.</span><span class="n">nth_oct_smooth_complex</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="n">freqs_range</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20000</span><span class="p">),</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+        <span class="n">ax</span><span class="o">=</span><span class="n">a</span><span class="p">,</span> <span class="n">plot_phase</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">mode</span><span class="p">)</span>
+<span class="n">a</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20000</span><span class="p">)</span>
+<span class="n">a</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mi">60</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span>
+<span class="n">a</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">legend</span><span class="o">.</span><span class="n">Legend</span> <span class="n">at</span> <span class="mh">0x787d9a188440</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p><img alt="png" src="_images/4_spectrum_smoothing_and_weighting_8_1.png" /></p>
+<p>Above a few hundred hertz, the <code class="docutils literal notranslate"><span class="pre">'complex'</span></code> mode collapses: inside one
+1/12 octave band the phase rotates by more than a turn, and the values cancel
+each other. The two other modes are unaffected, because they average the
+modulus.</p>
+<p>This is worth remembering:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">'complex'</span></code> is the only linear mode (the smoothing of a sum is the sum of
+the smoothings), but it must be used on <strong>time aligned</strong> data only, that is,
+after the propagation delay has been removed. The next tutorial shows how
+measpy does that.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'amplitude_phase'</span></code> (the default) and <code class="docutils literal notranslate"><span class="pre">'power'</span></code> are insensitive to
+the delay as far as the modulus is concerned, and are the safe choice for a
+raw measurement. <code class="docutils literal notranslate"><span class="pre">'power'</span></code> is the relevant one for quantities that are
+already energetic, such as power spectral densities.</p></li>
+</ul>
+</section>
+<section id="smoothing-a-power-spectral-density">
+<h2>4. Smoothing a power spectral density<a class="headerlink" href="#smoothing-a-power-spectral-density" title="Link to this heading"></a></h2>
+<p>For a real valued spectrum, <code class="docutils literal notranslate"><span class="pre">nth_oct_smooth</span></code> is used. A moving average
+preserves the mean level of the spectrum, which means that the total energy in a
+band is unchanged: the smoothed PSD can be read as a level.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">P</span> <span class="o">=</span> <span class="n">s_in</span><span class="o">.</span><span class="n">psd</span><span class="p">(</span><span class="n">nperseg</span><span class="o">=</span><span class="mi">2</span><span class="o">**</span><span class="mi">13</span><span class="p">)</span>
+<span class="n">a</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">plot_phase</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;0.7&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;PSD&#39;</span><span class="p">)</span>
+<span class="n">P</span><span class="o">.</span><span class="n">nth_oct_smooth</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">freqs_range</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20000</span><span class="p">))</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+    <span class="n">ax</span><span class="o">=</span><span class="n">a</span><span class="p">,</span> <span class="n">plot_phase</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;tab:red&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;1/3 octave smoothed&#39;</span><span class="p">)</span>
+<span class="n">a</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20000</span><span class="p">)</span>
+<span class="n">a</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+<span class="n">inband</span> <span class="o">=</span> <span class="p">(</span><span class="n">P</span><span class="o">.</span><span class="n">freqs</span> <span class="o">&gt;</span> <span class="mi">100</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">P</span><span class="o">.</span><span class="n">freqs</span> <span class="o">&lt;</span> <span class="mi">10000</span><span class="p">)</span>
+<span class="n">smoothed</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">nth_oct_smooth</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">freqs_range</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20000</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Ratio of the mean levels (should be close to 1): &#39;</span>
+      <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">smoothed</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">inband</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">/</span><span class="n">P</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">inband</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Ratio</span> <span class="n">of</span> <span class="n">the</span> <span class="n">mean</span> <span class="n">levels</span> <span class="p">(</span><span class="n">should</span> <span class="n">be</span> <span class="n">close</span> <span class="n">to</span> <span class="mi">1</span><span class="p">):</span> <span class="mf">0.9977</span>
+</pre></div>
+</div>
+<p><img alt="png" src="_images/4_spectrum_smoothing_and_weighting_11_1.png" /></p>
+</section>
+<section id="weighting-objects">
+<h2>5. Weighting objects<a class="headerlink" href="#weighting-objects" title="Link to this heading"></a></h2>
+<p>A <code class="docutils literal notranslate"><span class="pre">measpy.Weighting</span></code> object stores a gain as a function of the frequency:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">freqs</span></code> : a 1D array of frequencies,</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">amp</span></code> : the corresponding amplitudes (linear, not dB),</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">phase</span></code> : the corresponding phases in radians,</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">desc</span></code> : a description.</p></li>
+</ul>
+<p>Two properties give other representations of the same data: <code class="docutils literal notranslate"><span class="pre">adb</span></code> (the
+amplitude in dB) and <code class="docutils literal notranslate"><span class="pre">acomplex</span></code> (the complex value <code class="docutils literal notranslate"><span class="pre">amp*exp(1j*phase)</span></code>).</p>
+<p>measpy provides three standard weightings as module constants: <code class="docutils literal notranslate"><span class="pre">mp.WDBA</span></code>
+(A-weighting), <code class="docutils literal notranslate"><span class="pre">mp.WDBC</span></code> (C-weighting) and <code class="docutils literal notranslate"><span class="pre">mp.WDBM</span></code> (M-weighting).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">w</span><span class="p">,</span> <span class="n">color</span> <span class="ow">in</span> <span class="p">((</span><span class="n">mp</span><span class="o">.</span><span class="n">WDBA</span><span class="p">,</span> <span class="s1">&#39;tab:blue&#39;</span><span class="p">),</span> <span class="p">(</span><span class="n">mp</span><span class="o">.</span><span class="n">WDBC</span><span class="p">,</span> <span class="s1">&#39;tab:red&#39;</span><span class="p">),</span> <span class="p">(</span><span class="n">mp</span><span class="o">.</span><span class="n">WDBM</span><span class="p">,</span> <span class="s1">&#39;tab:green&#39;</span><span class="p">)):</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">semilogx</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">freqs</span><span class="p">,</span> <span class="n">w</span><span class="o">.</span><span class="n">adb</span><span class="p">,</span> <span class="s1">&#39;.-&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">w</span><span class="o">.</span><span class="n">desc</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Frequency (Hz)&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Gain (dB)&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mi">50</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">which</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">legend</span><span class="o">.</span><span class="n">Legend</span> <span class="n">at</span> <span class="mh">0x787d986c12b0</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p><img alt="png" src="_images/4_spectrum_smoothing_and_weighting_13_1.png" /></p>
+<section id="interpolating-a-weighting">
+<h3>Interpolating a weighting<a class="headerlink" href="#interpolating-a-weighting" title="Link to this heading"></a></h3>
+<p>A weighting is defined on a few frequencies only. The
+<code class="docutils literal notranslate"><span class="pre">values_at_freqs</span></code> method interpolates it at any other frequency. The
+interpolation is done on a logarithmic frequency scale, and the amplitude is
+interpolated in the dB domain. Outside of the tabulated range, the value of the
+closest end is used: a weighting is never extrapolated.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">freqs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="mi">40000</span><span class="p">),</span> <span class="mi">500</span><span class="p">)</span>
+<span class="n">values</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">WDBA</span><span class="o">.</span><span class="n">values_at_freqs</span><span class="p">(</span><span class="n">freqs</span><span class="p">)</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">semilogx</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="mi">20</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">values</span><span class="p">)),</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Interpolated&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">semilogx</span><span class="p">(</span><span class="n">mp</span><span class="o">.</span><span class="n">WDBA</span><span class="o">.</span><span class="n">freqs</span><span class="p">,</span> <span class="n">mp</span><span class="o">.</span><span class="n">WDBA</span><span class="o">.</span><span class="n">adb</span><span class="p">,</span> <span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Tabulated values&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Frequency (Hz)&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Gain (dB)&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mi">100</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">which</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;A-weighting at 1kHz : </span><span class="si">{</span><span class="mi">20</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">mp</span><span class="o">.</span><span class="n">WDBA</span><span class="o">.</span><span class="n">values_at_freqs</span><span class="p">(</span><span class="mf">1000.</span><span class="p">)))</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1"> dB&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">A</span><span class="o">-</span><span class="n">weighting</span> <span class="n">at</span> <span class="mi">1</span><span class="n">kHz</span> <span class="p">:</span> <span class="mf">0.000</span> <span class="n">dB</span>
+</pre></div>
+</div>
+<p><img alt="png" src="_images/4_spectrum_smoothing_and_weighting_15_1.png" /></p>
+</section>
+<section id="applying-a-weighting-to-a-spectrum">
+<h3>Applying a weighting to a spectrum<a class="headerlink" href="#applying-a-weighting-to-a-spectrum" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">apply_weighting</span></code> multiplies a spectrum by an interpolated weighting.
+With <code class="docutils literal notranslate"><span class="pre">inverse=True</span></code>, it divides by it instead, which is how the response of
+a reference sensor is removed from a measurement.</p>
+<p><code class="docutils literal notranslate"><span class="pre">apply_dBA</span></code> and <code class="docutils literal notranslate"><span class="pre">apply_dBC</span></code> are shortcuts for the standard curves.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">s_pa</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="o">.</span><span class="n">noise</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span> <span class="n">dur</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">freqs_range</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">FS</span><span class="o">/</span><span class="mi">2</span><span class="p">),</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;Pa&#39;</span><span class="p">)</span>
+<span class="n">sp</span> <span class="o">=</span> <span class="n">s_pa</span><span class="o">.</span><span class="n">rfft</span><span class="p">()</span>
+
+<span class="n">a</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">nth_oct_smooth_complex</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="n">freqs_range</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20000</span><span class="p">))</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+    <span class="n">plot_phase</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;No weighting&#39;</span><span class="p">)</span>
+<span class="n">sp</span><span class="o">.</span><span class="n">apply_dBA</span><span class="p">()</span><span class="o">.</span><span class="n">nth_oct_smooth_complex</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="n">freqs_range</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20000</span><span class="p">))</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+    <span class="n">ax</span><span class="o">=</span><span class="n">a</span><span class="p">,</span> <span class="n">plot_phase</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;A-weighted&#39;</span><span class="p">)</span>
+<span class="n">sp</span><span class="o">.</span><span class="n">apply_dBC</span><span class="p">()</span><span class="o">.</span><span class="n">nth_oct_smooth_complex</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="n">freqs_range</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20000</span><span class="p">))</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+    <span class="n">ax</span><span class="o">=</span><span class="n">a</span><span class="p">,</span> <span class="n">plot_phase</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;C-weighted&#39;</span><span class="p">)</span>
+<span class="n">a</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20000</span><span class="p">)</span>
+<span class="n">a</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">legend</span><span class="o">.</span><span class="n">Legend</span> <span class="n">at</span> <span class="mh">0x787d9a14e7b0</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p><img alt="png" src="_images/4_spectrum_smoothing_and_weighting_17_1.png" /></p>
+</section>
+</section>
+<section id="from-a-spectrum-to-a-weighting-and-back">
+<h2>6. From a spectrum to a weighting, and back<a class="headerlink" href="#from-a-spectrum-to-a-weighting-and-back" title="Link to this heading"></a></h2>
+<p>A smoothed spectrum can be reduced to a small number of points, one per 1/nth
+octave band. This is what the <code class="docutils literal notranslate"><span class="pre">nth_oct_smooth_to_weight</span></code> (real) and
+<code class="docutils literal notranslate"><span class="pre">nth_oct_smooth_to_weight_complex</span></code> (complex) methods do: they return a
+<code class="docutils literal notranslate"><span class="pre">Weighting</span></code> object whose frequencies are the center frequencies of the
+bands. Bands that contain no data (at low frequency, where the bands are
+narrower than the frequency resolution) are dropped.</p>
+<p>This is the compact form used to store a calibration curve in a file. The
+<code class="docutils literal notranslate"><span class="pre">to_csv</span></code> and <code class="docutils literal notranslate"><span class="pre">from_csv</span></code> methods of the <code class="docutils literal notranslate"><span class="pre">Weighting</span></code> class write and
+read a three column file (frequency, amplitude, phase), with options to choose
+between dB or linear amplitudes, and radians or degrees.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">W</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">nth_oct_smooth_to_weight_complex</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="n">freqs_range</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20000</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">W</span><span class="o">.</span><span class="n">freqs</span><span class="p">)</span><span class="si">}</span><span class="s1"> points instead of </span><span class="si">{</span><span class="n">G</span><span class="o">.</span><span class="n">length</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+<span class="n">W</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;my_weighting.csv&#39;</span><span class="p">,</span> <span class="n">asdB</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">asradians</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">W2</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">signal</span><span class="o">.</span><span class="n">Weighting</span><span class="o">.</span><span class="n">from_csv</span><span class="p">(</span><span class="s1">&#39;my_weighting.csv&#39;</span><span class="p">,</span> <span class="n">asdB</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">asradians</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Max difference after a save/load round trip: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">W</span><span class="o">.</span><span class="n">amp</span><span class="o">-</span><span class="n">W2</span><span class="o">.</span><span class="n">amp</span><span class="p">))</span><span class="si">:</span><span class="s1">.2e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">106</span> <span class="n">points</span> <span class="n">instead</span> <span class="n">of</span> <span class="mi">4097</span>
+<span class="n">Max</span> <span class="n">difference</span> <span class="n">after</span> <span class="n">a</span> <span class="n">save</span><span class="o">/</span><span class="n">load</span> <span class="nb">round</span> <span class="n">trip</span><span class="p">:</span> <span class="mf">3.55e-15</span>
+</pre></div>
+</div>
+<p>A <code class="docutils literal notranslate"><span class="pre">Weighting</span></code> can be turned back into a full <code class="docutils literal notranslate"><span class="pre">Spectral</span></code> object by
+giving it to the <code class="docutils literal notranslate"><span class="pre">similar</span></code> method with the <code class="docutils literal notranslate"><span class="pre">w</span></code> keyword. The values are
+interpolated at every frequency of the spectrum.</p>
+<p>The figure below compares the moving average (computed at every frequency) with
+the band center values and their interpolation. The two are close, but the
+moving average keeps more detail: it is what should be used for analysis, while
+the <code class="docutils literal notranslate"><span class="pre">Weighting</span></code> is a compact form suited to storage and to the correction of
+a sensor response.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">a</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">plot_phase</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;0.8&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Not smoothed&#39;</span><span class="p">)</span>
+<span class="n">G</span><span class="o">.</span><span class="n">nth_oct_smooth_complex</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="n">freqs_range</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20000</span><span class="p">))</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+    <span class="n">ax</span><span class="o">=</span><span class="n">a</span><span class="p">,</span> <span class="n">plot_phase</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;tab:blue&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;1/12 oct. moving average&#39;</span><span class="p">)</span>
+<span class="n">G</span><span class="o">.</span><span class="n">similar</span><span class="p">(</span><span class="n">w</span><span class="o">=</span><span class="n">W</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;1/12 oct. band centers, interpolated&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+    <span class="n">ax</span><span class="o">=</span><span class="n">a</span><span class="p">,</span> <span class="n">plot_phase</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;tab:red&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">a</span><span class="o">.</span><span class="n">semilogx</span><span class="p">(</span><span class="n">W</span><span class="o">.</span><span class="n">freqs</span><span class="p">,</span> <span class="n">W</span><span class="o">.</span><span class="n">adb</span><span class="p">,</span> <span class="s1">&#39;k.&#39;</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">a</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20000</span><span class="p">)</span>
+<span class="n">a</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mi">40</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span>
+<span class="n">a</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">legend</span><span class="o">.</span><span class="n">Legend</span> <span class="n">at</span> <span class="mh">0x787d9a13a1e0</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p><img alt="png" src="_images/4_spectrum_smoothing_and_weighting_21_1.png" /></p>
+</section>
+<section id="a-practical-use-microphone-response-calibration">
+<h2>7. A practical use: microphone response calibration<a class="headerlink" href="#a-practical-use-microphone-response-calibration" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">measpy.utils.mic_calibration_freq</span></code> function measures the frequency
+response of a microphone by comparing it with a reference microphone, both
+recording the same sound field. It returns a <code class="docutils literal notranslate"><span class="pre">Weighting</span></code> object.</p>
+<p>If the response of the reference microphone is itself known (as a
+<code class="docutils literal notranslate"><span class="pre">Weighting</span></code>), it is passed with the <code class="docutils literal notranslate"><span class="pre">Wref</span></code> argument and it is removed
+from the result.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">measpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">measpy.audio</span><span class="w"> </span><span class="kn">import</span> <span class="n">audio_run_measurement</span>
+
+<span class="n">FS</span><span class="p">,</span> <span class="n">DUR</span> <span class="o">=</span> <span class="mi">48000</span><span class="p">,</span> <span class="mi">10</span>
+<span class="n">pa</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;Pa&#39;</span><span class="p">,</span> <span class="n">cal</span><span class="o">=...</span><span class="p">,</span> <span class="n">dbfs</span><span class="o">=...</span><span class="p">)</span>
+<span class="n">paref</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;Pa&#39;</span><span class="p">,</span> <span class="n">cal</span><span class="o">=...</span><span class="p">,</span> <span class="n">dbfs</span><span class="o">=...</span><span class="p">)</span>
+<span class="n">M</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Measurement</span><span class="p">(</span><span class="n">device_type</span><span class="o">=</span><span class="s1">&#39;audio&#39;</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span>
+                   <span class="n">in_sig</span><span class="o">=</span><span class="p">[</span><span class="n">pa</span><span class="p">,</span> <span class="n">paref</span><span class="p">],</span> <span class="n">in_map</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">dur</span><span class="o">=</span><span class="n">DUR</span><span class="p">,</span>
+                   <span class="n">in_device</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">)</span>
+<span class="n">audio_run_measurement</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+
+<span class="c1"># The frequency response of the microphone, as a 1/3 octave Weighting</span>
+<span class="n">micresp</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">mic_calibration_freq</span><span class="p">(</span><span class="n">M</span><span class="o">.</span><span class="n">in_sig</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">M</span><span class="o">.</span><span class="n">in_sig</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">noct</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">micresp</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;my_microphone.csv&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The resulting curve is then applied to any later measurement made with this
+microphone:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">w</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">signal</span><span class="o">.</span><span class="n">Weighting</span><span class="o">.</span><span class="n">from_csv</span><span class="p">(</span><span class="s1">&#39;my_microphone.csv&#39;</span><span class="p">)</span>
+<span class="n">corrected</span> <span class="o">=</span> <span class="n">measured_signal</span><span class="o">.</span><span class="n">rfft</span><span class="p">()</span><span class="o">.</span><span class="n">apply_weighting</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">irfft</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="summary">
+<h2>8. Summary<a class="headerlink" href="#summary" title="Link to this heading"></a></h2>
+<p>| Method | Applies to | Returns |
+| — | — | — |
+| <code class="docutils literal notranslate"><span class="pre">nth_oct_smooth(n,</span> <span class="pre">...)</span></code> | Real spectrum | A <code class="docutils literal notranslate"><span class="pre">Spectral</span></code>, same frequency grid |
+| <code class="docutils literal notranslate"><span class="pre">nth_oct_smooth_complex(n,</span> <span class="pre">...,</span> <span class="pre">mode=...)</span></code> | Complex spectrum | A <code class="docutils literal notranslate"><span class="pre">Spectral</span></code>, same frequency grid |
+| <code class="docutils literal notranslate"><span class="pre">nth_oct_smooth_to_weight(n,</span> <span class="pre">...)</span></code> | Real spectrum | A <code class="docutils literal notranslate"><span class="pre">Weighting</span></code>, one point per band |
+| <code class="docutils literal notranslate"><span class="pre">nth_oct_smooth_to_weight_complex(n,</span> <span class="pre">...)</span></code> | Complex spectrum | A <code class="docutils literal notranslate"><span class="pre">Weighting</span></code>, one point per band |
+| <code class="docutils literal notranslate"><span class="pre">similar(w=W)</span></code> | <code class="docutils literal notranslate"><span class="pre">Spectral</span></code> | A <code class="docutils literal notranslate"><span class="pre">Spectral</span></code> interpolated from a <code class="docutils literal notranslate"><span class="pre">Weighting</span></code> |
+| <code class="docutils literal notranslate"><span class="pre">apply_weighting(W,</span> <span class="pre">inverse=False)</span></code> | <code class="docutils literal notranslate"><span class="pre">Spectral</span></code> | A weighted <code class="docutils literal notranslate"><span class="pre">Spectral</span></code> |
+| <code class="docutils literal notranslate"><span class="pre">values_at_freqs(f)</span></code> | <code class="docutils literal notranslate"><span class="pre">Weighting</span></code> | Complex values at the given frequencies |</p>
+<p>All these methods accept the standard measpy frequency range arguments
+<code class="docutils literal notranslate"><span class="pre">freqs_range</span></code>, <code class="docutils literal notranslate"><span class="pre">freq_min</span></code> and <code class="docutils literal notranslate"><span class="pre">freq_max</span></code>. The older <code class="docutils literal notranslate"><span class="pre">fmin</span></code> and
+<code class="docutils literal notranslate"><span class="pre">fmax</span></code> arguments still work but print a deprecation message.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="3_measurements.html" class="btn btn-neutral float-left" title="Tutorial 3: The Measurement class" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="5_synced_measurement.html" class="btn btn-neutral float-right" title="Tutorial 5: Synchronized measurements" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; <a href="copyright.html">Copyright</a> 2021-2023, Olivier Doaré.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
