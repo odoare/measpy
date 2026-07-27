@@ -538,14 +538,16 @@ class Signal:
 
         The signal is filtered accordingly to the parameters. This method is a wrapper around the scipy.signal iir functions, most of the parameters are hence the same.
 
-        The cutoff frequencies are given with the standard measpy frequency
-        range arguments ``freqs_range``, ``freq_min`` and ``freq_max``.
-        For lowpass filters, only ``freq_max`` is used, for highpass filters,
-        only ``freq_min`` is used.
+        The cutoff frequencies can be given either with the standard scipy
+        parameter ``Wn``, or with the measpy frequency range arguments
+        ``freqs_range``, ``freq_min`` and ``freq_max`` (if any of these is
+        given, it takes precedence over ``Wn``). For lowpass filters, only
+        ``freq_max`` (or the corresponding end of ``Wn``) is used, for
+        highpass filters, only ``freq_min``.
 
         :param N: Filter order, defaults to 2
         :type N: int, optional
-        :param Wn: Deprecated, use freqs_range, freq_min or freq_max instead. A cutoff frequency (if low or highpass) or a tuple of frequencies (if bandpass/stop).
+        :param Wn: A cutoff frequency (if low or highpass) or a tuple of frequencies (if bandpass/stop), as in scipy.signal.iirfilter. Superseded by freqs_range, freq_min or freq_max if any of these is given.
         :type Wn: float or tuple, optional
         :param rp: For Chebyshev and elliptic filters, provides the maximum ripple in the passband. (dB)
         :type rp: float, optional
@@ -565,13 +567,13 @@ class Signal:
         :rtype: measpy.signal.Signal
         """
 
-        if Wn is not None:
-            deprecated_argument(
-                'Wn', 'freqs_range, freq_min or freq_max', func_name='Signal.iir')
+        # Wn is the standard scipy parameter, not deprecated. It is only
+        # used as a fallback when none of the measpy frequency range
+        # arguments is given.
+        if Wn is not None and freqs_range is None and freq_min is None and freq_max is None:
             if isinstance(Wn, numbers.Number):
-                if freq_min is None and freq_max is None and freqs_range is None:
-                    freq_min = freq_max = Wn
-            elif freqs_range is None:
+                freq_min = freq_max = Wn
+            else:
                 freqs_range = Wn
 
         fmin, fmax = parse_freq_range(freqs_range, freq_min, freq_max,

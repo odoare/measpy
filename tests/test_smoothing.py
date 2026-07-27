@@ -80,11 +80,15 @@ class TestFreqRangeArguments(unittest.TestCase):
         ref = sig.iir(N=4, freqs_range=(100, 2000))
         self.assertTrue(np.allclose(
             ref.values, sig.iir(N=4, freq_min=100, freq_max=2000).values))
+        # Wn is the standard scipy parameter, it is not deprecated
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter('always')
-            deprecated = sig.iir(N=4, Wn=(100, 2000))
-        self.assertTrue(np.allclose(ref.values, deprecated.values))
-        self.assertEqual(len(caught), 1)
+            via_wn = sig.iir(N=4, Wn=(100, 2000))
+        self.assertTrue(np.allclose(ref.values, via_wn.values))
+        self.assertEqual(len(caught), 0)
+        # freqs_range/freq_min/freq_max take precedence over Wn
+        overridden = sig.iir(N=4, Wn=(1, 2), freqs_range=(100, 2000))
+        self.assertTrue(np.allclose(ref.values, overridden.values))
         # Lowpass and highpass only use one end of the range
         self.assertTrue(np.allclose(
             sig.iir(N=4, btype='lowpass', freq_max=1000).values,
