@@ -5,8 +5,8 @@
 ![Documentation](https://github.com/odoare/measpy/workflows/docs/badge.svg)
 ![Build](https://github.com/odoare/measpy/actions/workflows/release.yml/badge.svg)
 
-(c) 2021-2023 Olivier Doaré
-Contact: olivier.doare@ensta-paris.fr
+(c) 2021-2026 The measpy team
+Contact: olivier.doare@ensta.fr
 
 measpy is a set of classes and methods that
 - helps signal processing and analysis using rapid and compact Python scripting, thanks to the functional programming paradigm proposed by this package,
