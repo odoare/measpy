@@ -240,6 +240,58 @@ class TestMeasurementRegressions(unittest.TestCase):
         self.assertEqual(meas.freq_stop, 5000)
 
 
+class TestHarmonicDistoRegressions(unittest.TestCase):
+    """ measpy.signal.Signal.harmonic_disto """
+
+    def test_harmonic_phase_is_flat_for_memoryless_nonlinearity(self):
+        """ decal used np.ceil where the window position (ns) uses
+            np.round, leaving up to a full sample of uncorrected phase
+            error on the extracted harmonics (amplified by the harmonic
+            order once frequencies are realigned). For a memoryless,
+            zero-delay nonlinearity the phase of each harmonic must be
+            flat versus frequency: any residual slope reveals a leftover
+            fractional-sample timing error in the extraction.
+
+            fs/dur/freq_min/freq_max below are chosen so that
+            L*log(order)*fs has a fractional part below 0.5 for orders
+            2 and 3, which is exactly the regime where np.ceil and
+            np.round disagreed.
+        """
+        fs = 48000
+        x = mp.Signal.log_sweep(fs=fs, dur=3.0, freqs_range=(100.0, 10000.0), unit='V')
+        y = x.similar(values=x.values + 0.15*x.values**2 + 0.08*x.values**3, unit='V')
+
+        _, Hfr, _, delay = y.harmonic_disto(nh=3, freqs_range=(100.0, 10000.0),
+                                            nsmooth=48, win_max_length=2**14)
+        self.assertAlmostEqual(delay, 0.0, places=6)
+
+        for order in (1, 2, 3):
+            H = Hfr[order-1]
+            # Only the part of the realigned band where the harmonic's
+            # raw content stays well inside the original sweep band is
+            # analysed, higher orders alias close to fmax otherwise.
+            band = (H.freqs > 300) & (H.freqs < 9000.0/order)
+            self.assertGreater(band.sum(), 20)
+            phase = np.unwrap(np.angle(H.values[band]))
+            freqs = H.freqs[band]
+            slope = np.polyfit(freqs, phase, 1)[0]
+            residual_delay_samples = -slope/(2*np.pi)*fs
+            self.assertLess(abs(residual_delay_samples), 0.1,
+                            f"harmonic {order}: residual delay "
+                            f"{residual_delay_samples:.3f} samples")
+
+    def test_non_integer_dl_does_not_raise(self):
+        """ dl=prop_before*win_max_length was not guaranteed to be an
+            integer, silently truncating (not rounding) the window
+            position for odd win_max_length/prop_before combinations """
+        x = mp.Signal.log_sweep(fs=48000, dur=2.0, freqs_range=(100.0, 10000.0), unit='V')
+        y = x.similar(values=x.values + 0.1*x.values**2, unit='V')
+        Hnl, Hfr, thd, delay = y.harmonic_disto(
+            nh=2, freqs_range=(100.0, 10000.0), win_max_length=999, prop_before=0.33)
+        self.assertTrue(np.all(np.isfinite(Hfr[0].values)))
+        self.assertTrue(np.all(np.isfinite(Hfr[1].values)))
+
+
 class TestUtilsRegressions(unittest.TestCase):
     """ measpy.utils """
 

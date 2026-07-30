@@ -538,14 +538,16 @@ class Signal:
 
         The signal is filtered accordingly to the parameters. This method is a wrapper around the scipy.signal iir functions, most of the parameters are hence the same.
 
-        The cutoff frequencies are given with the standard measpy frequency
-        range arguments ``freqs_range``, ``freq_min`` and ``freq_max``.
-        For lowpass filters, only ``freq_max`` is used, for highpass filters,
-        only ``freq_min`` is used.
+        The cutoff frequencies can be given either with the standard scipy
+        parameter ``Wn``, or with the measpy frequency range arguments
+        ``freqs_range``, ``freq_min`` and ``freq_max`` (if any of these is
+        given, it takes precedence over ``Wn``). For lowpass filters, only
+        ``freq_max`` (or the corresponding end of ``Wn``) is used, for
+        highpass filters, only ``freq_min``.
 
         :param N: Filter order, defaults to 2
         :type N: int, optional
-        :param Wn: Deprecated, use freqs_range, freq_min or freq_max instead. A cutoff frequency (if low or highpass) or a tuple of frequencies (if bandpass/stop).
+        :param Wn: A cutoff frequency (if low or highpass) or a tuple of frequencies (if bandpass/stop), as in scipy.signal.iirfilter. Superseded by freqs_range, freq_min or freq_max if any of these is given.
         :type Wn: float or tuple, optional
         :param rp: For Chebyshev and elliptic filters, provides the maximum ripple in the passband. (dB)
         :type rp: float, optional
@@ -565,13 +567,13 @@ class Signal:
         :rtype: measpy.signal.Signal
         """
 
-        if Wn is not None:
-            deprecated_argument(
-                'Wn', 'freqs_range, freq_min or freq_max', func_name='Signal.iir')
+        # Wn is the standard scipy parameter, not deprecated. It is only
+        # used as a fallback when none of the measpy frequency range
+        # arguments is given.
+        if Wn is not None and freqs_range is None and freq_min is None and freq_max is None:
             if isinstance(Wn, numbers.Number):
-                if freq_min is None and freq_max is None and freqs_range is None:
-                    freq_min = freq_max = Wn
-            elif freqs_range is None:
+                freq_min = freq_max = Wn
+            else:
                 freqs_range = Wn
 
         fmin, fmax = parse_freq_range(freqs_range, freq_min, freq_max,
@@ -2242,7 +2244,7 @@ class Signal:
         :type freqs_range: tuple, list, numpy.ndarray, optional
         :param delay: the mean delay between output and input, defaults to None. If None, the delay is estimated looking at the max value of the cross correlation of the signal with the input logarithmic sweep.
         :type delay: float, optional
-        :param win_max_length: Maximum window length for each harmonic Fourier analysis in number of samples. Has to be even. Defaults to 2**15. When treating higher harmonics, the window can be shortened so that there is no overlapping with the next window.
+        :param win_max_length: Maximum window length for each harmonic Fourier analysis in number of samples. Defaults to 2**15. When treating higher harmonics, the window can be shortened so that there is no overlapping with the next window.
         :type delay: float, optional
         :param prop_before: Proportion of the window that is before the peak center for each harmonic content. Defaults to 0.25 (1/4th of the window is before the harmonic peak)
         :type prop_before: float, optionnal
@@ -2272,7 +2274,11 @@ class Signal:
         # dl is the window shift for each Fourier transform computation
         # of the harmonic peaks l/4 is a standard value that keeps a part
         # of the signal before the peak itself
-        dl = prop_before*l
+        # dl must be an integer number of samples: ns (below) is rounded
+        # to the nearest sample, and a non-integer dl would silently be
+        # truncated (not rounded) when cast to int, adding an uncorrected
+        # sub-sample error.
+        dl = np.round(prop_before*l)
 
         # Compute delay from cross correlation
         # (timelag method)
@@ -2300,7 +2306,12 @@ class Signal:
         # and time shifting for phase reconstruction
         L = (self.dur-1/self.fs)/np.log(freq_max/freq_min)
         dt = L*np.log(np.arange(nh)+1)
-        decal = dt*G.fs-np.ceil(dt*G.fs)
+        # Phase correction for the sub-sample remainder left when dt is
+        # snapped to the nearest sample below (in ns). Must match the
+        # rounding used for ns (np.round), not np.ceil, otherwise up to
+        # a full sample of phase error is left uncorrected, amplified
+        # by the harmonic order once frequencies are realigned below.
+        decal = dt*G.fs-np.round(dt*G.fs)
         # print("dt")
         # print(dt)
         # print("decal")
