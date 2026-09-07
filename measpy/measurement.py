@@ -537,7 +537,19 @@ class Measurement:
                 self.in_iepe = convl(bool,task_dict['in_iepe'])
             except:
                 pass
-
+            try:
+                self.in_sig_config = convl(str,task_dict['in_sig_config'])
+            except:
+               pass
+            if 'ref_device' in task_dict:
+                self.ref_device = convl0(str,task_dict['ref_device'])
+                self.clock_terminal = convl0(str,task_dict['clock_terminal'])
+                self.intask_delay = convl0(float,task_dict['intask_delay'])
+            if 'freq_map' in task_dict:
+                self.freq_map = convl0(str,task_dict['freq_map'])
+                self.freq_device = convl0(str,task_dict['freq_device'])
+                self.freq_nsamp = convl0(int,task_dict['freq_nsamp'])
+                self.freq_result = convl0(float,task_dict['freq_result'])
         return self
 
     # --------------------------------
