@@ -273,9 +273,26 @@ class ni_callback_measurement:
                 self.M.out_range = self.ao_channel_range
                 self.M.ni_out_sig_bit_resolution = self.ao_channels_bits_resolution
                 self.M.out_adc_temp = self.out_Device.cal_dev_temp #current temperature of the output card
-
             #set_up timing
             self.timing()
+            #Set up frequency measurement task
+            if hasattr(self.M, "freq_device"):
+                self.f_task = nidaqmx.Task(new_task_name="fs measurement")
+                device = nidaqmx.system.device.Device(self.M.freq_device)
+                self.freq_divisor = max(4,int((self.M.fs/device.ci_max_timebase)*2e6)) #resolution ~.5ppm
+                fs_meas = self.f_task.ci_channels.add_ci_freq_chan(
+                    self.M.freq_device + "/ctr1",
+                    min_val=self.M.fs*(1-.1),
+                    max_val=self.M.fs*(1+.1),
+                    meas_method=niconst.CounterFrequencyMethod.LARGE_RANGE_2_COUNTERS,
+                    divisor=self.freq_divisor,
+                    edge=niconst.Edge.RISING,
+                )
+                self.timebase = fs_meas.ci_ctr_timebase_rate
+                if self.timebase!=device.ci_max_timebase:
+                    raise ValueError("Fastest timebase not available to measure frequency")
+                fs_meas.ci_freq_term = "/" + self.M.freq_device +"/"+ self.M.freq_map
+
         except Exception as e:
             self.__exit__(type(e), e.args, e)
             raise e
@@ -287,11 +304,13 @@ class ni_callback_measurement:
             self.intask.close()
         if self.M.out_sig != None:
             self.outtask.close()
+        if hasattr(self.M, "freq_device"):
+            self.f_task.close()
         print("ni tasks closed")
 
     def timing(self):
         if self.M.in_sig is not None and self.M.out_sig is not None and self.M.in_device !=self.M.out_device:
-            if  hasattr(self.M, "ref_device") and hasattr(self.M, "clock_terminal"):
+            if hasattr(self.M, "ref_device") and hasattr(self.M, "clock_terminal"):
                 if self.M.ref_device == "in":
                     self.intask.timing.cfg_samp_clk_timing(
                         rate=self.M.fs,
@@ -470,6 +489,23 @@ class ni_callback_measurement:
                 self.outtask.start()  # Start the write task first, waiting for the analog input sample clock
             if self.M.in_sig != None:
                 self.intask.start()
+
+        #frequency measurement task
+        if hasattr(self.M, "freq_device"):
+            self.f_task.start()
+            data =self.f_task.read(number_of_samples_per_channel=self.M.freq_nsamp)
+            self.f_task.stop()
+            result = np.mean(data)
+            if self.M.freq_nsamp<10:
+                t = [1.84,1.32,1.20,1.14,1.11,1.09,1.08,1.07,1.06][self.M.freq_nsamp-2]
+            else:
+                t=1
+            err_measure = np.std(data)*t/np.sqrt(self.M.freq_nsamp)
+            err_resolution = (result*result/(self.freq_divisor*self.timebase-result))/(2*np.sqrt(3))
+            if err_measure>0:
+                err_resolution/=2    #we know realfreq is in the interval data1,data2
+            incertitude = 2*np.sqrt(err_measure**2+err_resolution**2)
+            self.M.freq_result = [result, incertitude]
         try:
             print("Start measurement")
             while (

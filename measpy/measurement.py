@@ -194,6 +194,14 @@ class Measurement:
                         raise Exception("Clock signal route undefined")
                 else:
                     raise Exception("Input and output on different device, a reference device and clock signal route should be defined")
+            if "freq_device" in params:
+                if "freq_map" in params:
+                    self.freq_map = params["freq_map"]
+                else:
+                    raise Exception("Frequency measurement terminal not defined")
+                self.freq_device = params["freq_device"]
+                self.freq_nsamp = params.setdefault("freq_nsamp",10)
+
         if type(self.out_sig)!=type(None):
             self.io_sync = params.setdefault('io_sync',0)
         elif 'io_sync' in params:
