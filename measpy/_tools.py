@@ -148,6 +148,13 @@ def csv_to_dict(filename):
             dd[row[0]]=row[1:]
     return dd
 
+def convl0(fun,xx):
+    if type(xx) in [np.ndarray ,list]:
+        yy=list(map(lambda x:convl0(fun,x),xx))
+    else:
+        yy=None if xx=='None' else fun(xx)
+    return yy
+
 def convl(fun,xx):
     if type(xx) in [np.ndarray ,list]:
         yy=list(map(fun,xx))

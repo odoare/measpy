@@ -62,15 +62,11 @@ from ._tools import (add_step,
                            array_mult_unitlist,
                            to_list,
                            mix_dicts,
-                           decodeH5str)
+                           decodeH5str,
+                           SignalType)
 
 from ._data_tools import Queue2array,Queue2prealocated_array
 
-from enum import Enum
-
-class SignalType(Enum):
-    DIGITAL = "digital signal"
-    ANALOG = "analog signal"
 
 ##################
 ##              ##
@@ -840,14 +836,18 @@ class Signal:
         if not isinstance(self.unit, list):
             self.unit = to_list(self.unit,self.nchannels)
         conversion = [1.0]*self.nchannels
-        for i,u in enumerate(self.unit):
-            self.unit[i] = Unit(unit_in)
-            try:
-                conversion[i] = (1.0 * Unit(unit_in)).to_value(self.unit[i])
-            except UnitConversionError:
-                print(
-                    f"Signal unit ({self.unit[i]}) incompatible with {unit_in}, Signal unit set to {unit_in} without conversion"
-                )
+        if unit_in=="raw":
+            pass
+        else:
+            for i,u in enumerate(self.unit):
+                self.unit[i] = Unit(unit_in)
+                try:
+                    conversion[i] = (1.0 * Unit(unit_in)).to_value(self.unit[i])
+                except UnitConversionError:
+                    print(
+                        f"Signal unit ({self.unit[i]}) incompatible with {unit_in}, Signal unit set to {unit_in} without conversion"
+                    )
+                self.cal[i]=""
         if Ndata:
             array = np.zeros((Ndata, self.nchannels)).squeeze()
             values = conversion * Queue2prealocated_array(q_in, array)
@@ -1544,8 +1544,23 @@ class Signal:
         elif isinstance(self.cal,list):
             # Here we convert a list of values to ndarray
             # (converting eventual None values to 1.0)
-            cal = np.array([1.0 if x is None else x for x in self.cal])
-            return self._rawvalues*self.dbfs/cal
+            values = np.empty_like(self._rawvalues)
+            for i,(cal,raw) in enumerate(zip(self.cal,self._rawvalues.T)):
+                if isinstance(cal,str):
+                    d = {}
+                    d['x'] = raw*self.dbfs
+                    command = 'y='+cal
+                    exec(command, d)
+                    values[:,i] = d['y']
+                    if self.type == SignalType.DIGITAL:
+                        values[:,i] = values.astype(int)
+                else:
+                    if cal is None:
+                        cal = 1.0
+                    values[:,i]=raw*self.dbfs/cal
+            return values
+            # cal = np.array([1.0 if x is None else x for x in self.cal])
+            # return self._rawvalues*self.dbfs/cal
         else:
             print('cal property not recognized')
     @values.setter
